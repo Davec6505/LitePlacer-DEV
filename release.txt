@@ -1,0 +1,31 @@
+Build date 11/01/2022
+
+---------------------
+
+New Features, significant changes
+
+* ctlr+C in log window no copies in rich text format (preserving colors)
+---------------------
+
+Bug Fixes 
+
+* Sometimes, TinyG uses wrong parameter for A axis. This is now checked at startup,
+  and changed, if needed.
+* Max delay in camera setup no longer cause a crash
+* Homing acceleration control was accidentally disabled
+
+
+---------------------
+
+Known issues
+
+* If you change camera resolution, you need to re-set pixel size
+* Pause and Stop need to be clicked twice
+* The application does not automatically restart when loading new settings from file. (there is now a dialog, though)
+* Place fast sometimes uses last hole (which might not be whole), not the second to last as expected
+
+---------------------
+
+For info about earlier releases,
+Please see https://liteplacer.com/downloads/ and 
+https://liteplacer.com/software-release-history-and-previous-versions/ .
