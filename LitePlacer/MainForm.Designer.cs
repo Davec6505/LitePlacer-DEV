@@ -41,8 +41,8 @@ namespace LitePlacer
         {
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormMain));
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle6 = new System.Windows.Forms.DataGridViewCellStyle();
             this.Park_button = new System.Windows.Forms.Button();
             this.TestNozzleRecognition_button = new System.Windows.Forms.Button();
             this.DownCamZoomFactor_textBox = new System.Windows.Forms.TextBox();
@@ -1365,6 +1365,7 @@ namespace LitePlacer
             // 
             // Tapes_tabPage
             // 
+            this.Tapes_tabPage.Controls.Add(this.TapesOld_dataGridView);
             this.Tapes_tabPage.Controls.Add(this.label230);
             this.Tapes_tabPage.Controls.Add(this.TapeSetupZguard_checkBox);
             this.Tapes_tabPage.Controls.Add(this.label225);
@@ -1381,7 +1382,6 @@ namespace LitePlacer
             this.Tapes_tabPage.Controls.Add(this.ResetSelectedPlaceZs_button);
             this.Tapes_tabPage.Controls.Add(this.ResetSelectedZs_button);
             this.Tapes_tabPage.Controls.Add(this.ResetPlaceZ_button);
-            this.Tapes_tabPage.Controls.Add(this.TapesOld_dataGridView);
             this.Tapes_tabPage.Controls.Add(this.ShowPart_button);
             this.Tapes_tabPage.Controls.Add(this.label129);
             this.Tapes_tabPage.Controls.Add(this.HoleTest_button);
@@ -1405,7 +1405,7 @@ namespace LitePlacer
             this.Tapes_tabPage.Location = new System.Drawing.Point(4, 25);
             this.Tapes_tabPage.Name = "Tapes_tabPage";
             this.Tapes_tabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.Tapes_tabPage.Size = new System.Drawing.Size(1245, 632);
+            this.Tapes_tabPage.Size = new System.Drawing.Size(1302, 632);
             this.Tapes_tabPage.TabIndex = 6;
             this.Tapes_tabPage.Tag = "https://liteplacer.com/tape-positions-page/";
             this.Tapes_tabPage.Text = "Tape Positions";
@@ -1601,6 +1601,8 @@ namespace LitePlacer
             // TapesOld_dataGridView
             // 
             this.TapesOld_dataGridView.AllowUserToAddRows = false;
+            this.TapesOld_dataGridView.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.TapesOld_dataGridView.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.AllCells;
             this.TapesOld_dataGridView.AutoSizeRowsMode = System.Windows.Forms.DataGridViewAutoSizeRowsMode.AllCells;
             this.TapesOld_dataGridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
@@ -1628,7 +1630,7 @@ namespace LitePlacer
             this.TapesOld_dataGridView.RowHeadersVisible = false;
             this.TapesOld_dataGridView.RowHeadersWidth = 50;
             this.TapesOld_dataGridView.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.CellSelect;
-            this.TapesOld_dataGridView.Size = new System.Drawing.Size(438, 100);
+            this.TapesOld_dataGridView.Size = new System.Drawing.Size(641, 100);
             this.TapesOld_dataGridView.TabIndex = 62;
             this.TapesOld_dataGridView.Visible = false;
             // 
@@ -1993,6 +1995,8 @@ namespace LitePlacer
             // Tapes_dataGridView
             // 
             this.Tapes_dataGridView.AllowUserToAddRows = false;
+            this.Tapes_dataGridView.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.Tapes_dataGridView.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.AllCells;
             this.Tapes_dataGridView.AutoSizeRowsMode = System.Windows.Forms.DataGridViewAutoSizeRowsMode.AllCells;
             this.Tapes_dataGridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
@@ -2027,7 +2031,7 @@ namespace LitePlacer
             this.Tapes_dataGridView.RowHeadersVisible = false;
             this.Tapes_dataGridView.RowHeadersWidth = 50;
             this.Tapes_dataGridView.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.CellSelect;
-            this.Tapes_dataGridView.Size = new System.Drawing.Size(584, 581);
+            this.Tapes_dataGridView.Size = new System.Drawing.Size(641, 581);
             this.Tapes_dataGridView.TabIndex = 15;
             this.Tapes_dataGridView.Tag = "https://liteplacer.com/tape-positions-page/";
             this.Tapes_dataGridView.CellClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.Tapes_dataGridView_CellClick);
@@ -2281,7 +2285,7 @@ namespace LitePlacer
             this.tabPageSetupCameras.Location = new System.Drawing.Point(4, 25);
             this.tabPageSetupCameras.Name = "tabPageSetupCameras";
             this.tabPageSetupCameras.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPageSetupCameras.Size = new System.Drawing.Size(1245, 632);
+            this.tabPageSetupCameras.Size = new System.Drawing.Size(1302, 632);
             this.tabPageSetupCameras.TabIndex = 0;
             this.tabPageSetupCameras.Text = "Setup Cameras";
             this.toolTip1.SetToolTip(this.tabPageSetupCameras, "https://liteplacer.com/setup-cameras-page/");
@@ -2289,9 +2293,9 @@ namespace LitePlacer
             // 
             // Cam_pictureBox
             // 
-            this.Cam_pictureBox.Location = new System.Drawing.Point(20, 25);
+            this.Cam_pictureBox.Location = new System.Drawing.Point(6, 6);
             this.Cam_pictureBox.Name = "Cam_pictureBox";
-            this.Cam_pictureBox.Size = new System.Drawing.Size(614, 429);
+            this.Cam_pictureBox.Size = new System.Drawing.Size(628, 448);
             this.Cam_pictureBox.TabIndex = 228;
             this.Cam_pictureBox.TabStop = false;
             // 
@@ -8221,16 +8225,18 @@ namespace LitePlacer
             // JobData_GridView
             // 
             this.JobData_GridView.AllowUserToAddRows = false;
+            this.JobData_GridView.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.JobData_GridView.CellBorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.Raised;
             this.JobData_GridView.ClipboardCopyMode = System.Windows.Forms.DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
-            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle1.BackColor = System.Drawing.SystemColors.Control;
-            dataGridViewCellStyle1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            dataGridViewCellStyle1.ForeColor = System.Drawing.SystemColors.WindowText;
-            dataGridViewCellStyle1.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle1.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.JobData_GridView.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle1;
+            dataGridViewCellStyle4.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle4.BackColor = System.Drawing.SystemColors.Control;
+            dataGridViewCellStyle4.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            dataGridViewCellStyle4.ForeColor = System.Drawing.SystemColors.WindowText;
+            dataGridViewCellStyle4.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle4.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle4.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.JobData_GridView.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle4;
             this.JobData_GridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.JobData_GridView.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.JobDataValueColumn,
@@ -8342,16 +8348,18 @@ namespace LitePlacer
             // CadData_GridView
             // 
             this.CadData_GridView.AllowUserToAddRows = false;
+            this.CadData_GridView.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.CadData_GridView.CellBorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.Raised;
             this.CadData_GridView.ClipboardCopyMode = System.Windows.Forms.DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
-            dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle2.BackColor = System.Drawing.SystemColors.Control;
-            dataGridViewCellStyle2.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            dataGridViewCellStyle2.ForeColor = System.Drawing.SystemColors.WindowText;
-            dataGridViewCellStyle2.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle2.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle2.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.CadData_GridView.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle2;
+            dataGridViewCellStyle6.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle6.BackColor = System.Drawing.SystemColors.Control;
+            dataGridViewCellStyle6.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            dataGridViewCellStyle6.ForeColor = System.Drawing.SystemColors.WindowText;
+            dataGridViewCellStyle6.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle6.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle6.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.CadData_GridView.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle6;
             this.CadData_GridView.ColumnHeadersHeight = 29;
             this.CadData_GridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
             this.CadData_GridView.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
@@ -8512,6 +8520,8 @@ namespace LitePlacer
             // 
             // tabControlPages
             // 
+            this.tabControlPages.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.tabControlPages.Controls.Add(this.RunJob_tabPage);
             this.tabControlPages.Controls.Add(this.tabPageBasicSetup);
             this.tabControlPages.Controls.Add(this.tabPageSetupCameras);
@@ -8521,7 +8531,7 @@ namespace LitePlacer
             this.tabControlPages.Location = new System.Drawing.Point(3, 2);
             this.tabControlPages.Name = "tabControlPages";
             this.tabControlPages.SelectedIndex = 1;
-            this.tabControlPages.Size = new System.Drawing.Size(1253, 661);
+            this.tabControlPages.Size = new System.Drawing.Size(1310, 661);
             this.tabControlPages.TabIndex = 3;
             this.tabControlPages.SelectedIndexChanged += new System.EventHandler(this.tabControlPages_SelectedIndexChanged);
             this.tabControlPages.Selecting += new System.Windows.Forms.TabControlCancelEventHandler(this.tabControlPages_Selecting);
@@ -8598,7 +8608,7 @@ namespace LitePlacer
             this.Algorithms_tabPage.Location = new System.Drawing.Point(4, 25);
             this.Algorithms_tabPage.Name = "Algorithms_tabPage";
             this.Algorithms_tabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.Algorithms_tabPage.Size = new System.Drawing.Size(1245, 632);
+            this.Algorithms_tabPage.Size = new System.Drawing.Size(1302, 632);
             this.Algorithms_tabPage.TabIndex = 8;
             this.Algorithms_tabPage.Tag = "https://liteplacer.com/setup-video-processing-page/";
             this.Algorithms_tabPage.Text = "Setup Video Processing";
@@ -10222,7 +10232,7 @@ namespace LitePlacer
             this.Nozzles_tabPage.Location = new System.Drawing.Point(4, 25);
             this.Nozzles_tabPage.Name = "Nozzles_tabPage";
             this.Nozzles_tabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.Nozzles_tabPage.Size = new System.Drawing.Size(1245, 632);
+            this.Nozzles_tabPage.Size = new System.Drawing.Size(1302, 632);
             this.Nozzles_tabPage.TabIndex = 7;
             this.Nozzles_tabPage.Tag = "https://liteplacer.com/setup-nozzles/";
             this.Nozzles_tabPage.Text = "Setup Nozzles";
@@ -10230,7 +10240,8 @@ namespace LitePlacer
             // 
             // SetNoOfNozzles_button
             // 
-            this.SetNoOfNozzles_button.Location = new System.Drawing.Point(1014, 487);
+            this.SetNoOfNozzles_button.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.SetNoOfNozzles_button.Location = new System.Drawing.Point(1064, 487);
             this.SetNoOfNozzles_button.Name = "SetNoOfNozzles_button";
             this.SetNoOfNozzles_button.Size = new System.Drawing.Size(108, 23);
             this.SetNoOfNozzles_button.TabIndex = 46;
@@ -10241,7 +10252,8 @@ namespace LitePlacer
             // 
             // NozzeTip_textBox
             // 
-            this.NozzeTip_textBox.Location = new System.Drawing.Point(765, 498);
+            this.NozzeTip_textBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.NozzeTip_textBox.Location = new System.Drawing.Point(821, 499);
             this.NozzeTip_textBox.Multiline = true;
             this.NozzeTip_textBox.Name = "NozzeTip_textBox";
             this.NozzeTip_textBox.Size = new System.Drawing.Size(183, 127);
@@ -10263,8 +10275,9 @@ namespace LitePlacer
             // 
             // label139
             // 
+            this.label139.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.label139.AutoSize = true;
-            this.label139.Location = new System.Drawing.Point(1085, 121);
+            this.label139.Location = new System.Drawing.Point(1135, 121);
             this.label139.Name = "label139";
             this.label139.Size = new System.Drawing.Size(96, 16);
             this.label139.TabIndex = 43;
@@ -10273,8 +10286,9 @@ namespace LitePlacer
             // 
             // CalibrateThis_button
             // 
+            this.CalibrateThis_button.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.CalibrateThis_button.Enabled = false;
-            this.CalibrateThis_button.Location = new System.Drawing.Point(785, 446);
+            this.CalibrateThis_button.Location = new System.Drawing.Point(711, 602);
             this.CalibrateThis_button.Name = "CalibrateThis_button";
             this.CalibrateThis_button.Size = new System.Drawing.Size(87, 23);
             this.CalibrateThis_button.TabIndex = 41;
@@ -10286,8 +10300,9 @@ namespace LitePlacer
             // 
             // label155
             // 
+            this.label155.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.label155.AutoSize = true;
-            this.label155.Location = new System.Drawing.Point(971, 586);
+            this.label155.Location = new System.Drawing.Point(1021, 586);
             this.label155.Name = "label155";
             this.label155.Size = new System.Drawing.Size(125, 16);
             this.label155.TabIndex = 40;
@@ -10296,7 +10311,8 @@ namespace LitePlacer
             // 
             // CalData_button
             // 
-            this.CalData_button.Location = new System.Drawing.Point(971, 602);
+            this.CalData_button.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.CalData_button.Location = new System.Drawing.Point(1021, 602);
             this.CalData_button.Name = "CalData_button";
             this.CalData_button.Size = new System.Drawing.Size(99, 23);
             this.CalData_button.TabIndex = 39;
@@ -10307,8 +10323,9 @@ namespace LitePlacer
             // 
             // label151
             // 
+            this.label151.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.label151.AutoSize = true;
-            this.label151.Location = new System.Drawing.Point(1142, 91);
+            this.label151.Location = new System.Drawing.Point(1192, 91);
             this.label151.Name = "label151";
             this.label151.Size = new System.Drawing.Size(86, 16);
             this.label151.TabIndex = 38;
@@ -10318,7 +10335,7 @@ namespace LitePlacer
             // label150
             // 
             this.label150.AutoSize = true;
-            this.label150.Location = new System.Drawing.Point(561, 296);
+            this.label150.Location = new System.Drawing.Point(597, 296);
             this.label150.Name = "label150";
             this.label150.Size = new System.Drawing.Size(120, 16);
             this.label150.TabIndex = 37;
@@ -10331,6 +10348,7 @@ namespace LitePlacer
             this.NozzlesParameters_dataGridView.AllowUserToDeleteRows = false;
             this.NozzlesParameters_dataGridView.AllowUserToResizeColumns = false;
             this.NozzlesParameters_dataGridView.AllowUserToResizeRows = false;
+            this.NozzlesParameters_dataGridView.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.NozzlesParameters_dataGridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.NozzlesParameters_dataGridView.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.NozzleNumber_column,
@@ -10340,7 +10358,7 @@ namespace LitePlacer
             this.NozzleMinSize_column,
             this.NozzleMaxSize_column});
             this.NozzlesParameters_dataGridView.EditMode = System.Windows.Forms.DataGridViewEditMode.EditOnEnter;
-            this.NozzlesParameters_dataGridView.Location = new System.Drawing.Point(564, 320);
+            this.NozzlesParameters_dataGridView.Location = new System.Drawing.Point(597, 320);
             this.NozzlesParameters_dataGridView.Name = "NozzlesParameters_dataGridView";
             this.NozzlesParameters_dataGridView.RowHeadersVisible = false;
             this.NozzlesParameters_dataGridView.RowHeadersWidth = 40;
@@ -10348,7 +10366,7 @@ namespace LitePlacer
             this.NozzlesParameters_dataGridView.ScrollBars = System.Windows.Forms.ScrollBars.None;
             this.NozzlesParameters_dataGridView.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.CellSelect;
             this.NozzlesParameters_dataGridView.ShowEditingIcon = false;
-            this.NozzlesParameters_dataGridView.Size = new System.Drawing.Size(384, 78);
+            this.NozzlesParameters_dataGridView.Size = new System.Drawing.Size(407, 78);
             this.NozzlesParameters_dataGridView.TabIndex = 36;
             this.NozzlesParameters_dataGridView.Tag = "https://liteplacer.com/setup-nozzles/";
             // 
@@ -10406,7 +10424,8 @@ namespace LitePlacer
             // 
             // NozzlesStop_button
             // 
-            this.NozzlesStop_button.Location = new System.Drawing.Point(971, 425);
+            this.NozzlesStop_button.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.NozzlesStop_button.Location = new System.Drawing.Point(1021, 425);
             this.NozzlesStop_button.Name = "NozzlesStop_button";
             this.NozzlesStop_button.Size = new System.Drawing.Size(125, 23);
             this.NozzlesStop_button.TabIndex = 35;
@@ -10417,7 +10436,8 @@ namespace LitePlacer
             // 
             // NozzlesSave_button
             // 
-            this.NozzlesSave_button.Location = new System.Drawing.Point(971, 396);
+            this.NozzlesSave_button.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.NozzlesSave_button.Location = new System.Drawing.Point(1021, 396);
             this.NozzlesSave_button.Name = "NozzlesSave_button";
             this.NozzlesSave_button.Size = new System.Drawing.Size(125, 23);
             this.NozzlesSave_button.TabIndex = 34;
@@ -10428,8 +10448,9 @@ namespace LitePlacer
             // 
             // CalibrateNozzles_button
             // 
+            this.CalibrateNozzles_button.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.CalibrateNozzles_button.Enabled = false;
-            this.CalibrateNozzles_button.Location = new System.Drawing.Point(690, 446);
+            this.CalibrateNozzles_button.Location = new System.Drawing.Point(711, 573);
             this.CalibrateNozzles_button.Name = "CalibrateNozzles_button";
             this.CalibrateNozzles_button.Size = new System.Drawing.Size(89, 23);
             this.CalibrateNozzles_button.TabIndex = 33;
@@ -10441,9 +10462,10 @@ namespace LitePlacer
             // 
             // NozzleChangeEnable_checkBox
             // 
+            this.NozzleChangeEnable_checkBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.NozzleChangeEnable_checkBox.AutoSize = true;
             this.NozzleChangeEnable_checkBox.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.NozzleChangeEnable_checkBox.Location = new System.Drawing.Point(971, 534);
+            this.NozzleChangeEnable_checkBox.Location = new System.Drawing.Point(1021, 534);
             this.NozzleChangeEnable_checkBox.Name = "NozzleChangeEnable_checkBox";
             this.NozzleChangeEnable_checkBox.Size = new System.Drawing.Size(248, 29);
             this.NozzleChangeEnable_checkBox.TabIndex = 32;
@@ -10454,6 +10476,7 @@ namespace LitePlacer
             // 
             // panel10
             // 
+            this.panel10.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.panel10.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.panel10.Controls.Add(this.label28);
             this.panel10.Controls.Add(this.LastMoveFullSpeed_checkBox);
@@ -10471,7 +10494,7 @@ namespace LitePlacer
             this.panel10.Controls.Add(this.label141);
             this.panel10.Controls.Add(this.NozzleXYspeed_textBox);
             this.panel10.Controls.Add(this.label140);
-            this.panel10.Location = new System.Drawing.Point(971, 147);
+            this.panel10.Location = new System.Drawing.Point(1021, 147);
             this.panel10.Name = "panel10";
             this.panel10.Size = new System.Drawing.Size(259, 221);
             this.panel10.TabIndex = 16;
@@ -10648,7 +10671,8 @@ namespace LitePlacer
             // 
             // GotoZ0_button
             // 
-            this.GotoZ0_button.Location = new System.Drawing.Point(971, 31);
+            this.GotoZ0_button.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.GotoZ0_button.Location = new System.Drawing.Point(1021, 31);
             this.GotoZ0_button.Name = "GotoZ0_button";
             this.GotoZ0_button.Size = new System.Drawing.Size(108, 23);
             this.GotoZ0_button.TabIndex = 15;
@@ -10659,7 +10683,8 @@ namespace LitePlacer
             // 
             // SetDefaultNozzle_button
             // 
-            this.SetDefaultNozzle_button.Location = new System.Drawing.Point(971, 118);
+            this.SetDefaultNozzle_button.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.SetDefaultNozzle_button.Location = new System.Drawing.Point(1021, 118);
             this.SetDefaultNozzle_button.Name = "SetDefaultNozzle_button";
             this.SetDefaultNozzle_button.Size = new System.Drawing.Size(108, 23);
             this.SetDefaultNozzle_button.TabIndex = 14;
@@ -10670,10 +10695,11 @@ namespace LitePlacer
             // 
             // NozzleZGuard_checkBox
             // 
+            this.NozzleZGuard_checkBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.NozzleZGuard_checkBox.AutoSize = true;
             this.NozzleZGuard_checkBox.Checked = true;
             this.NozzleZGuard_checkBox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.NozzleZGuard_checkBox.Location = new System.Drawing.Point(971, 8);
+            this.NozzleZGuard_checkBox.Location = new System.Drawing.Point(1021, 8);
             this.NozzleZGuard_checkBox.Name = "NozzleZGuard_checkBox";
             this.NozzleZGuard_checkBox.Size = new System.Drawing.Size(228, 20);
             this.NozzleZGuard_checkBox.TabIndex = 13;
@@ -10684,7 +10710,8 @@ namespace LitePlacer
             // 
             // ChangeNozzle_button
             // 
-            this.ChangeNozzle_button.Location = new System.Drawing.Point(971, 89);
+            this.ChangeNozzle_button.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.ChangeNozzle_button.Location = new System.Drawing.Point(1021, 89);
             this.ChangeNozzle_button.Name = "ChangeNozzle_button";
             this.ChangeNozzle_button.Size = new System.Drawing.Size(108, 23);
             this.ChangeNozzle_button.TabIndex = 11;
@@ -10695,7 +10722,8 @@ namespace LitePlacer
             // 
             // ForceNozzleStatus_button
             // 
-            this.ForceNozzleStatus_button.Location = new System.Drawing.Point(971, 60);
+            this.ForceNozzleStatus_button.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.ForceNozzleStatus_button.Location = new System.Drawing.Point(1021, 60);
             this.ForceNozzleStatus_button.Name = "ForceNozzleStatus_button";
             this.ForceNozzleStatus_button.Size = new System.Drawing.Size(108, 23);
             this.ForceNozzleStatus_button.TabIndex = 10;
@@ -10706,7 +10734,8 @@ namespace LitePlacer
             // 
             // ForceNozzle_numericUpDown
             // 
-            this.ForceNozzle_numericUpDown.Location = new System.Drawing.Point(1102, 89);
+            this.ForceNozzle_numericUpDown.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.ForceNozzle_numericUpDown.Location = new System.Drawing.Point(1152, 89);
             this.ForceNozzle_numericUpDown.Maximum = new decimal(new int[] {
             10,
             0,
@@ -10724,8 +10753,9 @@ namespace LitePlacer
             // 
             // label124
             // 
+            this.label124.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.label124.AutoSize = true;
-            this.label124.Location = new System.Drawing.Point(1083, 63);
+            this.label124.Location = new System.Drawing.Point(1133, 63);
             this.label124.Name = "label124";
             this.label124.Size = new System.Drawing.Size(74, 16);
             this.label124.TabIndex = 8;
@@ -10734,7 +10764,7 @@ namespace LitePlacer
             // 
             // GetUnloadCoordinates_button
             // 
-            this.GetUnloadCoordinates_button.Location = new System.Drawing.Point(435, 291);
+            this.GetUnloadCoordinates_button.Location = new System.Drawing.Point(86, 296);
             this.GetUnloadCoordinates_button.Name = "GetUnloadCoordinates_button";
             this.GetUnloadCoordinates_button.Size = new System.Drawing.Size(108, 23);
             this.GetUnloadCoordinates_button.TabIndex = 7;
@@ -10745,7 +10775,7 @@ namespace LitePlacer
             // 
             // GetLoadCoordinates_button
             // 
-            this.GetLoadCoordinates_button.Location = new System.Drawing.Point(840, 5);
+            this.GetLoadCoordinates_button.Location = new System.Drawing.Point(86, 5);
             this.GetLoadCoordinates_button.Name = "GetLoadCoordinates_button";
             this.GetLoadCoordinates_button.Size = new System.Drawing.Size(108, 23);
             this.GetLoadCoordinates_button.TabIndex = 6;
@@ -10770,6 +10800,8 @@ namespace LitePlacer
             this.NozzlesUnload_dataGridView.AllowUserToDeleteRows = false;
             this.NozzlesUnload_dataGridView.AllowUserToResizeColumns = false;
             this.NozzlesUnload_dataGridView.AllowUserToResizeRows = false;
+            this.NozzlesUnload_dataGridView.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.NozzlesUnload_dataGridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.NozzlesUnload_dataGridView.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.dataGridViewTextBoxColumn51,
@@ -10786,7 +10818,7 @@ namespace LitePlacer
             this.NozzlesUnload_dataGridView.ScrollBars = System.Windows.Forms.ScrollBars.Horizontal;
             this.NozzlesUnload_dataGridView.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.CellSelect;
             this.NozzlesUnload_dataGridView.ShowEditingIcon = false;
-            this.NozzlesUnload_dataGridView.Size = new System.Drawing.Size(537, 249);
+            this.NozzlesUnload_dataGridView.Size = new System.Drawing.Size(577, 249);
             this.NozzlesUnload_dataGridView.TabIndex = 4;
             this.NozzlesUnload_dataGridView.Tag = "https://liteplacer.com/setup-nozzles/";
             this.NozzlesUnload_dataGridView.CellMouseDown += new System.Windows.Forms.DataGridViewCellMouseEventHandler(this.NozzlesUnload_dataGridView_CellMouseDown);
@@ -10884,7 +10916,8 @@ namespace LitePlacer
             // 
             // NoOfNozzles_UpDown
             // 
-            this.NoOfNozzles_UpDown.Location = new System.Drawing.Point(974, 490);
+            this.NoOfNozzles_UpDown.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.NoOfNozzles_UpDown.Location = new System.Drawing.Point(1024, 490);
             this.NoOfNozzles_UpDown.Maximum = new decimal(new int[] {
             10,
             0,
@@ -10902,8 +10935,9 @@ namespace LitePlacer
             // 
             // label54
             // 
+            this.label54.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.label54.AutoSize = true;
-            this.label54.Location = new System.Drawing.Point(971, 471);
+            this.label54.Location = new System.Drawing.Point(1021, 471);
             this.label54.Name = "label54";
             this.label54.Size = new System.Drawing.Size(198, 16);
             this.label54.TabIndex = 1;
@@ -10916,6 +10950,8 @@ namespace LitePlacer
             this.NozzlesLoad_dataGridView.AllowUserToDeleteRows = false;
             this.NozzlesLoad_dataGridView.AllowUserToResizeColumns = false;
             this.NozzlesLoad_dataGridView.AllowUserToResizeRows = false;
+            this.NozzlesLoad_dataGridView.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.NozzlesLoad_dataGridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.NozzlesLoad_dataGridView.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.NozzleNo_Column,
@@ -11320,7 +11356,7 @@ namespace LitePlacer
             this.AutoScroll = true;
             this.AutoSize = true;
             this.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.ClientSize = new System.Drawing.Size(1258, 856);
+            this.ClientSize = new System.Drawing.Size(1315, 856);
             this.Controls.Add(this.Test7_button);
             this.Controls.Add(this.MeasureAndSet_button);
             this.Controls.Add(this.ShowPixels_checkBox);
