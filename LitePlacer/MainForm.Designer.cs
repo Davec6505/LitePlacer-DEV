@@ -41,8 +41,8 @@ namespace LitePlacer
         {
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormMain));
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle6 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
             this.Park_button = new System.Windows.Forms.Button();
             this.TestNozzleRecognition_button = new System.Windows.Forms.Button();
             this.DownCamZoomFactor_textBox = new System.Windows.Forms.TextBox();
@@ -1624,7 +1624,7 @@ namespace LitePlacer
             this.NextX_Column,
             this.NextY_column});
             this.TapesOld_dataGridView.EditMode = System.Windows.Forms.DataGridViewEditMode.EditOnEnter;
-            this.TapesOld_dataGridView.Location = new System.Drawing.Point(8, 386);
+            this.TapesOld_dataGridView.Location = new System.Drawing.Point(655, 504);
             this.TapesOld_dataGridView.MultiSelect = false;
             this.TapesOld_dataGridView.Name = "TapesOld_dataGridView";
             this.TapesOld_dataGridView.RowHeadersVisible = false;
@@ -2031,7 +2031,7 @@ namespace LitePlacer
             this.Tapes_dataGridView.RowHeadersVisible = false;
             this.Tapes_dataGridView.RowHeadersWidth = 50;
             this.Tapes_dataGridView.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.CellSelect;
-            this.Tapes_dataGridView.Size = new System.Drawing.Size(641, 581);
+            this.Tapes_dataGridView.Size = new System.Drawing.Size(641, 479);
             this.Tapes_dataGridView.TabIndex = 15;
             this.Tapes_dataGridView.Tag = "https://liteplacer.com/tape-positions-page/";
             this.Tapes_dataGridView.CellClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.Tapes_dataGridView_CellClick);
@@ -3406,7 +3406,7 @@ namespace LitePlacer
             this.tabPageBasicSetup.Location = new System.Drawing.Point(4, 25);
             this.tabPageBasicSetup.Name = "tabPageBasicSetup";
             this.tabPageBasicSetup.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPageBasicSetup.Size = new System.Drawing.Size(1245, 632);
+            this.tabPageBasicSetup.Size = new System.Drawing.Size(1302, 632);
             this.tabPageBasicSetup.TabIndex = 1;
             this.tabPageBasicSetup.Tag = "https://liteplacer.com/basic-setup-page-2/";
             this.tabPageBasicSetup.Text = "Basic Setup";
@@ -7415,7 +7415,7 @@ namespace LitePlacer
             this.RunJob_tabPage.Location = new System.Drawing.Point(4, 25);
             this.RunJob_tabPage.Name = "RunJob_tabPage";
             this.RunJob_tabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.RunJob_tabPage.Size = new System.Drawing.Size(1245, 632);
+            this.RunJob_tabPage.Size = new System.Drawing.Size(1302, 632);
             this.RunJob_tabPage.TabIndex = 2;
             this.RunJob_tabPage.Tag = "https://liteplacer.com/run-job-page-2/";
             this.RunJob_tabPage.Text = "Run Job";
@@ -8229,14 +8229,14 @@ namespace LitePlacer
             | System.Windows.Forms.AnchorStyles.Right)));
             this.JobData_GridView.CellBorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.Raised;
             this.JobData_GridView.ClipboardCopyMode = System.Windows.Forms.DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
-            dataGridViewCellStyle4.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle4.BackColor = System.Drawing.SystemColors.Control;
-            dataGridViewCellStyle4.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            dataGridViewCellStyle4.ForeColor = System.Drawing.SystemColors.WindowText;
-            dataGridViewCellStyle4.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle4.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle4.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.JobData_GridView.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle4;
+            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle1.BackColor = System.Drawing.SystemColors.Control;
+            dataGridViewCellStyle1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            dataGridViewCellStyle1.ForeColor = System.Drawing.SystemColors.WindowText;
+            dataGridViewCellStyle1.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle1.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.JobData_GridView.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle1;
             this.JobData_GridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.JobData_GridView.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.JobDataValueColumn,
@@ -8253,7 +8253,7 @@ namespace LitePlacer
             this.JobData_GridView.RowHeadersVisible = false;
             this.JobData_GridView.RowHeadersWidth = 51;
             this.JobData_GridView.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.CellSelect;
-            this.JobData_GridView.Size = new System.Drawing.Size(458, 267);
+            this.JobData_GridView.Size = new System.Drawing.Size(515, 267);
             this.JobData_GridView.TabIndex = 11;
             this.JobData_GridView.Tag = "https://liteplacer.com/run-job-page-job-data-section/";
             this.JobData_GridView.CellClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.JobData_GridView_CellClick);
@@ -8352,14 +8352,14 @@ namespace LitePlacer
             | System.Windows.Forms.AnchorStyles.Right)));
             this.CadData_GridView.CellBorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.Raised;
             this.CadData_GridView.ClipboardCopyMode = System.Windows.Forms.DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
-            dataGridViewCellStyle6.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle6.BackColor = System.Drawing.SystemColors.Control;
-            dataGridViewCellStyle6.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            dataGridViewCellStyle6.ForeColor = System.Drawing.SystemColors.WindowText;
-            dataGridViewCellStyle6.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle6.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle6.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.CadData_GridView.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle6;
+            dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle2.BackColor = System.Drawing.SystemColors.Control;
+            dataGridViewCellStyle2.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            dataGridViewCellStyle2.ForeColor = System.Drawing.SystemColors.WindowText;
+            dataGridViewCellStyle2.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle2.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle2.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.CadData_GridView.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle2;
             this.CadData_GridView.ColumnHeadersHeight = 29;
             this.CadData_GridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
             this.CadData_GridView.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
@@ -8380,7 +8380,7 @@ namespace LitePlacer
             this.CadData_GridView.RowHeadersWidth = 16;
             this.CadData_GridView.RowHeadersWidthSizeMode = System.Windows.Forms.DataGridViewRowHeadersWidthSizeMode.DisableResizing;
             this.CadData_GridView.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.CellSelect;
-            this.CadData_GridView.Size = new System.Drawing.Size(457, 212);
+            this.CadData_GridView.Size = new System.Drawing.Size(514, 212);
             this.CadData_GridView.TabIndex = 5;
             this.CadData_GridView.Tag = "https://liteplacer.com/run-job-page-cad-data-section/";
             this.CadData_GridView.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.CadData_GridView_CellContentClick);

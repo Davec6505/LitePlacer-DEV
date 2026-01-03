@@ -7,8 +7,19 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LitePlacer", "LitePlacer\Li
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{34FF0353-B9B2-4EDF-A13E-24071C8066B5}"
 	ProjectSection(SolutionItems) = preProject
+		.copilot-instructions.md = .copilot-instructions.md
 		LitePlacer\ImagesForCameras.cs = LitePlacer\ImagesForCameras.cs
 		release.txt = release.txt
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plan", "Plan", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+	ProjectSection(SolutionItems) = preProject
+		Plan\Architecture-Analysis.md = Plan\Architecture-Analysis.md
+		Plan\Firmware-Protocol-Comparison.md = Plan\Firmware-Protocol-Comparison.md
+		Plan\PIC33MZ-Integration-Notes.md = Plan\PIC33MZ-Integration-Notes.md
+		Plan\Questions-And-Discoveries.md = Plan\Questions-And-Discoveries.md
+		Plan\README.md = Plan\README.md
+		Plan\Refactor-Roadmap.md = Plan\Refactor-Roadmap.md
 	EndProjectSection
 EndProject
 Global
