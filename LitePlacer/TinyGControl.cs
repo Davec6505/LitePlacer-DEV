@@ -382,23 +382,42 @@ namespace LitePlacer
         public bool Nozzle_ProbeDown(double backoff)
         {
             MainForm.DisplayText("Probing, TinyG");
-            Write_m("{\"zsn\",0}", 150);
+            // Configure switch as normally-open, mode: limit+homing
+            Write_m("{\"zsn\":0}", 150);
             Thread.Sleep(50);
-            Write_m("{\"zsx\",1}",150);
+            Write_m("{\"zsx\":1}", 150);
             Thread.Sleep(50);
-            Write_m("{\"zzb\",0}", 150);
+            
+            // Set zzb=0 to disable ALARM on switch trigger, but we still need to MONITOR the switch
+            // G38.2 (straight probe) will stop when probe triggers, even with zzb=0
+            // G28.4 (homing) with zzb=0 would IGNORE the switch entirely - causing crash!
+            Write_m("{\"zzb\":0}", 150);
             Thread.Sleep(50);
 
-            if (!Write_m("{\"gc\":\"G28.4 Z0\"}", RegularMoveTimeout))
+            // Use G38.2 (straight probe) instead of G28.4 (homing)
+            // G38.2 monitors the probe/switch even when zzb=0
+            // Move down maximum 50mm (adjust if needed for your machine depth)
+            if (!Write_m("{\"gc\":\"G38.2 Z50\"}", RegularMoveTimeout))
             {
+                // Restore zzb before returning on error
+                Write_m("{\"zzb\":2}", 150);
+                Thread.Sleep(50);
+                EnableZswitches();
                 return false;
             }
-            Write_m("{\"zzb\",2}", 150);
+            
+            // Restore normal zzb value after probing completes
+            Write_m("{\"zzb\":2}", 150);
             Thread.Sleep(50);
             EnableZswitches();
-            if (!MainForm.CNC_Z_m(Cnc.CurrentZ - backoff))
+            
+            // Back off if requested
+            if (Math.Abs(backoff) > 0.001)
             {
-                return false;
+                if (!MainForm.CNC_Z_m(Cnc.CurrentZ - backoff))
+                {
+                    return false;
+                }
             }
             return true;
         }
