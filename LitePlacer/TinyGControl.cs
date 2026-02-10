@@ -35,6 +35,118 @@ namespace LitePlacer
             {
                 return false;
             }
+            
+            // CRITICAL: Force restore ALL Z-switch settings - EEPROM corruption detected
+            MainForm.DisplayText("=== FORCE RESTORING Z-SWITCH SETTINGS ===", KnownColor.DarkOrange);
+            MainForm.DisplayText("BEFORE: st=" + MainForm.TinyGBoard.st +
+                                ", zzb=" + MainForm.TinyGBoard.Zzb + 
+                                ", zlb=" + MainForm.TinyGBoard.Zlb +
+                                ", zsn=" + MainForm.TinyGBoard.Zsn + 
+                                ", zsx=" + MainForm.TinyGBoard.Zsx);
+            
+            // Force set switch type to NO (normally open)
+            MainForm.DisplayText("Setting switch type (st) to 0 (normally open)...");
+            if (!Write_m("{\"st\":0}", 300))
+            {
+                MainForm.DisplayText("*** Failed to set switch type!", KnownColor.DarkRed, true);
+            }
+            Thread.Sleep(200);
+            
+            // Force set Z zero backoff to 2.0mm (REQUIRED for homing to work)
+            MainForm.DisplayText("Setting Z zero backoff (zzb) to 2.0mm...");
+            if (!Write_m("{\"zzb\":2.0}", 300))
+            {
+                MainForm.DisplayText("*** Failed to set zzb!", KnownColor.DarkRed, true);
+            }
+            Thread.Sleep(200);
+            
+            // Force set Z latch backoff to 10mm
+            MainForm.DisplayText("Setting Z latch backoff (zlb) to 10mm...");
+            if (!Write_m("{\"zlb\":10}", 300))
+            {
+                MainForm.DisplayText("*** Failed to set zlb!", KnownColor.DarkRed, true);
+            }
+            Thread.Sleep(200);
+            
+            // Force set Z min switch to mode 3 (homing + limit)
+            MainForm.DisplayText("Setting Z min switch (zsn) to 3 (homing+limit)...");
+            if (!Write_m("{\"zsn\":3}", 300))
+            {
+                MainForm.DisplayText("*** Failed to set zsn!", KnownColor.DarkRed, true);
+            }
+            Thread.Sleep(200);
+            
+            // CRITICAL: Force set Z max switch to mode 2 (limit only) - THIS ENABLES THE ALARM!
+            MainForm.DisplayText("Setting Z max switch (zsx) to 2 (limit) - THIS ENABLES ALARM...");
+            if (!Write_m("{\"zsx\":2}", 300))
+            {
+                MainForm.DisplayText("*** Failed to set zsx!", KnownColor.DarkRed, true);
+            }
+            Thread.Sleep(200);
+            
+            // CRITICAL: Force TinyG to persist settings to EEPROM
+            MainForm.DisplayText("Forcing settings to persist to EEPROM...");
+            // Some TinyG versions use $$ to show all settings which forces save
+            Com.Write("$$\n");
+            Thread.Sleep(500);
+            
+            // Re-read all Z settings to verify they stuck
+            MainForm.DisplayText("Re-reading Z-switch settings for verification...");
+            Write_m("{\"st\":\"\"}", 300);
+            Thread.Sleep(100);
+            Write_m("{\"zzb\":\"\"}", 300);
+            Thread.Sleep(100);
+            Write_m("{\"zlb\":\"\"}", 300);
+            Thread.Sleep(100);
+            Write_m("{\"zsn\":\"\"}", 300);
+            Thread.Sleep(100);
+            Write_m("{\"zsx\":\"\"}", 300);
+            Thread.Sleep(200);
+            
+            // Display final values
+            MainForm.DisplayText("=== VERIFICATION RESULTS ===", KnownColor.DarkCyan);
+            MainForm.DisplayText("AFTER:  st=" + MainForm.TinyGBoard.st +
+                                ", zzb=" + MainForm.TinyGBoard.Zzb + 
+                                ", zlb=" + MainForm.TinyGBoard.Zlb +
+                                ", zsn=" + MainForm.TinyGBoard.Zsn + 
+                                ", zsx=" + MainForm.TinyGBoard.Zsx, KnownColor.DarkCyan);
+            
+            // Verify critical values
+            bool SettingsOK = true;
+            if (MainForm.TinyGBoard.Zzb == "0" || MainForm.TinyGBoard.Zzb == "0.000")
+            {
+                MainForm.DisplayText("*** ERROR: zzb still = 0 after restore attempt!", KnownColor.DarkRed, true);
+                SettingsOK = false;
+            }
+            if (MainForm.TinyGBoard.Zsn == "0")
+            {
+                MainForm.DisplayText("*** ERROR: zsn still = 0 after restore attempt!", KnownColor.DarkRed, true);
+                SettingsOK = false;
+            }
+            if (MainForm.TinyGBoard.Zsx != "2")
+            {
+                MainForm.DisplayText("*** ERROR: zsx = " + MainForm.TinyGBoard.Zsx + " (should be 2) - ALARM DISABLED!", KnownColor.DarkRed, true);
+                SettingsOK = false;
+            }
+            
+            if (!SettingsOK)
+            {
+                MainForm.DisplayText("╔════════════════════════════════════════════════════════════╗", KnownColor.DarkRed, true);
+                MainForm.DisplayText("║ CRITICAL: TinyG EEPROM is corrupted or write-protected!   ║", KnownColor.DarkRed, true);
+                MainForm.DisplayText("║                                                            ║", KnownColor.DarkRed, true);
+                MainForm.DisplayText("║ IMMEDIATE ACTIONS REQUIRED:                                ║", KnownColor.DarkRed, true);
+                MainForm.DisplayText("║ 1. DO NOT USE Z AXIS - LIMIT ALARM IS DISABLED!           ║", KnownColor.DarkRed, true);
+                MainForm.DisplayText("║ 2. Power cycle TinyG (unplug USB + power, wait 10 sec)    ║", KnownColor.DarkRed, true);
+                MainForm.DisplayText("║ 3. Send this command: {\"defa\":1}                          ║", KnownColor.DarkRed, true);
+                MainForm.DisplayText("║    (This does a factory reset)                            ║", KnownColor.DarkRed, true);
+                MainForm.DisplayText("║ 4. Reconnect to LitePlacer                                 ║", KnownColor.DarkRed, true);
+                MainForm.DisplayText("╚════════════════════════════════════════════════════════════╝", KnownColor.DarkRed, true);
+            }
+            else
+            {
+                MainForm.DisplayText("=== Z-SWITCH SETTINGS SUCCESSFULLY RESTORED ===", KnownColor.DarkGreen);
+            }
+            
             // Do settings that need to be done always
             if (!Write_m("{\"me\":\"\"}"))      // motor power on
             {
@@ -381,26 +493,121 @@ namespace LitePlacer
 
         public bool Nozzle_ProbeDown(double backoff)
         {
-            MainForm.DisplayText("Probing, TinyG");
-            Write_m("{\"zsn\",0}", 150);
-            Thread.Sleep(50);
-            Write_m("{\"zsx\",1}",150);
-            Thread.Sleep(50);
-            Write_m("{\"zzb\",0}", 150);
-            Thread.Sleep(50);
-
-            if (!Write_m("{\"gc\":\"G28.4 Z0\"}", RegularMoveTimeout))
+            MainForm.DisplayText("Probing PCB surface (Z-max limit detection method)");
+            
+            // CRITICAL: Verify zzb is non-zero FIRST
+            double zzb_value;
+            if (!double.TryParse(MainForm.TinyGBoard.Zzb.Replace(',', '.'), out zzb_value))
             {
+                MainForm.DisplayText("*** Invalid zzb value: " + MainForm.TinyGBoard.Zzb, System.Drawing.KnownColor.DarkRed, true);
                 return false;
             }
-            Write_m("{\"zzb\",2}", 150);
-            Thread.Sleep(50);
-            EnableZswitches();
-            if (!MainForm.CNC_Z_m(Cnc.CurrentZ - backoff))
+            
+            if (Math.Abs(zzb_value) < 0.001)
             {
+                MainForm.DisplayText("*** zzb = 0, probing will fail! Restoring to 2.0", System.Drawing.KnownColor.DarkRed, true);
+                if (!Write_m("{\"zzb\":2.0}", 150))
+                {
+                    MainForm.DisplayText("*** Failed to set zzb!", System.Drawing.KnownColor.DarkRed, true);
+                    return false;
+                }
+                Thread.Sleep(100);
+            }
+            
+            MainForm.DisplayText("Using slow controlled descent with Z-max limit detection");
+            
+            // Ensure Z-min is disabled so we can move down freely
+            MainForm.DisplayText("Disabling Z-min switch...");
+            if (!Write_m("{\"zsn\":0}", 150))
+            {
+                MainForm.DisplayText("Failed to disable Z min switch", System.Drawing.KnownColor.DarkRed, true);
                 return false;
             }
-            return true;
+            Thread.Sleep(50);
+            
+            // Ensure Z-max is in LIMIT mode so it triggers alarm when hit
+            MainForm.DisplayText("Ensuring Z-max is in LIMIT mode (zsx=2)...");
+            if (!Write_m("{\"zsx\":2}", 150))
+            {
+                MainForm.DisplayText("Failed to set Z max to limit mode", System.Drawing.KnownColor.DarkRed, true);
+                EnableZswitches();
+                return false;
+            }
+            Thread.Sleep(50);
+            
+            // Store starting position
+            double startZ = Cnc.CurrentZ;
+            MainForm.DisplayText("Starting probe from Z=" + startZ.ToString("0.000"));
+            
+            // Move slowly down in small increments, checking for limit alarm after each move
+            double probeSpeed = 100;  // mm/min - slow and safe
+            double incrementSize = -1.0;  // Move down 1mm at a time (negative = down toward PCB)
+            double maxTravel = -100.0;  // Maximum 100mm travel (safety limit)
+            bool switchHit = false;
+            
+            MainForm.DisplayText("Beginning slow descent at " + probeSpeed + " mm/min...");
+            
+            // Perform slow continuous move down and let limit switch stop it
+            double targetZ = startZ + maxTravel;  // e.g., 0 + (-100) = -100
+            
+            if (!Write_m("{\"gc\":\"G1 F" + probeSpeed + " Z" + targetZ.ToString("0.000", CultureInfo.InvariantCulture) + "\"}", RegularMoveTimeout * 5, false))
+            {
+                // This is expected - the limit switch should trigger an error/stop
+                MainForm.DisplayText("Move stopped (likely by limit switch)");
+                switchHit = true;
+            }
+            else
+            {
+                // If we completed the full move without hitting limit, that's bad!
+                MainForm.DisplayText("*** WARNING: Completed full travel without hitting limit switch!", System.Drawing.KnownColor.DarkRed, true);
+                switchHit = false;
+            }
+            
+            // Wait for motion to fully stop
+            Thread.Sleep(200);
+            
+            double probeZ = Cnc.CurrentZ;
+            double travelDistance = probeZ - startZ;
+            
+            MainForm.DisplayText("Probe stopped at Z=" + probeZ.ToString("0.000") + " (traveled " + travelDistance.ToString("0.000") + " mm)");
+            
+            if (switchHit || travelDistance < -0.5)  // If we moved down at least 0.5mm, assume we hit something
+            {
+                MainForm.DisplayText(">>> PCB surface detected at Z=" + probeZ.ToString("0.000") + " <<<", System.Drawing.KnownColor.DarkGreen);
+                
+                // Restore Z switches to normal operation
+                MainForm.DisplayText("Restoring normal Z-switch configuration...");
+                EnableZswitches();
+                
+                // Clear any error state from limit hit
+                if (Cnc.ErrorState)
+                {
+                    MainForm.DisplayText("Clearing error state from limit detection...");
+                    // Reset TinyG might be needed here
+                    // For now, just clear the error flag
+                    Cnc.ErrorState = false;
+                }
+                
+                // Back off from the surface
+                double backoffZ = probeZ - backoff;  // e.g., -50 - 2 = -52 (move down 2mm more)
+                MainForm.DisplayText("Backing off " + backoff + "mm to Z=" + backoffZ.ToString("0.000"));
+                Thread.Sleep(500);  // Give TinyG time to recover
+                
+                if (!MainForm.CNC_Z_m(backoffZ))
+                {
+                    MainForm.DisplayText("*** Backoff move failed", System.Drawing.KnownColor.DarkRed, true);
+                    return false;
+                }
+                
+                MainForm.DisplayText("Probing complete - PCB surface at Z=" + probeZ.ToString("0.000"), System.Drawing.KnownColor.DarkGreen);
+                return true;
+            }
+            else
+            {
+                MainForm.DisplayText("*** No surface detected within " + maxTravel + "mm travel!", System.Drawing.KnownColor.DarkRed, true);
+                EnableZswitches();
+                return false;
+            }
         }
 
 

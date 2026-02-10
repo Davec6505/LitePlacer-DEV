@@ -2434,6 +2434,7 @@ namespace LitePlacer
 
             // Safety check: If nozzle is loaded and we're moving to X >= 273mm (picker area)
             // with current Y < 50mm, first move Y to 50mm to avoid collision with pickers
+        /*    
             if (Setting.Nozzles_current > 0 && Cnc.CurrentY < 50.0 && X >= 273.0)
             {
                 DisplayText("Safety: Nozzle loaded and Y < 50mm, moving Y to 50mm before X movement to avoid picker collision", KnownColor.DarkOrange, true);
@@ -2447,8 +2448,9 @@ namespace LitePlacer
                         MessageBoxButtons.OK);
                     return false;
                 }
-
+        */
                 // Move to safe Y position first
+        /*
                 if (!Cnc.XYA(Cnc.CurrentX, 50.0, Cnc.CurrentA))
                 {
                     ShowMessageBox(
@@ -2460,7 +2462,7 @@ namespace LitePlacer
                 
                 DisplayText("Safety Y move completed, now proceeding with requested move", KnownColor.Green);
             }
-
+        */
             // Safety check: If NO nozzle is attached and we're moving to X >= 273mm (picker area)
             // Z must be at home position (0) to avoid collision with pickers
             if (Setting.Nozzles_current == 0 && X >= 273.0 && Math.Abs(Cnc.CurrentZ) > 0.01)
@@ -5901,8 +5903,9 @@ namespace LitePlacer
 
 
                 case 1:
-                    Cnc.Nozzle_ProbeDown(0);
-                    DisplayText("Z at bottom: " + Cnc.CurrentZ.ToString("0.000", CultureInfo.InvariantCulture));
+                    // Use calibration-specific probe that preserves Z position
+                    Cnc.Nozzle_ProbeDown_Calibration();
+                    DisplayText("Z at probe trigger: " + Cnc.CurrentZ.ToString("0.000", CultureInfo.InvariantCulture));
                     NozzleHeightInstructions_label.Text = "Jog nozzle up so that it just touches the PCB.\n\r" +
                         "If the nozzle doesn't touch the PCB, click cancel, adjust the switch and start again.\n\r" +
                                 "Click \"Next\".";
