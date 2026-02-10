@@ -490,126 +490,29 @@ namespace LitePlacer
             Thread.Sleep(50);
         }
 
-
         public bool Nozzle_ProbeDown(double backoff)
         {
-            MainForm.DisplayText("Probing PCB surface (Z-max limit detection method)");
-            
-            // CRITICAL: Verify zzb is non-zero FIRST
-            double zzb_value;
-            if (!double.TryParse(MainForm.TinyGBoard.Zzb.Replace(',', '.'), out zzb_value))
-            {
-                MainForm.DisplayText("*** Invalid zzb value: " + MainForm.TinyGBoard.Zzb, System.Drawing.KnownColor.DarkRed, true);
-                return false;
-            }
-            
-            if (Math.Abs(zzb_value) < 0.001)
-            {
-                MainForm.DisplayText("*** zzb = 0, probing will fail! Restoring to 2.0", System.Drawing.KnownColor.DarkRed, true);
-                if (!Write_m("{\"zzb\":2.0}", 150))
-                {
-                    MainForm.DisplayText("*** Failed to set zzb!", System.Drawing.KnownColor.DarkRed, true);
-                    return false;
-                }
-                Thread.Sleep(100);
-            }
-            
-            MainForm.DisplayText("Using slow controlled descent with Z-max limit detection");
-            
-            // Ensure Z-min is disabled so we can move down freely
-            MainForm.DisplayText("Disabling Z-min switch...");
-            if (!Write_m("{\"zsn\":0}", 150))
-            {
-                MainForm.DisplayText("Failed to disable Z min switch", System.Drawing.KnownColor.DarkRed, true);
-                return false;
-            }
+            MainForm.DisplayText("Probing, TinyG");
+            Write_m("{\"zsn\",0}", 150);
             Thread.Sleep(50);
-            
-            // Ensure Z-max is in LIMIT mode so it triggers alarm when hit
-            MainForm.DisplayText("Ensuring Z-max is in LIMIT mode (zsx=2)...");
-            if (!Write_m("{\"zsx\":2}", 150))
-            {
-                MainForm.DisplayText("Failed to set Z max to limit mode", System.Drawing.KnownColor.DarkRed, true);
-                EnableZswitches();
-                return false;
-            }
+            Write_m("{\"zsx\",1}", 150);
             Thread.Sleep(50);
-            
-            // Store starting position
-            double startZ = Cnc.CurrentZ;
-            MainForm.DisplayText("Starting probe from Z=" + startZ.ToString("0.000"));
-            
-            // Move slowly down in small increments, checking for limit alarm after each move
-            double probeSpeed = 100;  // mm/min - slow and safe
-            double incrementSize = -1.0;  // Move down 1mm at a time (negative = down toward PCB)
-            double maxTravel = -100.0;  // Maximum 100mm travel (safety limit)
-            bool switchHit = false;
-            
-            MainForm.DisplayText("Beginning slow descent at " + probeSpeed + " mm/min...");
-            
-            // Perform slow continuous move down and let limit switch stop it
-            double targetZ = startZ + maxTravel;  // e.g., 0 + (-100) = -100
-            
-            if (!Write_m("{\"gc\":\"G1 F" + probeSpeed + " Z" + targetZ.ToString("0.000", CultureInfo.InvariantCulture) + "\"}", RegularMoveTimeout * 5, false))
-            {
-                // This is expected - the limit switch should trigger an error/stop
-                MainForm.DisplayText("Move stopped (likely by limit switch)");
-                switchHit = true;
-            }
-            else
-            {
-                // If we completed the full move without hitting limit, that's bad!
-                MainForm.DisplayText("*** WARNING: Completed full travel without hitting limit switch!", System.Drawing.KnownColor.DarkRed, true);
-                switchHit = false;
-            }
-            
-            // Wait for motion to fully stop
-            Thread.Sleep(200);
-            
-            double probeZ = Cnc.CurrentZ;
-            double travelDistance = probeZ - startZ;
-            
-            MainForm.DisplayText("Probe stopped at Z=" + probeZ.ToString("0.000") + " (traveled " + travelDistance.ToString("0.000") + " mm)");
-            
-            if (switchHit || travelDistance < -0.5)  // If we moved down at least 0.5mm, assume we hit something
-            {
-                MainForm.DisplayText(">>> PCB surface detected at Z=" + probeZ.ToString("0.000") + " <<<", System.Drawing.KnownColor.DarkGreen);
-                
-                // Restore Z switches to normal operation
-                MainForm.DisplayText("Restoring normal Z-switch configuration...");
-                EnableZswitches();
-                
-                // Clear any error state from limit hit
-                if (Cnc.ErrorState)
-                {
-                    MainForm.DisplayText("Clearing error state from limit detection...");
-                    // Reset TinyG might be needed here
-                    // For now, just clear the error flag
-                    Cnc.ErrorState = false;
-                }
-                
-                // Back off from the surface
-                double backoffZ = probeZ - backoff;  // e.g., -50 - 2 = -52 (move down 2mm more)
-                MainForm.DisplayText("Backing off " + backoff + "mm to Z=" + backoffZ.ToString("0.000"));
-                Thread.Sleep(500);  // Give TinyG time to recover
-                
-                if (!MainForm.CNC_Z_m(backoffZ))
-                {
-                    MainForm.DisplayText("*** Backoff move failed", System.Drawing.KnownColor.DarkRed, true);
-                    return false;
-                }
-                
-                MainForm.DisplayText("Probing complete - PCB surface at Z=" + probeZ.ToString("0.000"), System.Drawing.KnownColor.DarkGreen);
-                return true;
-            }
-            else
-            {
-                MainForm.DisplayText("*** No surface detected within " + maxTravel + "mm travel!", System.Drawing.KnownColor.DarkRed, true);
-                EnableZswitches();
-                return false;
-            }
-        }
+            Write_m("{\"zzb\",0}", 150);
+            Thread.Sleep(50);
 
+            if (!Write_m("{\"gc\":\"G28.4 Z0\"}", RegularMoveTimeout))
+            {
+                return false;
+            }
+            Write_m("{\"zzb\",2}", 150);
+            Thread.Sleep(50);
+            EnableZswitches();
+            if (!MainForm.CNC_Z_m(Cnc.CurrentZ - backoff))
+            {
+                return false;
+            }
+            return true;
+        }
 
         public void MotorPowerOn()
         {
