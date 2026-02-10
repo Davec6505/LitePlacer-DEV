@@ -1,4 +1,4 @@
-Ôªø// Processing tables branch
+// Processing tables branch
 
 using System;
 using System.Collections.Generic;
@@ -5904,7 +5904,7 @@ namespace LitePlacer
 
                 case 1:
                     // Use calibration-specific probe that preserves Z position
-                    Cnc.Nozzle_ProbeDown_Calibration();
+                    // Cnc.Nozzle_ProbeDown_Calibration(); // TODO: This method does not exist
                     DisplayText("Z at probe trigger: " + Cnc.CurrentZ.ToString("0.000", CultureInfo.InvariantCulture));
                     NozzleHeightInstructions_label.Text = "Jog nozzle up so that it just touches the PCB.\n\r" +
                         "If the nozzle doesn't touch the PCB, click cancel, adjust the switch and start again.\n\r" +
@@ -9881,7 +9881,7 @@ namespace LitePlacer
             DisplayText("Transform results:");
             DisplayText("Xorigin= " + (Loc.X).ToString(CultureInfo.InvariantCulture));
             DisplayText("Yorigin= " + Loc.Y.ToString(CultureInfo.InvariantCulture));
-            // We do need rotation. Find out by rotat√≠ng a unit vector:
+            // We do need rotation. Find out by rotatÌng a unit vector:
             Loc2.X = 1.0;
             Loc2.Y = 0.0;
             Loc2.W = 1.0;
@@ -10657,7 +10657,7 @@ namespace LitePlacer
                 // If layer is indicated and the component is not on this layer, skip it
                 // TODO: Notify user if component is not on either layer (unknown data), once only and continue.
                 // TODO: Fix bug: If component is not on either layer, skip it.
-                // TODO: Use list of strings for layers and other fields, add ‚ÄúTopLayer‚Äù and ‚ÄúBottomLayer‚Äù for AD17.
+                // TODO: Use list of strings for layers and other fields, add ìTopLayerî and ìBottomLayerî for AD17.
 
                 if (LayerDataPresent)
                 {
