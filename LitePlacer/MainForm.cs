@@ -62,7 +62,7 @@ namespace LitePlacer
     public partial class FormMain : Form
     {
         public CNC Cnc { get; set; }
-        public enum ControlBoardType { TinyG, SKR3, unknown};
+        public enum ControlBoardType { TinyG, SKR3, MZ_CNC, unknown};
 
         Camera DownCamera;
         Camera UpCamera;
@@ -9881,7 +9881,7 @@ namespace LitePlacer
             DisplayText("Transform results:");
             DisplayText("Xorigin= " + (Loc.X).ToString(CultureInfo.InvariantCulture));
             DisplayText("Yorigin= " + Loc.Y.ToString(CultureInfo.InvariantCulture));
-            // We do need rotation. Find out by rotatíng a unit vector:
+            // We do need rotation. Find out by rotatï¿½ng a unit vector:
             Loc2.X = 1.0;
             Loc2.Y = 0.0;
             Loc2.W = 1.0;
@@ -10657,7 +10657,7 @@ namespace LitePlacer
                 // If layer is indicated and the component is not on this layer, skip it
                 // TODO: Notify user if component is not on either layer (unknown data), once only and continue.
                 // TODO: Fix bug: If component is not on either layer, skip it.
-                // TODO: Use list of strings for layers and other fields, add “TopLayer” and “BottomLayer” for AD17.
+                // TODO: Use list of strings for layers and other fields, add ï¿½TopLayerï¿½ and ï¿½BottomLayerï¿½ for AD17.
 
                 if (LayerDataPresent)
                 {

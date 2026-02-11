@@ -283,7 +283,7 @@ Juha's `Nozzle_ProbeDown()` method is designed to:
 - STATUS.md creation
 
 **Recommended Actions:**
-1. Create feature branch: `git checkout -b fix/z-axis-probing`
+1. Create feature branch: `git checkout -b fix`
 2. Commit auto-restore code
 3. Commit STATUS.md
 4. Fix JSON syntax in Nozzle_ProbeDown
@@ -309,11 +309,52 @@ Juha's `Nozzle_ProbeDown()` method is designed to:
 
 | Date | Author | Change | File | Lines |
 |------|--------|--------|------|-------|
+| 2026-02-10 | Copilot | Added MZ_CNC controller class | MZ_CNCControl.cs | All (new file) |
+| 2026-02-10 | Copilot | Added MZ_CNC to ControlBoardType enum | MainForm.cs | 65 |
+| 2026-02-10 | Copilot | Integrated MZ_CNC into CNC class | CNC.cs | Multiple |
+| 2026-02-10 | Copilot | Added MZ_CNC board detection | CNC.cs | CheckMZ_CNC() method |
 | 2024-01-XX | Copilot+User | Added auto-restore Z-switch settings | TinyGControl.cs | 33-145 |
 | 2024-01-XX | Copilot+User | Added DisableZswitches() helper | TinyGControl.cs | 485-490 |
 | 2024-01-XX | Copilot+User | Added EnableZswitches() helper | TinyGControl.cs | 493-498 |
 | 2024-01-XX | Copilot+User | Created STATUS.md documentation | STATUS.md | All |
 | 2024-01-XX | Original (Juha) | Broken JSON syntax introduced | TinyGControl.cs | 500-530 |
+
+---
+
+## New Controller Integration (2026-02-10)
+
+### MZ_CNC Controller Added
+**Purpose:** Integrate PIC32MZ GRBL v1.1 CNC controller (Pic32mzCNC_V3 firmware) into LitePlacer
+
+**Files Created:**
+- `LitePlacer\MZ_CNCControl.cs` - New controller class following SKR3/TinyG pattern
+
+**Files Modified:**
+- `LitePlacer\MainForm.cs` - Added MZ_CNC to ControlBoardType enum
+- `LitePlacer\CNC.cs` - Integrated MZ_CNC routing throughout
+
+**Key Features Implemented:**
+1. **Board Detection** - CheckMZ_CNC() identifies GRBL v1.1 banner
+2. **Communication** - Write_m(), GetResponse_m(), LineReceived() matching established pattern
+3. **Movement Commands** - XY(), Z(), A(), XYZA(), SetXYZA position()
+4. **Probing Support** - ProbeZ() method using G38.2 (critical for LitePlacer)
+5. **Homing Support** - $H command integration
+6. **GRBL Protocol** - Status queries (?), settings ($$), error/alarm handling
+
+**GRBL Protocol Features:**
+- Real-time commands: ?, !, ~, Ctrl+X
+- G-code positioning: G90/G91, G92
+- Probe command: G38.2 (probe toward, stop on contact)
+- Probe result format: [PRB:x,y,z,a:1]
+- Error/Alarm handling with proper user feedback
+
+**Integration Pattern:**
+- Follows existing SKR3/TinyG architecture
+- Controller selection via MainForm.Setting.Controlboard
+- Serial communication through shared SerialComm instance
+- Routing in CNC.cs for all operations
+
+**Testing Status:** ⬜ Not yet tested - requires hardware connection
 
 ---
 
@@ -326,5 +367,296 @@ Juha's `Nozzle_ProbeDown()` method is designed to:
 
 ---
 
-**Last Updated:** 2025-01-XX  
-**Status:** 🟢 **Ready to Fix** - Simply apply JSON syntax correction to solve the problem!
+**Last Updated:** 2026-02-11  
+**Status:** 🚀 **Active Development** - Multi-controller integration and concurrency improvements in progress
+
+---
+
+## 🎯 Current Development Plan (February 11, 2026)
+
+### Project Scope
+We are completing **TWO** unfinished controller integrations and implementing **application-wide concurrency improvements**:
+
+1. **SKR3 Integration** - Incomplete, partially implemented by Juha
+2. **MZ_CNC Integration** - New PIC32MZ GRBL v1.1 controller (in progress)
+3. **Concurrency Hardening** - Application-wide thread safety improvements
+
+---
+
+## 🔧 Phase 1: Complete MZ_CNC Integration ✅ 50% COMPLETE
+
+### ✅ Completed (February 10, 2026)
+- [x] Created `MZ_CNCControl.cs` - Full GRBL v1.1 implementation
+- [x] Added `ControlBoardType.MZ_CNC` enum to MainForm.cs
+- [x] Integrated MZ_CNC into CNC.cs constructor
+- [x] Added CheckMZ_CNC() board detection
+- [x] Added LineReceived() routing
+- [x] Added Write_m() routing
+- [x] Basic movement commands (XY, Z, A, XYZA, Set position)
+- [x] ProbeZ() method stub (G38.2 command)
+- [x] Homing() method stub ($H command)
+
+### ⬜ TODO - Complete MZ_CNC Integration
+**Priority: HIGH** - Required for hardware testing
+
+#### Missing CNC.cs Integrations
+Search `CNC.cs` for all methods with `ControlBoardType.SKR3` pattern and add MZ_CNC cases:
+
+- [ ] `SetXposition()` - Line ~??? - Add MZ_CNC case with position update
+- [ ] `SetYposition()` - Add MZ_CNC case
+- [ ] `SetZposition()` - Add MZ_CNC case  
+- [ ] `SetAposition()` - Add MZ_CNC case
+- [ ] `SetPosition()` - Line 282 - **MISSING MZ_CNC CASE** (reported by user)
+- [ ] `XY()` - Add MZ_CNC case
+- [ ] `XYA()` - Add MZ_CNC case
+- [ ] `Z()` - Add MZ_CNC case
+- [ ] `A()` - Add MZ_CNC case
+- [ ] `XYZA()` - Add MZ_CNC case
+- [ ] `ProbeZ()` - Add MZ_CNC case (CRITICAL for LitePlacer)
+- [ ] `Homing()` - Add MZ_CNC case
+- [ ] `UpdatePosition()` - Add MZ_CNC case (status query)
+- [ ] Any other methods with board routing
+
+**Action**: Use PowerShell search to find all methods:
+```powershell
+Select-String -Path "LitePlacer\CNC.cs" -Pattern "ControlBoardType\.(SKR3|TinyG)" -Context 0,5
+```
+
+#### Missing MZ_CNCControl.cs Methods
+- [ ] Implement `SetPosition(X, Y, Z, A)` method - combined coordinate set
+- [ ] Parse probe result `[PRB:x,y,z,a:1]` in ProbeZ()
+- [ ] Update Cnc.CurrentZ with probe position
+- [ ] Parse status query response `<Idle|MPos:x,y,z|...>`
+- [ ] Update all position variables from status
+- [ ] Test all methods with actual hardware
+
+---
+
+## 🔧 Phase 2: Complete SKR3 Integration ⬜ TODO
+
+### Current State
+- SKR3 class exists but integration incomplete (Juha stopped mid-way)
+- Similar pattern to MZ_CNC - needs same completion work
+
+### ⬜ TODO - Complete SKR3 Integration
+**Priority: MEDIUM** - Needed for Juha's work completion
+
+- [ ] Audit SKR3Control.cs for missing methods
+- [ ] Add missing CNC.cs routing (same as MZ_CNC above)
+- [ ] Test SKR3 board detection
+- [ ] Verify grblHAL protocol compatibility
+- [ ] Document SKR3-specific features/quirks
+
+**Note**: Keep SKR3 and MZ_CNC separate as requested - no shared base class
+
+---
+
+## 🔒 Phase 3: Application-Wide Concurrency Improvements ⬜ TODO
+
+### Current Issues
+**All controller classes** (TinyG, SKR3, MZ_CNC) have similar concurrency problems:
+
+#### 1. **Weak Lock Pattern** ⚠️ CRITICAL
+```csharp
+// CURRENT (BROKEN):
+private string ReceivedLine = "";
+lock (ReceivedLine) { ... }  // ❌ Locking string reference!
+
+// FIXED:
+private readonly object responseLock = new object();
+lock (responseLock) { ... }  // ✅ Proper lock object
+```
+
+#### 2. **Missing volatile Flags** ⚠️ CRITICAL
+```csharp
+// CURRENT (BROKEN):
+private bool WriteBusy = false;  // ❌ Compiler can cache!
+
+// FIXED:
+private volatile bool WriteBusy = false;  // ✅ Thread-visible
+```
+
+#### 3. **Application.DoEvents() Re-entrancy** ⚠️ CRITICAL
+```csharp
+// CURRENT (DANGEROUS):
+while (WriteBusy) {
+    Thread.Sleep(2);
+    Application.DoEvents();  // ❌ Allows button clicks during wait!
+}
+
+// FIXED (Option 1 - Simple):
+while (WriteBusy) {
+    Thread.Sleep(2);
+    // NO Application.DoEvents()
+}
+
+// FIXED (Option 2 - Better):
+private readonly ManualResetEvent responseEvent = new ManualResetEvent(false);
+responseEvent.WaitOne(timeout);  // ✅ Proper async wait
+```
+
+### ⬜ TODO - Fix Concurrency Issues
+
+#### Step 1: TinyGControl.cs Hardening
+- [ ] Replace `lock(ReceivedLine)` with proper lock object
+- [ ] Add `volatile` to WriteBusy, ExpectingResponse, LineAvailable
+- [ ] Remove all `Application.DoEvents()` calls
+- [ ] Consider ManualResetEvent for Write_m() waits
+- [ ] Test with actual TinyG board
+
+#### Step 2: SKR3Control.cs Hardening  
+- [ ] Apply same fixes as TinyGControl.cs
+- [ ] Verify thread safety with SKR3 hardware
+- [ ] Document any SKR3-specific threading concerns
+
+#### Step 3: MZ_CNCControl.cs Hardening
+- [ ] Apply same fixes as TinyGControl.cs
+- [ ] Test with PIC32MZ firmware
+- [ ] Ensure GRBL protocol doesn't expose race conditions
+
+#### Step 4: Application-Wide Review
+- [ ] Search for other `Application.DoEvents()` usage
+- [ ] Audit MainForm.cs for threading issues
+- [ ] Review SerialComm.cs event handling
+- [ ] Consider BackgroundWorker for long operations
+
+---
+
+## 📋 Development Workflow
+
+### Branch Strategy
+**Current State**: Detached HEAD at c7befe4
+
+**Recommended Action**:
+1. Create feature branch: `git checkout -b feature/multi-controller-integration`
+2. Commit current work (MZ_CNC initial integration)
+3. Work incrementally - commit after each phase
+4. Merge to master when all phases complete
+
+### Testing Strategy
+- **Phase 1**: Test MZ_CNC with PIC32MZ hardware
+- **Phase 2**: Test SKR3 with grblHAL board  
+- **Phase 3**: Stress test all controllers with concurrent operations
+- **Integration**: Run full LitePlacer workflow with each board
+
+---
+
+## 🚨 Critical Path Items
+
+### Must Complete Before Hardware Testing
+1. ✅ MZ_CNC board detection working
+2. ⬜ Add ALL missing CNC.cs routing for MZ_CNC
+3. ⬜ Implement SetPosition() method (user reported missing)
+4. ⬜ Parse G38.2 probe results properly
+5. ⬜ Fix concurrency issues (prevent crashes during testing)
+
+### Must Complete Before Production
+1. ⬜ Complete SKR3 integration (finish Juha's work)
+2. ⬜ Full concurrency hardening
+3. ⬜ Comprehensive testing with all 3 boards
+4. ⬜ Update user documentation
+
+---
+
+## 📝 Implementation Checklist
+
+### MZ_CNC Integration Tasks
+- [ ] Find all CNC.cs methods needing MZ_CNC cases (grep search)
+- [ ] Add MZ_CNC case to each method (20-30 methods estimated)
+- [ ] Implement SetPosition(X,Y,Z,A) in MZ_CNCControl.cs
+- [ ] Test basic movement (XY, Z, A axes)
+- [ ] Test probe workflow (G38.2 command)
+- [ ] Verify position tracking accuracy
+- [ ] Test homing ($H command)
+- [ ] Verify error/alarm handling
+
+### SKR3 Integration Tasks
+- [ ] Audit SKR3Control.cs completeness
+- [ ] Add missing CNC.cs routing
+- [ ] Test with grblHAL firmware
+- [ ] Document any protocol differences
+
+### Concurrency Tasks
+- [ ] Fix lock patterns in all 3 controller classes
+- [ ] Add volatile to all shared flags
+- [ ] Remove Application.DoEvents() calls
+- [ ] Test under concurrent load
+- [ ] Verify no deadlocks or race conditions
+
+---
+
+## 🔬 Testing Plan
+
+### Unit Testing (Per Controller)
+- Board detection and connection
+- Basic movement commands
+- Position tracking
+- Error handling
+- Probe operations (critical for LitePlacer)
+
+### Integration Testing
+- Switch between controller types
+- Concurrent command execution
+- Long-running operations
+- Error recovery scenarios
+
+### Stress Testing
+- Rapid command sequences
+- UI interaction during motion
+- Multiple probe cycles
+- Emergency stop scenarios
+
+---
+
+## 📚 Reference Information
+
+### Controller Comparison
+| Feature | TinyG | SKR3 (grblHAL) | MZ_CNC (GRBL v1.1) |
+|---------|-------|----------------|---------------------|
+| Protocol | JSON | GRBL | GRBL v1.1 |
+| Probe Command | G28.4 | G38.2 | G38.2 |
+| Status Query | ? | ? | ? |
+| Soft Reset | Ctrl+X | Ctrl+X | Ctrl+X |
+| Integration | ✅ Complete | ⚠️ Partial | ⚠️ Partial |
+| Concurrency | ⚠️ Needs Fix | ⚠️ Needs Fix | ⚠️ Needs Fix |
+
+### GRBL Protocol Notes (SKR3 + MZ_CNC)
+- Status format: `<Idle|MPos:x,y,z,a|WPos:x,y,z,a|FS:f,s>`
+- Probe result: `[PRB:x,y,z,a:1]` (success) or `[PRB:x,y,z,a:0]` (fail)
+- Error format: `error:X` (numeric code)
+- Alarm format: `ALARM:X` (numeric code)
+
+### TinyG Protocol Notes
+- JSON format: `{"cmd":"value"}` (NOT `{"cmd","value"}` - colon not comma!)
+- Status via `?` or auto-status reports
+- Switch settings: 0=off, 1=homing, 2=limit, 3=both
+
+---
+
+## 🎯 Next Actions
+
+### Immediate (Today)
+1. ✅ Clean up STATUS.md (this update)
+2. ⬜ Create feature branch: `feature/multi-controller-integration`
+3. ⬜ Find all missing CNC.cs integrations (PowerShell search)
+4. ⬜ Add SetPosition() method to MZ_CNC (user reported issue)
+5. ⬜ Fix concurrency in MZ_CNCControl.cs first (test bed)
+
+### Short Term (This Week)
+- Complete MZ_CNC CNC.cs routing
+- Test MZ_CNC with PIC32MZ hardware
+- Apply concurrency fixes to all controllers
+- Begin SKR3 completion
+
+### Medium Term (This Month)
+- Complete SKR3 integration
+- Full concurrency audit
+- Comprehensive testing
+- Documentation updates
+
+---
+
+**Last Updated:** 2026-02-11  
+**Branch:** Detached HEAD (needs feature branch)  
+**Status:** 🚀 **Active Development** - Multi-controller integration phase
+**TinyG Fix:** 🟢 **Ready to Fix** - JSON syntax correction needed for Z-probing

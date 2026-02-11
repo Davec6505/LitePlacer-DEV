@@ -91,6 +91,7 @@ namespace LitePlacer
         public static FormMain MainForm;
         private TinyGclass TinyG;
         public SKR3class SKR3;
+        public MZ_CNCclass MZ_CNC;
 
         public bool SlackCompensation { get; set; }
         public double SlackCompensationDistance { get; set; }
@@ -123,6 +124,7 @@ namespace LitePlacer
             Com = new SerialComm(this, MainF);
             TinyG = new TinyGclass(MainForm, this, Com);
             SKR3 = new SKR3class(MainForm, this, Com);
+            MZ_CNC = new MZ_CNCclass(MainForm, this, Com);
         }
 
         // =================================================================================
@@ -140,6 +142,7 @@ namespace LitePlacer
                 regTimeout = value;
                 TinyG.RegularMoveTimeout = (int)value * 1000;  // in ms
                 SKR3.RegularMoveTimeout = (int)value * 1000;  // in ms
+                MZ_CNC.RegularMoveTimeout = (int)value * 1000;  // in ms
             }
         }
 
@@ -437,6 +440,9 @@ namespace LitePlacer
                 case FormMain.ControlBoardType.SKR3:
                     SKR3.LineReceived(line);
                     return;
+                case FormMain.ControlBoardType.MZ_CNC:
+                    MZ_CNC.LineReceived(line);
+                    return;
                 case FormMain.ControlBoardType.unknown:
                     UnknownBoardLineReceived(line);
                     return;
@@ -519,9 +525,32 @@ namespace LitePlacer
                     {
                         return true;
                     }
+                    if (CheckMZ_CNC())
+                    {
+                        return true;
+                    }
                     break;
                 case FormMain.ControlBoardType.SKR3:
                     MainForm.Setting.Controlboard = FormMain.ControlBoardType.unknown;
+                    if (CheckSKR3())
+                    {
+                        return true;
+                    }
+                    if (CheckMZ_CNC())
+                    {
+                        return true;
+                    }
+                    if (CheckTinyG())
+                    {
+                        return true;
+                    }
+                    break;
+                case FormMain.ControlBoardType.MZ_CNC:
+                    MainForm.Setting.Controlboard = FormMain.ControlBoardType.unknown;
+                    if (CheckMZ_CNC())
+                    {
+                        return true;
+                    }
                     if (CheckSKR3())
                     {
                         return true;
@@ -629,6 +658,52 @@ namespace LitePlacer
             return false;
         }
 
+        private bool CheckMZ_CNC()
+        {
+            if (ErrorState)
+            {
+                MainForm.DisplayText("*** CheckMZ_CNC() - error state", KnownColor.DarkRed, true);
+                return false;
+            }
+
+            MainForm.DisplayText("Checking for PIC32MZ GRBL board.");
+            ClearReceivedBuffers();
+            MainForm.Setting.Serial_EndCharacters = "\n";
+            Com.Write("\n\x18");   // ctrl-X (soft reset)
+            int delay = 0;
+            while (delay < 200)
+            {
+                if (LineAvailable)
+                {
+                    break;
+                }
+                else
+                {
+                    Thread.Sleep(1);
+                    delay++;
+                }
+            }
+            if (delay >= 200)
+            {
+                MainForm.DisplayText("*** CheckMZ_CNC() - no response", KnownColor.DarkRed, true);
+                return false;
+            }
+            string resp = "";
+            while (LineAvailable)
+            {
+                resp = resp + ReadLine();
+            }
+            // Look for GRBL v1.1 banner: "Grbl 1.1h ['$' for help]"
+            if (resp.Contains("Grbl") && (resp.Contains("1.1") || resp.Contains("['$' for help]")))
+            {
+                MainForm.DisplayText("PIC32MZ GRBL v1.1 board found.", KnownColor.DarkGreen);
+                MainForm.Setting.Controlboard = FormMain.ControlBoardType.MZ_CNC;
+                ClearReceivedBuffers();
+                return true;
+            }
+            return false;
+        }
+
         public bool JustConnected()
         {
             // Called after a control board connection is estabished and board type found.
@@ -636,6 +711,14 @@ namespace LitePlacer
             if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.SKR3)
             {
                 if (!SKR3.JustConnected())
+                {
+                    RaiseError();
+                    return false;
+                }
+            }
+            else if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.MZ_CNC)
+            {
+                if (!MZ_CNC.JustConnected())
                 {
                     RaiseError();
                     return false;
@@ -664,6 +747,19 @@ namespace LitePlacer
             if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.SKR3)
             {
                 if (SKR3.Write_m(command, Timeout))
+                {
+                    return true;
+                }
+                else
+                {
+                    RaiseError();
+                    return false;
+                }
+            };
+
+            if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.MZ_CNC)
+            {
+                if (MZ_CNC.Write_m(command, Timeout))
                 {
                     return true;
                 }
