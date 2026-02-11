@@ -11,13 +11,13 @@ namespace LitePlacer
     /// Firmware: Pic32mzCNC_V3 (200MHz PIC32MZ2048EFH100)
     /// Protocol: GRBL v1.1 compatible with LitePlacer extensions
     /// </summary>
-    public class MZ_CNCclass
+    public class MZ_CNCControl
     {
         FormMain MainForm;
         CNC Cnc;
         SerialComm Com;
 
-        public MZ_CNCclass(FormMain MainF, CNC C, SerialComm ser)
+        public MZ_CNCControl(FormMain MainF, CNC C, SerialComm ser)
         {
             MainForm = MainF;
             Cnc = C;
@@ -102,7 +102,7 @@ namespace LitePlacer
         private bool LineAvailable = false;
         private string ReceivedLine = "";
         private bool WriteBusy = false;
-        private bool ExpectingResponse = false;
+       
 
         private void ClearReceivedLine()
         {
@@ -181,7 +181,7 @@ namespace LitePlacer
             Timeout = Timeout / 2;
             int i = 0;
             LineAvailable = false;
-            ExpectingResponse = true;
+          
             Com.Write(cmd);
             while (!LineAvailable)
             {
@@ -198,7 +198,7 @@ namespace LitePlacer
                             MessageBoxButtons.OK);
                     }
                     ClearReceivedLine();
-                    ExpectingResponse = false;
+                  
                     return "";
                 }
             }
@@ -206,7 +206,7 @@ namespace LitePlacer
             {
                 line = ReceivedLine;
                 ClearReceivedLine();
-                ExpectingResponse = false;
+               
             }
             return line;
         }
@@ -374,8 +374,8 @@ namespace LitePlacer
             return true;
         }
 
-        // Combined position set for all axes
-        public bool SetPosition(string X, string Y, string Z, string A)
+        // Combined position set for all axes - CHANGED TO VOID to match CNC.cs signature
+        public void SetPosition(string X, string Y, string Z, string A)
         {
             string command = "G92";
             bool hasValues = false;
@@ -389,7 +389,7 @@ namespace LitePlacer
                         "MZ_CNC.SetPosition() called with bad X value " + X,
                         "BUG",
                         MessageBoxButtons.OK);
-                    return false;
+                    return;
                 }
                 command += " X" + X;
                 Cnc.SetCurrentX(val);
@@ -405,7 +405,7 @@ namespace LitePlacer
                         "MZ_CNC.SetPosition() called with bad Y value " + Y,
                         "BUG",
                         MessageBoxButtons.OK);
-                    return false;
+                    return;
                 }
                 command += " Y" + Y;
                 Cnc.SetCurrentY(val);
@@ -421,7 +421,7 @@ namespace LitePlacer
                         "MZ_CNC.SetPosition() called with bad Z value " + Z,
                         "BUG",
                         MessageBoxButtons.OK);
-                    return false;
+                    return;
                 }
                 command += " Z" + Z;
                 Cnc.SetCurrentZ(val);
@@ -437,7 +437,7 @@ namespace LitePlacer
                         "MZ_CNC.SetPosition() called with bad A value " + A,
                         "BUG",
                         MessageBoxButtons.OK);
-                    return false;
+                    return;
                 }
                 command += " A" + A;
                 Cnc.SetCurrentA(val);
@@ -447,7 +447,7 @@ namespace LitePlacer
             if (!hasValues)
             {
                 MainForm.DisplayText("*** MZ_CNC.SetPosition() called with no values", KnownColor.DarkRed);
-                return false;
+                return;
             }
 
             if (!Write_m(command))
@@ -456,9 +456,7 @@ namespace LitePlacer
                     "MZ_CNC " + command + " failed",
                     "comm err?",
                     MessageBoxButtons.OK);
-                return false;
             }
-            return true;
         }
 
         // Move to absolute position
@@ -524,9 +522,49 @@ namespace LitePlacer
             return true;
         }
 
+        // Overload to match CNC.Execute_Z(double Z, double speed, string MoveType)
+        public bool Z(double Z, double speed, string MoveType)
+        {
+            string command;
+            if (MoveType == "G1")
+            {
+                command = "G1 Z" + Z.ToString("0.000", CultureInfo.InvariantCulture) + " F" + speed.ToString("0.0", CultureInfo.InvariantCulture);
+            }
+            else
+            {
+                command = "G0 Z" + Z.ToString("0.000", CultureInfo.InvariantCulture);
+            }
+            if (!Write_m(command, RegularMoveTimeout))
+            {
+                return false;
+            }
+            Cnc.SetCurrentZ(Z);
+            return true;
+        }
+
         public bool A(double A)
         {
             string command = "G0 A" + A.ToString("0.000", CultureInfo.InvariantCulture);
+            if (!Write_m(command, RegularMoveTimeout))
+            {
+                return false;
+            }
+            Cnc.SetCurrentA(A);
+            return true;
+        }
+
+        // Overload to match CNC.Execute_A(double A, double speed, string MoveType)
+        public bool A(double A, double speed, string MoveType)
+        {
+            string command;
+            if (MoveType == "G1")
+            {
+                command = "G1 A" + A.ToString("0.000", CultureInfo.InvariantCulture) + " F" + speed.ToString("0.0", CultureInfo.InvariantCulture);
+            }
+            else
+            {
+                command = "G0 A" + A.ToString("0.000", CultureInfo.InvariantCulture);
+            }
             if (!Write_m(command, RegularMoveTimeout))
             {
                 return false;
@@ -839,5 +877,50 @@ namespace LitePlacer
         }
 
         #endregion Homing
+
+        // =================================================================================
+        // Hardware Features - Motor Power, Vacuum, Pump
+        #region Hardware Features
+
+        public void MotorPowerOn()
+        {
+            MainForm.DisplayText("MotorPowerOn(), MZ_CNC");
+            // GRBL motors auto-enable on motion commands
+            // No explicit enable needed, but we track the state
+            MainForm.ResetMotorTimer();
+        }
+
+        public void MotorPowerOff()
+        {
+            MainForm.DisplayText("MotorPowerOff(), MZ_CNC");
+            MainForm.TimerDone = true;
+            RawWrite("M18");  // Disable all steppers (standard GRBL)
+        }
+
+        public void VacuumOn()
+        {
+            MainForm.DisplayText("VacuumOn(), MZ_CNC");
+            RawWrite("M7");  // Mist coolant = Vacuum control
+        }
+
+        public void VacuumOff()
+        {
+            MainForm.DisplayText("VacuumOff(), MZ_CNC");
+            RawWrite("M9");  // All coolant off
+        }
+
+        public void PumpOn()
+        {
+            MainForm.DisplayText("PumpOn(), MZ_CNC");
+            RawWrite("M8");  // Flood coolant = Pump control
+        }
+
+        public void PumpOff()
+        {
+            MainForm.DisplayText("PumpOff(), MZ_CNC");
+            RawWrite("M9");  // All coolant off
+        }
+
+        #endregion Hardware Features
     }
 }

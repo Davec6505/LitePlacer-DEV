@@ -5904,7 +5904,7 @@ namespace LitePlacer
 
                 case 1:
                     // Use calibration-specific probe that preserves Z position
-                    // Cnc.Nozzle_ProbeDown_Calibration(); // TODO: This method does not exist
+                     Cnc.Nozzle_ProbeDown(0); // TODO: This method does not exist
                     DisplayText("Z at probe trigger: " + Cnc.CurrentZ.ToString("0.000", CultureInfo.InvariantCulture));
                     NozzleHeightInstructions_label.Text = "Jog nozzle up so that it just touches the PCB.\n\r" +
                         "If the nozzle doesn't touch the PCB, click cancel, adjust the switch and start again.\n\r" +

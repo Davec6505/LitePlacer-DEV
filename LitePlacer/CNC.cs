@@ -91,7 +91,8 @@ namespace LitePlacer
         public static FormMain MainForm;
         private TinyGclass TinyG;
         public SKR3class SKR3;
-        public MZ_CNCclass MZ_CNC;
+        private MZ_CNCControl MZ_CNC;  // Add MZ_CNC controller
+
 
         public bool SlackCompensation { get; set; }
         public double SlackCompensationDistance { get; set; }
@@ -124,7 +125,7 @@ namespace LitePlacer
             Com = new SerialComm(this, MainF);
             TinyG = new TinyGclass(MainForm, this, Com);
             SKR3 = new SKR3class(MainForm, this, Com);
-            MZ_CNC = new MZ_CNCclass(MainForm, this, Com);
+            MZ_CNC = new MZ_CNCControl(MainForm, this, Com);
         }
 
         // =================================================================================
@@ -355,14 +356,6 @@ namespace LitePlacer
             }
         }
 
-
-        #endregion Position
-            }   
-            else
-            {
-                MainForm.DisplayText("*** Cnc.Jog(), unknown board.", KnownColor.DarkRed, true);
-            }
-        }
 
         #endregion Position
 

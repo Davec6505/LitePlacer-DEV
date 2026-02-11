@@ -41,8 +41,8 @@ namespace LitePlacer
         {
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormMain));
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle6 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
             this.Park_button = new System.Windows.Forms.Button();
             this.TestNozzleRecognition_button = new System.Windows.Forms.Button();
             this.DownCamZoomFactor_textBox = new System.Windows.Forms.TextBox();
@@ -77,22 +77,6 @@ namespace LitePlacer
             this.Bookmark5_button = new System.Windows.Forms.Button();
             this.Bookmark6_button = new System.Windows.Forms.Button();
             this.Tapes_tabPage = new System.Windows.Forms.TabPage();
-            this.label230 = new System.Windows.Forms.Label();
-            this.TapeSetupZguard_checkBox = new System.Windows.Forms.CheckBox();
-            this.label225 = new System.Windows.Forms.Label();
-            this.label67 = new System.Windows.Forms.Label();
-            this.label62 = new System.Windows.Forms.Label();
-            this.TapeUp_button = new System.Windows.Forms.Button();
-            this.TapeDown_button = new System.Windows.Forms.Button();
-            this.label7 = new System.Windows.Forms.Label();
-            this.EditTape_button = new System.Windows.Forms.Button();
-            this.ResetAllTapes_button = new System.Windows.Forms.Button();
-            this.ResetOneTape_button = new System.Windows.Forms.Button();
-            this.label158 = new System.Windows.Forms.Label();
-            this.label157 = new System.Windows.Forms.Label();
-            this.ResetSelectedPlaceZs_button = new System.Windows.Forms.Button();
-            this.ResetSelectedZs_button = new System.Windows.Forms.Button();
-            this.ResetPlaceZ_button = new System.Windows.Forms.Button();
             this.TapesOld_dataGridView = new System.Windows.Forms.DataGridView();
             this.SelectButtonColumn = new System.Windows.Forms.DataGridViewButtonColumn();
             this.IdColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
@@ -110,6 +94,22 @@ namespace LitePlacer
             this.PlaceZ_Column = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.NextX_Column = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.NextY_column = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.label230 = new System.Windows.Forms.Label();
+            this.TapeSetupZguard_checkBox = new System.Windows.Forms.CheckBox();
+            this.label225 = new System.Windows.Forms.Label();
+            this.label67 = new System.Windows.Forms.Label();
+            this.label62 = new System.Windows.Forms.Label();
+            this.TapeUp_button = new System.Windows.Forms.Button();
+            this.TapeDown_button = new System.Windows.Forms.Button();
+            this.label7 = new System.Windows.Forms.Label();
+            this.EditTape_button = new System.Windows.Forms.Button();
+            this.ResetAllTapes_button = new System.Windows.Forms.Button();
+            this.ResetOneTape_button = new System.Windows.Forms.Button();
+            this.label158 = new System.Windows.Forms.Label();
+            this.label157 = new System.Windows.Forms.Label();
+            this.ResetSelectedPlaceZs_button = new System.Windows.Forms.Button();
+            this.ResetSelectedZs_button = new System.Windows.Forms.Button();
+            this.ResetPlaceZ_button = new System.Windows.Forms.Button();
             this.ShowPart_button = new System.Windows.Forms.Button();
             this.label129 = new System.Windows.Forms.Label();
             this.HoleTest_button = new System.Windows.Forms.Button();
@@ -1411,6 +1411,178 @@ namespace LitePlacer
             this.Tapes_tabPage.Text = "Tape Positions";
             this.Tapes_tabPage.UseVisualStyleBackColor = true;
             // 
+            // TapesOld_dataGridView
+            // 
+            this.TapesOld_dataGridView.AllowUserToAddRows = false;
+            this.TapesOld_dataGridView.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.TapesOld_dataGridView.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.AllCells;
+            this.TapesOld_dataGridView.AutoSizeRowsMode = System.Windows.Forms.DataGridViewAutoSizeRowsMode.AllCells;
+            this.TapesOld_dataGridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.TapesOld_dataGridView.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
+            this.SelectButtonColumn,
+            this.IdColumn,
+            this.OrientationColumn,
+            this.RotationColumn,
+            this.NozzleColumn,
+            this.WidthColumn,
+            this.CapacityColumn,
+            this.TypeColumn,
+            this.Tray_Column,
+            this.Next_Column,
+            this.X_Column,
+            this.Y_Column,
+            this.PickupZ_Column,
+            this.PlaceZ_Column,
+            this.NextX_Column,
+            this.NextY_column});
+            this.TapesOld_dataGridView.EditMode = System.Windows.Forms.DataGridViewEditMode.EditOnEnter;
+            this.TapesOld_dataGridView.Location = new System.Drawing.Point(8, 386);
+            this.TapesOld_dataGridView.MultiSelect = false;
+            this.TapesOld_dataGridView.Name = "TapesOld_dataGridView";
+            this.TapesOld_dataGridView.RowHeadersVisible = false;
+            this.TapesOld_dataGridView.RowHeadersWidth = 50;
+            this.TapesOld_dataGridView.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.CellSelect;
+            this.TapesOld_dataGridView.Size = new System.Drawing.Size(641, 100);
+            this.TapesOld_dataGridView.TabIndex = 62;
+            this.TapesOld_dataGridView.Visible = false;
+            // 
+            // SelectButtonColumn
+            // 
+            this.SelectButtonColumn.HeaderText = "Select";
+            this.SelectButtonColumn.MinimumWidth = 6;
+            this.SelectButtonColumn.Name = "SelectButtonColumn";
+            this.SelectButtonColumn.Text = "Reset";
+            this.SelectButtonColumn.Width = 51;
+            // 
+            // IdColumn
+            // 
+            this.IdColumn.HeaderText = "ID";
+            this.IdColumn.MinimumWidth = 6;
+            this.IdColumn.Name = "IdColumn";
+            this.IdColumn.Width = 49;
+            // 
+            // OrientationColumn
+            // 
+            this.OrientationColumn.HeaderText = "Dir.";
+            this.OrientationColumn.Items.AddRange(new object[] {
+            "+X",
+            "-X",
+            "+Y",
+            "-Y"});
+            this.OrientationColumn.MinimumWidth = 6;
+            this.OrientationColumn.Name = "OrientationColumn";
+            this.OrientationColumn.Resizable = System.Windows.Forms.DataGridViewTriState.False;
+            this.OrientationColumn.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
+            this.OrientationColumn.Width = 56;
+            // 
+            // RotationColumn
+            // 
+            this.RotationColumn.HeaderText = "Rot.";
+            this.RotationColumn.Items.AddRange(new object[] {
+            "0deg.",
+            "90deg.",
+            "180deg.",
+            "270deg."});
+            this.RotationColumn.MinimumWidth = 6;
+            this.RotationColumn.Name = "RotationColumn";
+            this.RotationColumn.Resizable = System.Windows.Forms.DataGridViewTriState.True;
+            this.RotationColumn.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
+            this.RotationColumn.Width = 60;
+            // 
+            // NozzleColumn
+            // 
+            this.NozzleColumn.HeaderText = "Nozzle";
+            this.NozzleColumn.MinimumWidth = 6;
+            this.NozzleColumn.Name = "NozzleColumn";
+            this.NozzleColumn.Width = 77;
+            // 
+            // WidthColumn
+            // 
+            this.WidthColumn.HeaderText = "Width";
+            this.WidthColumn.MinimumWidth = 6;
+            this.WidthColumn.Name = "WidthColumn";
+            this.WidthColumn.Width = 70;
+            // 
+            // CapacityColumn
+            // 
+            this.CapacityColumn.HeaderText = "Capacity";
+            this.CapacityColumn.MinimumWidth = 6;
+            this.CapacityColumn.Name = "CapacityColumn";
+            this.CapacityColumn.Visible = false;
+            this.CapacityColumn.Width = 73;
+            // 
+            // TypeColumn
+            // 
+            this.TypeColumn.HeaderText = "Type";
+            this.TypeColumn.Items.AddRange(new object[] {
+            "Paper (White)",
+            "Black Plastic",
+            "Clear Plastic"});
+            this.TypeColumn.MinimumWidth = 6;
+            this.TypeColumn.Name = "TypeColumn";
+            this.TypeColumn.Width = 45;
+            // 
+            // Tray_Column
+            // 
+            this.Tray_Column.HeaderText = "Tray";
+            this.Tray_Column.MinimumWidth = 6;
+            this.Tray_Column.Name = "Tray_Column";
+            this.Tray_Column.Width = 64;
+            // 
+            // Next_Column
+            // 
+            this.Next_Column.HeaderText = "Next";
+            this.Next_Column.MinimumWidth = 6;
+            this.Next_Column.Name = "Next_Column";
+            this.Next_Column.Width = 63;
+            // 
+            // X_Column
+            // 
+            this.X_Column.HeaderText = "X";
+            this.X_Column.MinimumWidth = 6;
+            this.X_Column.Name = "X_Column";
+            this.X_Column.ReadOnly = true;
+            this.X_Column.Width = 44;
+            // 
+            // Y_Column
+            // 
+            this.Y_Column.HeaderText = "Y";
+            this.Y_Column.MinimumWidth = 6;
+            this.Y_Column.Name = "Y_Column";
+            this.Y_Column.ReadOnly = true;
+            this.Y_Column.Width = 45;
+            // 
+            // PickupZ_Column
+            // 
+            this.PickupZ_Column.HeaderText = "Pickup Z";
+            this.PickupZ_Column.MinimumWidth = 6;
+            this.PickupZ_Column.Name = "PickupZ_Column";
+            this.PickupZ_Column.Width = 88;
+            // 
+            // PlaceZ_Column
+            // 
+            this.PlaceZ_Column.HeaderText = "PlaceZ";
+            this.PlaceZ_Column.MinimumWidth = 6;
+            this.PlaceZ_Column.Name = "PlaceZ_Column";
+            this.PlaceZ_Column.Width = 79;
+            // 
+            // NextX_Column
+            // 
+            this.NextX_Column.HeaderText = "Next X";
+            this.NextX_Column.MinimumWidth = 6;
+            this.NextX_Column.Name = "NextX_Column";
+            this.NextX_Column.ReadOnly = true;
+            this.NextX_Column.Width = 74;
+            // 
+            // NextY_column
+            // 
+            this.NextY_column.HeaderText = "Next Y";
+            this.NextY_column.MinimumWidth = 6;
+            this.NextY_column.Name = "NextY_column";
+            this.NextY_column.ReadOnly = true;
+            this.NextY_column.Width = 75;
+            // 
             // label230
             // 
             this.label230.AutoSize = true;
@@ -1597,178 +1769,6 @@ namespace LitePlacer
             this.toolTip1.SetToolTip(this.ResetPlaceZ_button, "Resets placement heights for the all rows.");
             this.ResetPlaceZ_button.UseVisualStyleBackColor = true;
             this.ResetPlaceZ_button.Click += new System.EventHandler(this.ResetPlaceZ_button_Click);
-            // 
-            // TapesOld_dataGridView
-            // 
-            this.TapesOld_dataGridView.AllowUserToAddRows = false;
-            this.TapesOld_dataGridView.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.TapesOld_dataGridView.AutoSizeColumnsMode = System.Windows.Forms.DataGridViewAutoSizeColumnsMode.AllCells;
-            this.TapesOld_dataGridView.AutoSizeRowsMode = System.Windows.Forms.DataGridViewAutoSizeRowsMode.AllCells;
-            this.TapesOld_dataGridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.TapesOld_dataGridView.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
-            this.SelectButtonColumn,
-            this.IdColumn,
-            this.OrientationColumn,
-            this.RotationColumn,
-            this.NozzleColumn,
-            this.WidthColumn,
-            this.CapacityColumn,
-            this.TypeColumn,
-            this.Tray_Column,
-            this.Next_Column,
-            this.X_Column,
-            this.Y_Column,
-            this.PickupZ_Column,
-            this.PlaceZ_Column,
-            this.NextX_Column,
-            this.NextY_column});
-            this.TapesOld_dataGridView.EditMode = System.Windows.Forms.DataGridViewEditMode.EditOnEnter;
-            this.TapesOld_dataGridView.Location = new System.Drawing.Point(8, 386);
-            this.TapesOld_dataGridView.MultiSelect = false;
-            this.TapesOld_dataGridView.Name = "TapesOld_dataGridView";
-            this.TapesOld_dataGridView.RowHeadersVisible = false;
-            this.TapesOld_dataGridView.RowHeadersWidth = 50;
-            this.TapesOld_dataGridView.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.CellSelect;
-            this.TapesOld_dataGridView.Size = new System.Drawing.Size(641, 100);
-            this.TapesOld_dataGridView.TabIndex = 62;
-            this.TapesOld_dataGridView.Visible = false;
-            // 
-            // SelectButtonColumn
-            // 
-            this.SelectButtonColumn.HeaderText = "Select";
-            this.SelectButtonColumn.MinimumWidth = 6;
-            this.SelectButtonColumn.Name = "SelectButtonColumn";
-            this.SelectButtonColumn.Text = "Reset";
-            this.SelectButtonColumn.Width = 51;
-            // 
-            // IdColumn
-            // 
-            this.IdColumn.HeaderText = "ID";
-            this.IdColumn.MinimumWidth = 6;
-            this.IdColumn.Name = "IdColumn";
-            this.IdColumn.Width = 49;
-            // 
-            // OrientationColumn
-            // 
-            this.OrientationColumn.HeaderText = "Dir.";
-            this.OrientationColumn.Items.AddRange(new object[] {
-            "+X",
-            "-X",
-            "+Y",
-            "-Y"});
-            this.OrientationColumn.MinimumWidth = 6;
-            this.OrientationColumn.Name = "OrientationColumn";
-            this.OrientationColumn.Resizable = System.Windows.Forms.DataGridViewTriState.False;
-            this.OrientationColumn.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
-            this.OrientationColumn.Width = 56;
-            // 
-            // RotationColumn
-            // 
-            this.RotationColumn.HeaderText = "Rot.";
-            this.RotationColumn.Items.AddRange(new object[] {
-            "0deg.",
-            "90deg.",
-            "180deg.",
-            "270deg."});
-            this.RotationColumn.MinimumWidth = 6;
-            this.RotationColumn.Name = "RotationColumn";
-            this.RotationColumn.Resizable = System.Windows.Forms.DataGridViewTriState.True;
-            this.RotationColumn.SortMode = System.Windows.Forms.DataGridViewColumnSortMode.Automatic;
-            this.RotationColumn.Width = 60;
-            // 
-            // NozzleColumn
-            // 
-            this.NozzleColumn.HeaderText = "Nozzle";
-            this.NozzleColumn.MinimumWidth = 6;
-            this.NozzleColumn.Name = "NozzleColumn";
-            this.NozzleColumn.Width = 77;
-            // 
-            // WidthColumn
-            // 
-            this.WidthColumn.HeaderText = "Width";
-            this.WidthColumn.MinimumWidth = 6;
-            this.WidthColumn.Name = "WidthColumn";
-            this.WidthColumn.Width = 70;
-            // 
-            // CapacityColumn
-            // 
-            this.CapacityColumn.HeaderText = "Capacity";
-            this.CapacityColumn.MinimumWidth = 6;
-            this.CapacityColumn.Name = "CapacityColumn";
-            this.CapacityColumn.Visible = false;
-            this.CapacityColumn.Width = 73;
-            // 
-            // TypeColumn
-            // 
-            this.TypeColumn.HeaderText = "Type";
-            this.TypeColumn.Items.AddRange(new object[] {
-            "Paper (White)",
-            "Black Plastic",
-            "Clear Plastic"});
-            this.TypeColumn.MinimumWidth = 6;
-            this.TypeColumn.Name = "TypeColumn";
-            this.TypeColumn.Width = 45;
-            // 
-            // Tray_Column
-            // 
-            this.Tray_Column.HeaderText = "Tray";
-            this.Tray_Column.MinimumWidth = 6;
-            this.Tray_Column.Name = "Tray_Column";
-            this.Tray_Column.Width = 64;
-            // 
-            // Next_Column
-            // 
-            this.Next_Column.HeaderText = "Next";
-            this.Next_Column.MinimumWidth = 6;
-            this.Next_Column.Name = "Next_Column";
-            this.Next_Column.Width = 63;
-            // 
-            // X_Column
-            // 
-            this.X_Column.HeaderText = "X";
-            this.X_Column.MinimumWidth = 6;
-            this.X_Column.Name = "X_Column";
-            this.X_Column.ReadOnly = true;
-            this.X_Column.Width = 44;
-            // 
-            // Y_Column
-            // 
-            this.Y_Column.HeaderText = "Y";
-            this.Y_Column.MinimumWidth = 6;
-            this.Y_Column.Name = "Y_Column";
-            this.Y_Column.ReadOnly = true;
-            this.Y_Column.Width = 45;
-            // 
-            // PickupZ_Column
-            // 
-            this.PickupZ_Column.HeaderText = "Pickup Z";
-            this.PickupZ_Column.MinimumWidth = 6;
-            this.PickupZ_Column.Name = "PickupZ_Column";
-            this.PickupZ_Column.Width = 88;
-            // 
-            // PlaceZ_Column
-            // 
-            this.PlaceZ_Column.HeaderText = "PlaceZ";
-            this.PlaceZ_Column.MinimumWidth = 6;
-            this.PlaceZ_Column.Name = "PlaceZ_Column";
-            this.PlaceZ_Column.Width = 79;
-            // 
-            // NextX_Column
-            // 
-            this.NextX_Column.HeaderText = "Next X";
-            this.NextX_Column.MinimumWidth = 6;
-            this.NextX_Column.Name = "NextX_Column";
-            this.NextX_Column.ReadOnly = true;
-            this.NextX_Column.Width = 74;
-            // 
-            // NextY_column
-            // 
-            this.NextY_column.HeaderText = "Next Y";
-            this.NextY_column.MinimumWidth = 6;
-            this.NextY_column.Name = "NextY_column";
-            this.NextY_column.ReadOnly = true;
-            this.NextY_column.Width = 75;
             // 
             // ShowPart_button
             // 
@@ -3406,7 +3406,7 @@ namespace LitePlacer
             this.tabPageBasicSetup.Location = new System.Drawing.Point(4, 25);
             this.tabPageBasicSetup.Name = "tabPageBasicSetup";
             this.tabPageBasicSetup.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPageBasicSetup.Size = new System.Drawing.Size(1245, 632);
+            this.tabPageBasicSetup.Size = new System.Drawing.Size(1302, 632);
             this.tabPageBasicSetup.TabIndex = 1;
             this.tabPageBasicSetup.Tag = "https://liteplacer.com/basic-setup-page-2/";
             this.tabPageBasicSetup.Text = "Basic Setup";
@@ -7415,7 +7415,7 @@ namespace LitePlacer
             this.RunJob_tabPage.Location = new System.Drawing.Point(4, 25);
             this.RunJob_tabPage.Name = "RunJob_tabPage";
             this.RunJob_tabPage.Padding = new System.Windows.Forms.Padding(3);
-            this.RunJob_tabPage.Size = new System.Drawing.Size(1245, 632);
+            this.RunJob_tabPage.Size = new System.Drawing.Size(1302, 632);
             this.RunJob_tabPage.TabIndex = 2;
             this.RunJob_tabPage.Tag = "https://liteplacer.com/run-job-page-2/";
             this.RunJob_tabPage.Text = "Run Job";
@@ -8229,14 +8229,14 @@ namespace LitePlacer
             | System.Windows.Forms.AnchorStyles.Right)));
             this.JobData_GridView.CellBorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.Raised;
             this.JobData_GridView.ClipboardCopyMode = System.Windows.Forms.DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
-            dataGridViewCellStyle4.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle4.BackColor = System.Drawing.SystemColors.Control;
-            dataGridViewCellStyle4.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            dataGridViewCellStyle4.ForeColor = System.Drawing.SystemColors.WindowText;
-            dataGridViewCellStyle4.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle4.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle4.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.JobData_GridView.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle4;
+            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle1.BackColor = System.Drawing.SystemColors.Control;
+            dataGridViewCellStyle1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            dataGridViewCellStyle1.ForeColor = System.Drawing.SystemColors.WindowText;
+            dataGridViewCellStyle1.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle1.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.JobData_GridView.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle1;
             this.JobData_GridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.JobData_GridView.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.JobDataValueColumn,
@@ -8253,7 +8253,7 @@ namespace LitePlacer
             this.JobData_GridView.RowHeadersVisible = false;
             this.JobData_GridView.RowHeadersWidth = 51;
             this.JobData_GridView.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.CellSelect;
-            this.JobData_GridView.Size = new System.Drawing.Size(458, 267);
+            this.JobData_GridView.Size = new System.Drawing.Size(515, 267);
             this.JobData_GridView.TabIndex = 11;
             this.JobData_GridView.Tag = "https://liteplacer.com/run-job-page-job-data-section/";
             this.JobData_GridView.CellClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.JobData_GridView_CellClick);
@@ -8352,14 +8352,14 @@ namespace LitePlacer
             | System.Windows.Forms.AnchorStyles.Right)));
             this.CadData_GridView.CellBorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.Raised;
             this.CadData_GridView.ClipboardCopyMode = System.Windows.Forms.DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
-            dataGridViewCellStyle6.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle6.BackColor = System.Drawing.SystemColors.Control;
-            dataGridViewCellStyle6.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            dataGridViewCellStyle6.ForeColor = System.Drawing.SystemColors.WindowText;
-            dataGridViewCellStyle6.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle6.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle6.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.CadData_GridView.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle6;
+            dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle2.BackColor = System.Drawing.SystemColors.Control;
+            dataGridViewCellStyle2.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            dataGridViewCellStyle2.ForeColor = System.Drawing.SystemColors.WindowText;
+            dataGridViewCellStyle2.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle2.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle2.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.CadData_GridView.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle2;
             this.CadData_GridView.ColumnHeadersHeight = 29;
             this.CadData_GridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
             this.CadData_GridView.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
@@ -8380,7 +8380,7 @@ namespace LitePlacer
             this.CadData_GridView.RowHeadersWidth = 16;
             this.CadData_GridView.RowHeadersWidthSizeMode = System.Windows.Forms.DataGridViewRowHeadersWidthSizeMode.DisableResizing;
             this.CadData_GridView.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.CellSelect;
-            this.CadData_GridView.Size = new System.Drawing.Size(457, 212);
+            this.CadData_GridView.Size = new System.Drawing.Size(514, 212);
             this.CadData_GridView.TabIndex = 5;
             this.CadData_GridView.Tag = "https://liteplacer.com/run-job-page-cad-data-section/";
             this.CadData_GridView.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.CadData_GridView_CellContentClick);

@@ -46,7 +46,7 @@ namespace LitePlacer
             
             // Force set switch type to NO (normally open)
             MainForm.DisplayText("Setting switch type (st) to 0 (normally open)...");
-            if (!Write_m("{\"st\",0}", 300))
+            if (!Write_m("{\"st\",0}", 500))
             {
                 MainForm.DisplayText("*** Failed to set switch type!", KnownColor.DarkRed, true);
             }
@@ -54,7 +54,7 @@ namespace LitePlacer
             
             // Force set Z zero backoff to 2.0mm (REQUIRED for homing to work)
             MainForm.DisplayText("Setting Z zero backoff (zzb) to 2.0mm...");
-            if (!Write_m("{\"zzb\",2.0}", 300))
+            if (!Write_m("{\"zzb\",2.0}", 500))
             {
                 MainForm.DisplayText("*** Failed to set zzb!", KnownColor.DarkRed, true);
             }
@@ -62,7 +62,7 @@ namespace LitePlacer
             
             // Force set Z latch backoff to 10mm
             MainForm.DisplayText("Setting Z latch backoff (zlb) to 10mm...");
-            if (!Write_m("{\"zlb\",10}", 300))
+            if (!Write_m("{\"zlb\",10}", 500))
             {
                 MainForm.DisplayText("*** Failed to set zlb!", KnownColor.DarkRed, true);
             }
@@ -70,7 +70,7 @@ namespace LitePlacer
             
             // Force set Z min switch to mode 3 (homing + limit)
             MainForm.DisplayText("Setting Z min switch (zsn) to 3 (homing+limit)...");
-            if (!Write_m("{\"zsn\",3}", 300))
+            if (!Write_m("{\"zsn\",3}", 500))
             {
                 MainForm.DisplayText("*** Failed to set zsn!", KnownColor.DarkRed, true);
             }
@@ -78,7 +78,7 @@ namespace LitePlacer
             
             // CRITICAL: Force set Z max switch to mode 2 (limit only) - THIS ENABLES THE ALARM!
             MainForm.DisplayText("Setting Z max switch (zsx) to 2 (limit) - THIS ENABLES ALARM...");
-            if (!Write_m("{\"zsx\",2}", 300))
+            if (!Write_m("{\"zsx\",2}", 500))
             {
                 MainForm.DisplayText("*** Failed to set zsx!", KnownColor.DarkRed, true);
             }
@@ -88,19 +88,19 @@ namespace LitePlacer
             MainForm.DisplayText("Forcing settings to persist to EEPROM...");
             // Some TinyG versions use $$ to show all settings which forces save
             Com.Write("$$\n");
-            Thread.Sleep(500);
+            Thread.Sleep(1500);
             
             // Re-read all Z settings to verify they stuck
             MainForm.DisplayText("Re-reading Z-switch settings for verification...");
-            Write_m("{\"st\":\"\"}", 300);
+            Write_m("{\"st\":\"\"}",  500);
             Thread.Sleep(100);
-            Write_m("{\"zzb\":\"\"}", 300);
+            Write_m("{\"zzb\":\"\"}", 500);
             Thread.Sleep(100);
-            Write_m("{\"zlb\":\"\"}", 300);
+            Write_m("{\"zlb\":\"\"}", 500);
             Thread.Sleep(100);
-            Write_m("{\"zsn\":\"\"}", 300);
+            Write_m("{\"zsn\":\"\"}", 500);
             Thread.Sleep(100);
-            Write_m("{\"zsx\":\"\"}", 300);
+            Write_m("{\"zsx\":\"\"}", 500);
             Thread.Sleep(200);
             
             // Display final values
