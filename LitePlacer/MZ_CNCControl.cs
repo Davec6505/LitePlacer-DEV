@@ -98,7 +98,7 @@ namespace LitePlacer
         // ===================================================================
         // Read & write
         // ===================================================================
-
+        private readonly object responseLock = new object();
         private bool LineAvailable = false;
         private string ReceivedLine = "";
         private bool WriteBusy = false;
@@ -374,6 +374,93 @@ namespace LitePlacer
             return true;
         }
 
+        // Combined position set for all axes
+        public bool SetPosition(string X, string Y, string Z, string A)
+        {
+            string command = "G92";
+            bool hasValues = false;
+
+            if (!string.IsNullOrEmpty(X))
+            {
+                double val;
+                if (!double.TryParse(X.Replace(',', '.'), out val))
+                {
+                    MainForm.ShowMessageBox(
+                        "MZ_CNC.SetPosition() called with bad X value " + X,
+                        "BUG",
+                        MessageBoxButtons.OK);
+                    return false;
+                }
+                command += " X" + X;
+                Cnc.SetCurrentX(val);
+                hasValues = true;
+            }
+
+            if (!string.IsNullOrEmpty(Y))
+            {
+                double val;
+                if (!double.TryParse(Y.Replace(',', '.'), out val))
+                {
+                    MainForm.ShowMessageBox(
+                        "MZ_CNC.SetPosition() called with bad Y value " + Y,
+                        "BUG",
+                        MessageBoxButtons.OK);
+                    return false;
+                }
+                command += " Y" + Y;
+                Cnc.SetCurrentY(val);
+                hasValues = true;
+            }
+
+            if (!string.IsNullOrEmpty(Z))
+            {
+                double val;
+                if (!double.TryParse(Z.Replace(',', '.'), out val))
+                {
+                    MainForm.ShowMessageBox(
+                        "MZ_CNC.SetPosition() called with bad Z value " + Z,
+                        "BUG",
+                        MessageBoxButtons.OK);
+                    return false;
+                }
+                command += " Z" + Z;
+                Cnc.SetCurrentZ(val);
+                hasValues = true;
+            }
+
+            if (!string.IsNullOrEmpty(A))
+            {
+                double val;
+                if (!double.TryParse(A.Replace(',', '.'), out val))
+                {
+                    MainForm.ShowMessageBox(
+                        "MZ_CNC.SetPosition() called with bad A value " + A,
+                        "BUG",
+                        MessageBoxButtons.OK);
+                    return false;
+                }
+                command += " A" + A;
+                Cnc.SetCurrentA(val);
+                hasValues = true;
+            }
+
+            if (!hasValues)
+            {
+                MainForm.DisplayText("*** MZ_CNC.SetPosition() called with no values", KnownColor.DarkRed);
+                return false;
+            }
+
+            if (!Write_m(command))
+            {
+                MainForm.ShowMessageBox(
+                    "MZ_CNC " + command + " failed",
+                    "comm err?",
+                    MessageBoxButtons.OK);
+                return false;
+            }
+            return true;
+        }
+
         // Move to absolute position
         public bool XY(double X, double Y)
         {
@@ -393,6 +480,29 @@ namespace LitePlacer
             string command = "G0 X" + X.ToString("0.000", CultureInfo.InvariantCulture)
                            + " Y" + Y.ToString("0.000", CultureInfo.InvariantCulture)
                            + " A" + A.ToString("0.000", CultureInfo.InvariantCulture);
+            if (!Write_m(command, RegularMoveTimeout))
+            {
+                return false;
+            }
+            Cnc.SetCurrentX(X);
+            Cnc.SetCurrentY(Y);
+            Cnc.SetCurrentA(A);
+            return true;
+        }
+
+        // XYA with speed and move type (called from CNC.Execute_XYA)
+        public bool XYA(double X, double Y, double A, double speed, string MoveType)
+        {
+            string command = MoveType; // "G0" for rapid, "G1" for feed
+            command += " X" + X.ToString("0.000", CultureInfo.InvariantCulture);
+            command += " Y" + Y.ToString("0.000", CultureInfo.InvariantCulture);
+            command += " A" + A.ToString("0.000", CultureInfo.InvariantCulture);
+            
+            if (MoveType == "G1") // Feed move - include feedrate
+            {
+                command += " F" + speed.ToString("0.0", CultureInfo.InvariantCulture);
+            }
+            
             if (!Write_m(command, RegularMoveTimeout))
             {
                 return false;
@@ -442,6 +552,46 @@ namespace LitePlacer
             return true;
         }
 
+        // Jogging support (manual control)
+        public void Jog(string Speed, string X, string Y, string Z, string A)
+        {
+            // GRBL jog mode: $J=G91 X10 Y10 F500
+            // G91 = incremental mode for jogging
+            string command = "$J=G91";
+            
+            if (!string.IsNullOrEmpty(X))
+            {
+                command += " X" + X;
+            }
+            if (!string.IsNullOrEmpty(Y))
+            {
+                command += " Y" + Y;
+            }
+            if (!string.IsNullOrEmpty(Z))
+            {
+                command += " Z" + Z;
+            }
+            if (!string.IsNullOrEmpty(A))
+            {
+                command += " A" + A;
+            }
+            if (!string.IsNullOrEmpty(Speed))
+            {
+                command += " F" + Speed;
+            }
+            
+            RawWrite(command); // Jog doesn't wait for completion
+            MainForm.DisplayText("[JOG] " + command, KnownColor.DarkCyan);
+        }
+
+        public void CancelJog()
+        {
+            // GRBL jog cancel: Send 0x85 (jog cancel character)
+            // Alternative: Feed hold (!) will stop any motion
+            RawWrite("\x85"); // Jog cancel
+            MainForm.DisplayText("[JOG] Cancelled", KnownColor.DarkOrange);
+        }
+
         #endregion Movement
 
         // =================================================================================
@@ -459,28 +609,103 @@ namespace LitePlacer
             // Send G38.2 probe command
             string command = $"G38.2 Z{targetZ.ToString("0.000", CultureInfo.InvariantCulture)} F{feedrate.ToString("0.0", CultureInfo.InvariantCulture)}";
             
-            if (!Write_m(command, RegularMoveTimeout * 2)) // Double timeout for probing
+            if (!Write_m(command, RegularMoveTimeout * 3)) // Triple timeout for probing
             {
                 MainForm.DisplayText("*** Probe command failed", KnownColor.DarkRed);
                 return false;
             }
             
-            // Request probe result: [PRB:x,y,z,a:1]
-            string probeResult = GetResponse_m("?", 500, true);
+            // Get probe result with status query
+            Thread.Sleep(100); // Wait for probe to settle
+            string status = GetResponse_m("?", 500, false);
             
-            // Parse probe position from status or PRB response
-            if (!string.IsNullOrEmpty(probeResult))
+            // Parse probe result: Look for [PRB:x,y,z,a:1] in response
+            if (!string.IsNullOrEmpty(status) && status.Contains("[PRB:"))
             {
-                MainForm.DisplayText("[PROBE] Result: " + probeResult, KnownColor.DarkGreen);
-                // TODO: Parse probe position and update Cnc.CurrentZ
-                // Format: [PRB:x.xxx,y.yyy,z.zzz,a.aaa:1]
-            }
-            else
-            {
-                MainForm.DisplayText("*** Probe result not received", KnownColor.DarkOrange);
+                if (ParseProbeResult(status, out double probeZ))
+                {
+                    MainForm.DisplayText($"[PROBE] Success - Triggered at Z={probeZ:0.000}mm", KnownColor.DarkGreen);
+                    Cnc.SetCurrentZ(probeZ);
+                    return true;
+                }
             }
             
+            // Fallback: Update position with standard status query
+            UpdatePosition();
+            MainForm.DisplayText("[PROBE] Complete - check position", KnownColor.DarkOrange);
             return true;
+        }
+
+        /// <summary>
+        /// Nozzle probe down for LitePlacer (CRITICAL method)
+        /// </summary>
+        public bool Nozzle_ProbeDown(double backoff)
+        {
+            MainForm.DisplayText("[PROBE] Nozzle probing down...", KnownColor.DarkCyan);
+            
+            // Probe down with safe feedrate (300 mm/min typical for Z probing)
+            double probeDistance = -100.0; // Probe down 100mm (negative Z in GRBL)
+            double probeFeedrate = 300.0;
+            
+            if (!ProbeZ(probeDistance, probeFeedrate))
+            {
+                MainForm.DisplayText("*** Nozzle probe failed", KnownColor.DarkRed);
+                return false;
+            }
+            
+            // Back off after probe contact
+            if (backoff > 0.001)
+            {
+                double currentZ = Cnc.CurrentZ;
+                double backoffZ = currentZ + backoff; // Move up (positive) by backoff amount
+                
+                MainForm.DisplayText($"[PROBE] Backing off {backoff}mm to Z={backoffZ:0.000}", KnownColor.DarkCyan);
+                if (!Z(backoffZ))
+                {
+                    MainForm.DisplayText("*** Backoff move failed", KnownColor.DarkOrange);
+                }
+            }
+            
+            MainForm.DisplayText("[PROBE] Nozzle probe complete", KnownColor.DarkGreen);
+            return true;
+        }
+
+        /// <summary>
+        /// Parse probe result from GRBL response: [PRB:x,y,z,a:1]
+        /// </summary>
+        private bool ParseProbeResult(string response, out double probeZ)
+        {
+            probeZ = 0;
+            
+            try
+            {
+                int prbStart = response.IndexOf("[PRB:");
+                if (prbStart < 0) return false;
+                
+                int prbEnd = response.IndexOf("]", prbStart);
+                if (prbEnd < 0) return false;
+                
+                string prbData = response.Substring(prbStart + 5, prbEnd - prbStart - 5);
+                // Format: x.xxx,y.yyy,z.zzz,a.aaa:1
+                
+                string[] parts = prbData.Split(':');
+                if (parts.Length < 2) return false;
+                
+                string[] coords = parts[0].Split(',');
+                if (coords.Length < 3) return false;
+                
+                // Parse Z coordinate (index 2)
+                if (double.TryParse(coords[2], NumberStyles.Float, CultureInfo.InvariantCulture, out probeZ))
+                {
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                MainForm.DisplayText("*** Probe result parse error: " + ex.Message, KnownColor.DarkRed);
+            }
+            
+            return false;
         }
 
         /// <summary>
@@ -495,9 +720,59 @@ namespace LitePlacer
             }
             
             // Parse GRBL status: <Idle|MPos:x,y,z,a|WPos:x,y,z,a|FS:f,s>
-            // TODO: Parse and update Cnc.CurrentX/Y/Z/A
-            MainForm.DisplayText(status);
-            return true;
+            if (ParseGRBLStatus(status, out double x, out double y, out double z, out double a))
+            {
+                Cnc.SetCurrentX(x);
+                Cnc.SetCurrentY(y);
+                Cnc.SetCurrentZ(z);
+                Cnc.SetCurrentA(a);
+                return true;
+            }
+            
+            MainForm.DisplayText("*** Could not parse position from status", KnownColor.DarkOrange);
+            return false;
+        }
+
+        /// <summary>
+        /// Parse GRBL status response: <Idle|MPos:x,y,z,a|...>
+        /// </summary>
+        private bool ParseGRBLStatus(string status, out double x, out double y, out double z, out double a)
+        {
+            x = y = z = a = 0;
+            
+            try
+            {
+                // Look for MPos:x,y,z,a pattern
+                int mposStart = status.IndexOf("MPos:");
+                if (mposStart < 0) return false;
+                
+                int mposEnd = status.IndexOf("|", mposStart);
+                if (mposEnd < 0) mposEnd = status.IndexOf(">", mposStart);
+                if (mposEnd < 0) return false;
+                
+                string coordData = status.Substring(mposStart + 5, mposEnd - mposStart - 5);
+                string[] coords = coordData.Split(',');
+                
+                if (coords.Length >= 3)
+                {
+                    double.TryParse(coords[0], NumberStyles.Float, CultureInfo.InvariantCulture, out x);
+                    double.TryParse(coords[1], NumberStyles.Float, CultureInfo.InvariantCulture, out y);
+                    double.TryParse(coords[2], NumberStyles.Float, CultureInfo.InvariantCulture, out z);
+                    
+                    if (coords.Length >= 4)
+                    {
+                        double.TryParse(coords[3], NumberStyles.Float, CultureInfo.InvariantCulture, out a);
+                    }
+                    
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                MainForm.DisplayText("*** Status parse error: " + ex.Message, KnownColor.DarkRed);
+            }
+            
+            return false;
         }
 
         #endregion Probing
@@ -521,6 +796,40 @@ namespace LitePlacer
             MainForm.DisplayText("Homing complete", KnownColor.DarkGreen);
             
             // Update position after homing (machine zero)
+            Cnc.SetCurrentX(0);
+            Cnc.SetCurrentY(0);
+            Cnc.SetCurrentZ(0);
+            Cnc.SetCurrentA(0);
+            
+            return true;
+        }
+
+        /// <summary>
+        /// Home specific axis or all axes
+        /// </summary>
+        public bool Home_m(string axis)
+        {
+            MainForm.DisplayText($"[HOME] Starting homing for {axis}...", KnownColor.DarkCyan);
+            Cnc.Homing = true;
+            
+            // GRBL $H homes all axes - no single-axis homing in standard GRBL
+            // For single-axis, we use $H and warn user
+            if (axis != "all" && axis != "")
+            {
+                MainForm.DisplayText($"[HOME] Note: GRBL homes all axes together (no single-axis homing)", KnownColor.DarkOrange);
+            }
+            
+            if (!Write_m("$H", 30000)) // 30 second timeout
+            {
+                Cnc.Homing = false;
+                MainForm.DisplayText("*** Homing failed", KnownColor.DarkRed);
+                return false;
+            }
+            
+            Cnc.Homing = false;
+            MainForm.DisplayText("[HOME] Complete", KnownColor.DarkGreen);
+            
+            // Update position to machine zero
             Cnc.SetCurrentX(0);
             Cnc.SetCurrentY(0);
             Cnc.SetCurrentZ(0);
