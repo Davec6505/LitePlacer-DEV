@@ -21,7 +21,11 @@ namespace LitePlacer
             Com = ser;
         }
 
-        static ManualResetEvent ReadyEvent = new ManualResetEvent(false);
+        // CONCURRENCY FIX #1: Changed from static to instance-based to prevent cross-instance race conditions
+        private ManualResetEvent ReadyEvent = new ManualResetEvent(false);
+        
+        // CONCURRENCY FIX #2: Add lock object for thread-safe access to shared state
+        private readonly object writeLock = new object();
 
         public int RegularMoveTimeout { get; set; } // in ms
 
@@ -183,15 +187,19 @@ namespace LitePlacer
         // Sends a command to the board, doesn't return until the response is handled
         // by LineReceived() (which sets ReadyEvent), or operation times out
 
-        bool BlockingWriteDone = false;
-        bool WriteOk = true;
+        // CONCURRENCY FIX #3: Protected by writeLock to prevent race conditions
+        private bool BlockingWriteDone = false;
+        private bool WriteOk = true;
 
         private void BlockingWrite_thread(string cmd)
         {
             ReadyEvent.Reset();
             WriteOk = Com.Write(cmd);
             ReadyEvent.WaitOne();
-            BlockingWriteDone = true;
+            lock (writeLock)
+            {
+                BlockingWriteDone = true;
+            }
         }
 
         public bool Write_m(string cmd, int Timeout= 250, bool report = true)
@@ -216,7 +224,12 @@ namespace LitePlacer
                 return false;
             }
 
-            BlockingWriteDone = false;
+            lock (writeLock)
+            {
+                BlockingWriteDone = false;
+                WriteOk = true;
+            }
+            
             Thread t = new Thread(() => BlockingWrite_thread(cmd));
             t.IsBackground = true;
             t.Name = "TinyGwrite";
@@ -224,10 +237,18 @@ namespace LitePlacer
 
             Timeout = Timeout / 2;
             int i = 0;
-            while (!BlockingWriteDone)
+            bool done = false;
+            while (!done)
             {
                 Thread.Sleep(2);
-                Application.DoEvents();
+                // CONCURRENCY FIX #4: Removed Application.DoEvents() to prevent reentrancy issues
+                // Application.DoEvents() can cause UI events to fire during waiting, leading to unpredictable behavior
+                
+                lock (writeLock)
+                {
+                    done = BlockingWriteDone;
+                }
+                
                 i++;
                 if (i > Timeout)
                 {
@@ -239,11 +260,20 @@ namespace LitePlacer
                             "Timeout",
                             MessageBoxButtons.OK);
                     }
-                    BlockingWriteDone = true;
+                    lock (writeLock)
+                    {
+                        BlockingWriteDone = true;
+                    }
                     return false;
                 }
             }
-            return (WriteOk);
+            
+            bool result;
+            lock (writeLock)
+            {
+                result = WriteOk;
+            }
+            return result;
         }
 
 
@@ -607,31 +637,57 @@ namespace LitePlacer
         // ===============================
         // Read single line:
 
+        // CONCURRENCY FIX #5: Protected by writeLock for thread-safe access
         private bool LineWanted = false;
         private string LineOut;
 
         public string ReadLineDirectly(string command, bool report=true)
         {
-            LineWanted = true;
+            lock (writeLock)
+            {
+                LineWanted = true;
+            }
+            
             if (Write_m(command, 250, report))
             {
-                return LineOut;
+                string result;
+                lock (writeLock)
+                {
+                    result = LineOut;
+                }
+                return result;
             }
-            LineWanted = false;
+            
+            lock (writeLock)
+            {
+                LineWanted = false;
+            }
             return "";
         }
 
-
         public void LineReceived(string line)
         {
-            // This is called from SerialComm dataReceived, and runs in a separate thread than UI            
-            MainForm.DisplayText("<== " + line);
+            // This is called from SerialComm dataReceived, and runs in a separate thread than UI
+            // CONCURRENCY FIX #6: Use Invoke() for thread-safe UI updates
+            MainForm.Invoke((MethodInvoker)delegate
+            {
+                MainForm.DisplayText("<== " + line);
+            });
 
             // In some cases, the caller wants to look at the line directly:
-            if (LineWanted)
+            bool wantLine;
+            lock (writeLock)
             {
-                LineOut = line;
-                LineWanted = false;
+                wantLine = LineWanted;
+            }
+            
+            if (wantLine)
+            {
+                lock (writeLock)
+                {
+                    LineOut = line;
+                    LineWanted = false;
+                }
                 ReadyEvent.Set();
                 return;
             }
@@ -639,12 +695,15 @@ namespace LitePlacer
             if (line.Contains("SYSTEM READY"))
             {
                 Cnc.RaiseError();
-                MainForm.ShowMessageBox(
-                    "TinyG Reset.",
-                    "System Reset",
-                    MessageBoxButtons.OK);
-                MainForm.SetMotorPower_checkBox(false);
-                MainForm.UpdateCncConnectionStatus();
+                MainForm.Invoke((MethodInvoker)delegate
+                {
+                    MainForm.ShowMessageBox(
+                        "TinyG Reset.",
+                        "System Reset",
+                        MessageBoxButtons.OK);
+                    MainForm.SetMotorPower_checkBox(false);
+                    MainForm.UpdateCncConnectionStatus();
+                });
                 return;
             }
 
@@ -653,10 +712,14 @@ namespace LitePlacer
                 line = line.Substring(13);
                 int i = line.IndexOf('"');
                 line = line.Substring(0, i);
-                MainForm.ShowMessageBox(
-                    "TinyG Message:",
-                    line,
-                    MessageBoxButtons.OK);
+                string msg = line; // Capture for closure
+                MainForm.Invoke((MethodInvoker)delegate
+                {
+                    MainForm.ShowMessageBox(
+                        "TinyG Message:",
+                        msg,
+                        MessageBoxButtons.OK);
+                });
                 return;
             }
 
@@ -665,14 +728,20 @@ namespace LitePlacer
             {
                 if (line.Contains("File not open"))
                 {
-                    MainForm.DisplayText("### File not open error ignored. This is TinyG quirk, not a real error.");
+                    MainForm.Invoke((MethodInvoker)delegate
+                    {
+                        MainForm.DisplayText("### File not open error ignored. This is TinyG quirk, not a real error.");
+                    });
                     return;
                 };
                 
                 // Check for limit switch during homing - this is EXPECTED, not an error
                 if (line.Contains("Limit") && Cnc.Homing)
                 {
-                    MainForm.DisplayText("Limit switch hit during homing (expected).");
+                    MainForm.Invoke((MethodInvoker)delegate
+                    {
+                        MainForm.DisplayText("Limit switch hit during homing (expected).");
+                    });
                     return;  // Normal completion of homing, NOT an error
                 }
                 
@@ -681,16 +750,22 @@ namespace LitePlacer
                 
                 if (line.Contains("Limit"))
                 {
-                    MainForm.ShowMessageBox(
-                        "Limit switch hit outside of homing. Reset the TinyG and reconnect. Check job status if needed.",
-                        "TinyG Error",
-                        MessageBoxButtons.OK);
+                    MainForm.Invoke((MethodInvoker)delegate
+                    {
+                        MainForm.ShowMessageBox(
+                            "Limit switch hit outside of homing. Reset the TinyG and reconnect. Check job status if needed.",
+                            "TinyG Error",
+                            MessageBoxButtons.OK);
+                    });
                     return;
                 }
-                MainForm.ShowMessageBox(
-                    "TinyG error. Review situation and restart if needed.",
-                    "TinyG Error",
-                    MessageBoxButtons.OK);
+                MainForm.Invoke((MethodInvoker)delegate
+                {
+                    MainForm.ShowMessageBox(
+                        "TinyG error. Review situation and restart if needed.",
+                        "TinyG Error",
+                        MessageBoxButtons.OK);
+                });
                 return;
             }
 
@@ -733,8 +808,11 @@ namespace LitePlacer
                 NewStatusReport(line);
                 if (line.Contains("\"stat\":3"))
                 {
-                    MainForm.DisplayText("ReadyEvent stat");
-                    MainForm.ResetMotorTimer();
+                    MainForm.Invoke((MethodInvoker)delegate
+                    {
+                        MainForm.DisplayText("ReadyEvent stat");
+                        MainForm.ResetMotorTimer();
+                    });
                     ReadyEvent.Set();
                 }
                 return;
@@ -748,7 +826,10 @@ namespace LitePlacer
                 line = line.Substring(0, i + 2);
                 NewStatusReport(line);
                 ReadyEvent.Set();
-                MainForm.DisplayText("ReadyEvent r:sr");
+                MainForm.Invoke((MethodInvoker)delegate
+                {
+                    MainForm.DisplayText("ReadyEvent r:sr");
+                });
                 return;
             }
 
@@ -764,7 +845,10 @@ namespace LitePlacer
                 // response to setting a setting or reading motor settings for saving them
                 ParameterValue(line);  // <========= causes UI update
                 ReadyEvent.Set();
-                MainForm.DisplayText("ReadyEvent r");
+                MainForm.Invoke((MethodInvoker)delegate
+                {
+                    MainForm.DisplayText("ReadyEvent r");
+                });
                 return;
             }
 
@@ -772,7 +856,10 @@ namespace LitePlacer
             {
                 // response to reading settings for saving them
                 ReadyEvent.Set();
-                MainForm.DisplayText("ReadyEvent sys group (depreciated)");
+                MainForm.Invoke((MethodInvoker)delegate
+                {
+                    MainForm.DisplayText("ReadyEvent sys group (depreciated)");
+                });
                 return;
             }
 
@@ -787,7 +874,10 @@ namespace LitePlacer
                 MainForm.TinyGSetting.TinyG_x = line; 
                 */
                 ReadyEvent.Set();
-                MainForm.DisplayText("ReadyEvent x group (depreciated)");
+                MainForm.Invoke((MethodInvoker)delegate
+                {
+                    MainForm.DisplayText("ReadyEvent x group (depreciated)");
+                });
                 return;
             }
 
@@ -795,7 +885,10 @@ namespace LitePlacer
             {
                 // response to reading settings for saving them
                 ReadyEvent.Set();
-                MainForm.DisplayText("ReadyEvent y group (depreciated)");
+                MainForm.Invoke((MethodInvoker)delegate
+                {
+                    MainForm.DisplayText("ReadyEvent y group (depreciated)");
+                });
                 return;
             }
 
@@ -803,7 +896,10 @@ namespace LitePlacer
             {
                 // response to reading settings for saving them
                 ReadyEvent.Set();
-                MainForm.DisplayText("ReadyEvent z group (depreciated)");
+                MainForm.Invoke((MethodInvoker)delegate
+                {
+                    MainForm.DisplayText("ReadyEvent z group (depreciated)");
+                });
                 return;
             }
 
@@ -811,7 +907,10 @@ namespace LitePlacer
             {
                 // response to reading settings for saving them
                 ReadyEvent.Set();
-                MainForm.DisplayText("ReadyEvent a group (depreciated)");
+                MainForm.Invoke((MethodInvoker)delegate
+                {
+                    MainForm.DisplayText("ReadyEvent a group (depreciated)");
+                });
                 return;
             }
 
@@ -819,7 +918,10 @@ namespace LitePlacer
             {
                 // response to reading settings for saving them
                 ReadyEvent.Set();
-                MainForm.DisplayText("ReadyEvent m1 group (depreciated)");
+                MainForm.Invoke((MethodInvoker)delegate
+                {
+                    MainForm.DisplayText("ReadyEvent m1 group (depreciated)");
+                });
                 return;
             }
 
@@ -827,7 +929,10 @@ namespace LitePlacer
             {
                 // response to reading settings for saving them
                 ReadyEvent.Set();
-                MainForm.DisplayText("ReadyEvent m2 group (depreciated)");
+                MainForm.Invoke((MethodInvoker)delegate
+                {
+                    MainForm.DisplayText("ReadyEvent m2 group (depreciated)");
+                });
                 return;
             }
 
@@ -835,7 +940,10 @@ namespace LitePlacer
             {
                 // response to reading settings for saving them
                 ReadyEvent.Set();
-                MainForm.DisplayText("ReadyEvent m3 group (depreciated)");
+                MainForm.Invoke((MethodInvoker)delegate
+                {
+                    MainForm.DisplayText("ReadyEvent m3 group (depreciated)");
+                });
                 return;
             }
 
@@ -843,12 +951,15 @@ namespace LitePlacer
             {
                 // response to reading settings for saving them
                 ReadyEvent.Set();
-                MainForm.DisplayText("ReadyEvent m4 group (depreciated)");
+                MainForm.Invoke((MethodInvoker)delegate
+                {
+                    MainForm.DisplayText("ReadyEvent m4 group (depreciated)");
+                });
                 return;
             }
 
         }  // end LineReceived()
-        public string GetParameterValue(string line)
+        public string GetParameterValue(String line)
         {
             // line format is {"r":{"<parameter>":<value>},"f":[<some numbers>]}
             line = line.Substring(7);  // line: <parameter>":<value>},"f":[<some numbers>]}
