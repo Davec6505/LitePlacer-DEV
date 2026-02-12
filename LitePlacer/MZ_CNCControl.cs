@@ -25,7 +25,13 @@ namespace LitePlacer
         }
 
         public int RegularMoveTimeout { get; set; } // in ms
+        
+        // CONCURRENCY FIX #1: Instance-based event (already correct)
         private ManualResetEvent responseReceivedEvent = new ManualResetEvent(false);
+        
+        // CONCURRENCY FIX #2: Add lock object for thread-safe access to shared state
+        private readonly object writeLock = new object();
+        
         // =================================================================================
         #region Communications
 
@@ -99,6 +105,8 @@ namespace LitePlacer
         // Read & write
         // ===================================================================
         private readonly object responseLock = new object();
+        
+        // CONCURRENCY FIX #3: Protected by writeLock
         private bool LineAvailable = false;
         private string ReceivedLine = "";
         private bool WriteBusy = false;
@@ -130,15 +138,27 @@ namespace LitePlacer
                 return false;
             }
 
+            lock (writeLock)
+            {
+                WriteBusy = true;
+            }
+            
             Timeout = Timeout / 2;
             int i = 0;
-            WriteBusy = true;
             responseReceivedEvent.Reset();
             bool WriteOk = Com.Write(cmd);
-            while (WriteBusy)
+            
+            bool busy = true;
+            while (busy)
             {
                 Thread.Sleep(2);
-                Application.DoEvents();
+                // CONCURRENCY FIX #4: Removed Application.DoEvents() to prevent reentrancy
+                
+                lock (writeLock)
+                {
+                    busy = WriteBusy;
+                }
+                
                 i++;
                 if (i > Timeout)
                 {
@@ -179,15 +199,27 @@ namespace LitePlacer
                 return "";
             }
 
+            lock (writeLock)
+            {
+                LineAvailable = false;
+            }
+            
             Timeout = Timeout / 2;
             int i = 0;
-            LineAvailable = false;
           
             Com.Write(cmd);
-            while (!LineAvailable)
+            
+            bool available = false;
+            while (!available)
             {
                 Thread.Sleep(2);
-                Application.DoEvents();
+                // CONCURRENCY FIX #5: Removed Application.DoEvents() to prevent reentrancy
+                
+                lock (writeLock)
+                {
+                    available = LineAvailable;
+                }
+                
                 i++;
                 if (i > Timeout)
                 {
@@ -203,7 +235,7 @@ namespace LitePlacer
                     return "";
                 }
             }
-            lock (ReceivedLine)
+            lock (responseLock)
             {
                 line = ReceivedLine;
                 ClearReceivedLine();
@@ -217,29 +249,48 @@ namespace LitePlacer
         // Called from SerialComm when data arrives
         public void LineReceived(string line)
         {
-            MainForm.DisplayText("<== " + line);
+            // CONCURRENCY FIX #6: Use Invoke() for thread-safe UI updates
+            MainForm.Invoke((MethodInvoker)delegate
+            {
+                MainForm.DisplayText("<== " + line);
+            });
             
             // Handle "ok" response (command completed)
             if (line == "ok")
             {
-                WriteBusy = false;
+                lock (writeLock)
+                {
+                    WriteBusy = false;
+                }
                 return;
             }
             
             // Handle error responses
             if (line.StartsWith("error:"))
             {
-                MainForm.DisplayText("*** GRBL Error: " + line, KnownColor.DarkRed, true);
-                WriteBusy = false;
+                MainForm.Invoke((MethodInvoker)delegate
+                {
+                    MainForm.DisplayText("*** GRBL Error: " + line, KnownColor.DarkRed, true);
+                });
+                lock (writeLock)
+                {
+                    WriteBusy = false;
+                }
                 return;
             }
             
             // Handle alarm responses
             if (line.StartsWith("ALARM:"))
             {
-                MainForm.DisplayText("*** GRBL ALARM: " + line, KnownColor.DarkRed, true);
-                MainForm.DisplayText("*** Send $X to clear alarm", KnownColor.DarkOrange);
-                WriteBusy = false;
+                MainForm.Invoke((MethodInvoker)delegate
+                {
+                    MainForm.DisplayText("*** GRBL ALARM: " + line, KnownColor.DarkRed, true);
+                    MainForm.DisplayText("*** Send $X to clear alarm", KnownColor.DarkOrange);
+                });
+                lock (writeLock)
+                {
+                    WriteBusy = false;
+                }
                 Cnc.ErrorState = true;
                 return;
             }
@@ -255,6 +306,9 @@ namespace LitePlacer
                 {
                     ReceivedLine += MainForm.Setting.Serial_EndCharacters + line;
                 }
+            }
+            lock (writeLock)
+            {
                 LineAvailable = true;
             }
         }

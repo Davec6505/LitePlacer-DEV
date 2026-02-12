@@ -26,8 +26,10 @@ namespace LitePlacer
             Com = ser;
         }
 
-
         public int RegularMoveTimeout { get; set; } // in ms
+        
+        // CONCURRENCY FIX #1: Add lock object for thread-safe access to shared state
+        private readonly object writeLock = new object();
 
         // =================================================================================
         #region Communications
@@ -44,6 +46,7 @@ namespace LitePlacer
         // Read & write
         // ===================================================================
 
+        // CONCURRENCY FIX #2: Protected by writeLock
         private bool LineAvailable = false;
         private string ReceivedLine = "";
         private bool WriteBusy = false;
@@ -77,14 +80,26 @@ namespace LitePlacer
                 return false;
             }
 
+            lock (writeLock)
+            {
+                WriteBusy = true;
+            }
+            
             Timeout = Timeout / 2;
             int i = 0;
-            WriteBusy = true;
             bool WriteOk = Com.Write(cmd);
-            while (WriteBusy)
+            
+            bool busy = true;
+            while (busy)
             {
                 Thread.Sleep(2);
-                Application.DoEvents();
+                // CONCURRENCY FIX #3: Removed Application.DoEvents() to prevent reentrancy
+                
+                lock (writeLock)
+                {
+                    busy = WriteBusy;
+                }
+                
                 i++;
                 if (i > Timeout)
                 {
@@ -126,15 +141,27 @@ namespace LitePlacer
                 return "";
             }
 
+            lock (writeLock)
+            {
+                LineAvailable = false;
+                ExpectingResponse = true;
+            }
+            
             Timeout = Timeout / 2;
             int i = 0;
-            LineAvailable = false;
-            ExpectingResponse = true;
             Com.Write(cmd);
-            while (!LineAvailable)
+            
+            bool available = false;
+            while (!available)
             {
                 Thread.Sleep(2);
-                Application.DoEvents();
+                // CONCURRENCY FIX #4: Removed Application.DoEvents() to prevent reentrancy
+                
+                lock (writeLock)
+                {
+                    available = LineAvailable;
+                }
+                
                 i++;
                 if (i > Timeout)
                 {
@@ -153,6 +180,9 @@ namespace LitePlacer
             {
                 line = ReceivedLine;
                 ClearReceivedLine();
+            }
+            lock (writeLock)
+            {
                 ExpectingResponse = false;
             }
             return line;
@@ -169,12 +199,21 @@ namespace LitePlacer
             // I don't want to break TinyG communications, so I add lines here if needed.
             // Not too elegant, but works.
 
-            MainForm.DisplayText("<== " + line);
+            // CONCURRENCY FIX #5: Use Invoke() for thread-safe UI updates
+            MainForm.Invoke((MethodInvoker)delegate
+            {
+                MainForm.DisplayText("<== " + line);
+            });
+            
             if (line == "ok")
             {
-                WriteBusy = false;
+                lock (writeLock)
+                {
+                    WriteBusy = false;
+                }
                 return;
             }
+            
             lock (ReceivedLine)
             {
                 if (ReceivedLine=="")
@@ -185,11 +224,24 @@ namespace LitePlacer
                 {                     
                     ReceivedLine += MainForm.Setting.Serial_EndCharacters + line;
                 }
+            }
+            lock (writeLock)
+            {
                 LineAvailable = true;
             }
-            if (!ExpectingResponse)
+            
+            bool expecting;
+            lock (writeLock)
             {
-                MainForm.DisplayText("*** SKR3() - unsoliticed message", KnownColor.DarkRed, true);
+                expecting = ExpectingResponse;
+            }
+            
+            if (!expecting)
+            {
+                MainForm.Invoke((MethodInvoker)delegate
+                {
+                    MainForm.DisplayText("*** SKR3() - unsoliticed message", KnownColor.DarkRed, true);
+                });
             }
         }
 
@@ -388,87 +440,9 @@ namespace LitePlacer
 
         public bool Home_m(string axis)
         {
-
             MainForm.ShowMessageBox("Unimplemented SKR3 function Home_m: axis " + axis,
                 "Unimplemented function", MessageBoxButtons.OK);
             return false;
-
-/*
-            double HomingSpeed = 0;
-            double HomingBackoff = 0;
-            string BackoffSpeedStr = MainForm.Setting.CNC_SmallMovementSpeed.ToString();
-            int timeout;
-            switch (axis)
-            {
-                case "X":
-                    HomingSpeed = MainForm.Setting.SKR3_XHomingSpeed;
-                    HomingBackoff = MainForm.Setting.SKR3_XHomingBackoff;
-                    MainForm.Update_Xposition();
-                    break;
-                case "Y":
-                    HomingSpeed = MainForm.Setting.SKR3_YHomingSpeed;
-                    HomingBackoff = MainForm.Setting.SKR3_YHomingBackoff;
-                    MainForm.Update_Yposition();
-                    break;
-                case "Z":
-                    HomingSpeed = MainForm.Setting.SKR3_ZHomingSpeed;
-                    HomingBackoff = MainForm.Setting.SKR3_ZHomingBackoff;
-                    MainForm.Update_Zposition();
-                    break;
-                default:
-                    MainForm.ShowMessageBox("Unimplemented SKR3 function Home_m: axis " + axis,
-                        "Unimplemented function", MessageBoxButtons.OK);
-                    break;
-            }
-            if (!HomingTimeout_m(out timeout, axis))
-            {
-                return false;
-            }
-
-
-            string cmd = "G1 H1 " + axis + "-999999 F" + HomingSpeed.ToString();
-            if (!Write_m(cmd, timeout))
-            {
-                MainForm.ShowMessageBox(
-                    "Homing operation mechanical step failed, CNC issue",
-                    "Homing failed",
-                    MessageBoxButtons.OK);
-                return false;
-            }
-            cmd = "G1 " + axis + HomingBackoff.ToString() + " F" + BackoffSpeedStr;
-            if (!Write_m(cmd, RegularMoveTimeout))
-            {
-                MainForm.ShowMessageBox(
-                    "Homing operation mechanical step failed, CNC issue",
-                    "Homing failed",
-                    MessageBoxButtons.OK);
-                return false;
-            }
-            bool res = true;
-            switch (axis)
-            {
-                case "X":
-                    res= SetXposition("0.0");
-                    break;
-                case "Y":
-                    res = SetYposition("0.0");
-                    break;
-                case "Z":
-                    res = SetZposition("0.0");
-                    break;
-                default:
-                    MainForm.ShowMessageBox("Unimplemented SKR3 function Home_m: axis " + axis,
-                        "Unimplemented function", MessageBoxButtons.OK);
-                    break;
-            }
-            if (!res)
-            {
-                MainForm.DisplayText("*** Homing operation post moves position set failed", KnownColor.DarkRed, true);
-                return false;
-            }
-
-            MainForm.DisplayText("Homing " + axis + " done.");
-            return true;
         }
 
 
@@ -497,27 +471,6 @@ namespace LitePlacer
             Cnc.SetCurrentY(Y);
             Cnc.SetCurrentA(A);
             return true;
-*/        
-        }
-
-        public bool XYA(double X, double Y, double A, double speed, string MoveType)
-        {
-            string command;
-            if (MoveType == "G1")
-            {
-                command = "G1 F" + speed.ToString() +
-                    " X" + X.ToString("0.000", CultureInfo.InvariantCulture) +
-                    " Y" + Y.ToString("0.000", CultureInfo.InvariantCulture) +
-                    " A" + A.ToString("0.000", CultureInfo.InvariantCulture);
-            }
-            else
-            {
-                command = "G0 " +
-                    " X" + X.ToString("0.000", CultureInfo.InvariantCulture) +
-                    " Y" + Y.ToString("0.000", CultureInfo.InvariantCulture) +
-                    " A" + A.ToString("0.000", CultureInfo.InvariantCulture);
-            }
-            return Write_m("{\"gc\":\"" + command + "\"}", RegularMoveTimeout);
         }
 
 
