@@ -241,8 +241,11 @@ namespace LitePlacer
             while (!done)
             {
                 Thread.Sleep(2);
-                // CONCURRENCY FIX #4: Removed Application.DoEvents() to prevent reentrancy issues
-                // Application.DoEvents() can cause UI events to fire during waiting, leading to unpredictable behavior
+                
+                // CONCURRENCY FIX #4: Application.DoEvents() is REQUIRED for SerialComm events to fire
+                // Without it, LineReceived() never gets called and connection hangs
+                // The lock check prevents nested Write_m() calls (re-entrancy protection)
+                Application.DoEvents();
                 
                 lock (writeLock)
                 {
