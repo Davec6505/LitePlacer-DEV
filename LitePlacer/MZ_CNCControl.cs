@@ -25,7 +25,7 @@ namespace LitePlacer
         }
 
         public int RegularMoveTimeout { get; set; } // in ms
-
+        private ManualResetEvent responseReceivedEvent = new ManualResetEvent(false);
         // =================================================================================
         #region Communications
 
@@ -106,7 +106,7 @@ namespace LitePlacer
 
         private void ClearReceivedLine()
         {
-            lock (ReceivedLine)
+            lock (responseLock)
             {
                 ReceivedLine = "";
             }
@@ -133,6 +133,7 @@ namespace LitePlacer
             Timeout = Timeout / 2;
             int i = 0;
             WriteBusy = true;
+            responseReceivedEvent.Reset();
             bool WriteOk = Com.Write(cmd);
             while (WriteBusy)
             {
@@ -244,7 +245,7 @@ namespace LitePlacer
             }
             
             // Accumulate multi-line responses
-            lock (ReceivedLine)
+            lock (responseLock)
             {
                 if (ReceivedLine == "")
                 {
