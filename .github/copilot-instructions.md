@@ -69,12 +69,24 @@ When making ANY code change, you **MUST**:
 
 ## TinyG JSON Commands
 
-**CRITICAL:** TinyG uses JSON format with **colons** not commas!
+**CRITICAL:** TinyG uses **NON-STANDARD JSON** format with **COMMAS** instead of colons!
 
-? **CORRECT:** `{\"zsn\":3}`  
-? **WRONG:** `{\"zsn\",3}`  
+? **CORRECT for TinyG:** `{\"zsn\",3}`  
+? **WRONG for TinyG:** `{\"zsn\":3}` (this is standard JSON but TinyG does NOT accept it)
 
-**Always use proper JSON syntax in Write_m() commands!**
+**Important Notes:**
+- This is NOT standard JSON syntax, but TinyG firmware accepts it
+- **DO NOT "fix" these to use colons** - it will break TinyG communication
+- All existing code uses comma syntax: `{\"param\",value}`
+- Keep this format consistent throughout the codebase
+
+**Examples of correct TinyG commands:**
+```csharp
+Write_m("{\"zsn\",3}", 150);      // Set Z-min switch mode
+Write_m("{\"zsx\",2}", 150);      // Set Z-max switch mode
+Write_m("{\"zzb\",2.0}", 150);    // Set zero backoff
+Write_m("{\"st\",0}", 150);       // Set switch type
+```
 
 ## Code Style
 

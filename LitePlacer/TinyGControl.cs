@@ -493,109 +493,25 @@ namespace LitePlacer
         public bool Nozzle_ProbeDown(double backoff)
         {
             MainForm.DisplayText("Probing, TinyG");
-<<<<<<< HEAD
-            bool success = false;
-            string savedZzb = MainForm.TinyGBoard.Zzb;  // Save original value to restore
-            
-            try
-            {
-                // Configure switch as normally-open, mode: limit+homing
-                if (!Write_m("{\"zsn\":0}", 150))
-                {
-                    MainForm.DisplayText("*** Failed to set zsn", KnownColor.DarkRed, true);
-                    return false;
-                }
-                Thread.Sleep(50);
-                
-                if (!Write_m("{\"zsx\":1}", 150))
-                {
-                    MainForm.DisplayText("*** Failed to set zsx", KnownColor.DarkRed, true);
-                    return false;
-                }
-                Thread.Sleep(50);
-                
-                // Set zzb=0 to disable ALARM on switch trigger, but we still need to MONITOR the switch
-                // G38.2 (straight probe) will stop when probe triggers, even with zzb=0
-                // G28.4 (homing) with zzb=0 would IGNORE the switch entirely - causing crash!
-                if (!Write_m("{\"zzb\":0}", 150))
-                {
-                    MainForm.DisplayText("*** Failed to set zzb=0 for probing", KnownColor.DarkRed, true);
-                    return false;
-                }
-                Thread.Sleep(50);
-=======
             Write_m("{\"zsn\",0}", 150);
             Thread.Sleep(50);
             Write_m("{\"zsx\",1}", 150);
             Thread.Sleep(50);
             Write_m("{\"zzb\",0}", 150);
             Thread.Sleep(50);
->>>>>>> feature/multi-controller-integration
 
-                // Use G38.2 (straight probe) instead of G28.4 (homing)
-                // G38.2 monitors the probe/switch even when zzb=0
-                // Move down maximum 50mm (adjust if needed for your machine depth)
-                // Calculate appropriate timeout: 50mm at minimum probe speed (~100mm/min) = ~30s, add buffer
-                int probeTimeout = 40000;  // 40 seconds for safety
-                MainForm.DisplayText("Starting G38.2 probe down...");
-                if (!Write_m("{\"gc\":\"G38.2 Z50\"}", probeTimeout))
-                {
-                    MainForm.DisplayText("*** G38.2 probe command failed or timed out", KnownColor.DarkRed, true);
-                    return false;
-                }
-                
-                MainForm.DisplayText("Probe completed at Z=" + Cnc.CurrentZ.ToString("0.000", CultureInfo.InvariantCulture));
-                
-                // Back off if requested
-                if (Math.Abs(backoff) > 0.001)
-                {
-                    if (!MainForm.CNC_Z_m(Cnc.CurrentZ - backoff))
-                    {
-                        return false;
-                    }
-                }
-                
-                success = true;
-                return true;
-            }
-            finally
+            if (!Write_m("{\"gc\":\"G28.4 Z0\"}", RegularMoveTimeout))
             {
-                // ALWAYS restore zzb and switch settings, even on error/exception
-                MainForm.DisplayText("Restoring zzb and Z-switches to original state...");
-                
-                // Restore original zzb value (usually "2.000" but respect user's custom value)
-                bool restoreOk = Write_m("{\"zzb\":" + savedZzb + "}", 250);
-                if (!restoreOk)
-                {
-                    MainForm.DisplayText("*** WARNING: Failed to restore zzb value!", KnownColor.DarkRed, true);
-                    // Try one more time with explicit value
-                    Write_m("{\"zzb\":2}", 250);
-                }
-                Thread.Sleep(100);
-                
-                // CRITICAL: Re-read zzb to update TinyGBoard.Zzb cached value
-                // Without this, Check_zzb() will see stale "0.000" value and refuse to home!
-                Write_m("{\"zzb\":\"\"}", 250);
-                Thread.Sleep(100);
-                
-                // Verify it was actually restored
-                if (MainForm.TinyGBoard.Zzb == "0.000" || MainForm.TinyGBoard.Zzb == "0")
-                {
-                    MainForm.DisplayText("*** ERROR: zzb still shows 0 after restore attempt!", KnownColor.DarkRed, true);
-                    MainForm.DisplayText("*** Manually send: {\"zzb\":2} to fix", KnownColor.DarkRed, true);
-                }
-                else
-                {
-                    MainForm.DisplayText("zzb successfully restored to: " + MainForm.TinyGBoard.Zzb, KnownColor.DarkGreen);
-                }
-                
-                EnableZswitches();
-                
-                if (!success)
-                {
-                    MainForm.DisplayText("*** Nozzle_ProbeDown failed - check TinyG firmware supports G38.2", KnownColor.DarkRed, true);
-                }
+                return false;
             }
+            Write_m("{\"zzb\",2}", 150);
+            Thread.Sleep(50);
+            EnableZswitches();
+            if (!MainForm.CNC_Z_m(Cnc.CurrentZ - backoff))
+            {
+                return false;
+            }
+            return true;
         }
 
         public void MotorPowerOn()

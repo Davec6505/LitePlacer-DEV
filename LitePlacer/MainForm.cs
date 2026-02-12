@@ -43,11 +43,8 @@ namespace LitePlacer
     public partial class FormMain : Form
     {
         public CNC Cnc { get; set; }
-<<<<<<< HEAD
-        public enum ControlBoardType { TinyG, SKR3, unknown };
-=======
+
         public enum ControlBoardType { TinyG, SKR3, MZ_CNC, unknown};
->>>>>>> feature/multi-controller-integration
 
         Camera DownCamera;
         Camera UpCamera;
@@ -2426,37 +2423,6 @@ namespace LitePlacer
 
             // Safety check: If nozzle is loaded and we're moving to X >= 273mm (picker area)
             // with current Y < 50mm, first move Y to 50mm to avoid collision with pickers
-<<<<<<< HEAD
-            /*    
-                if (Setting.Nozzles_current > 0 && Cnc.CurrentY < 50.0 && X >= 273.0)
-                {
-                    DisplayText("Safety: Nozzle loaded and Y < 50mm, moving Y to 50mm before X movement to avoid picker collision", KnownColor.DarkOrange, true);
-
-                    // First, move Y to safe position (50mm) while keeping X and A at current position
-                    if (!Cnc.Connected)
-                    {
-                        ShowMessageBox(
-                            "CNC_XYA: Cnc not connected",
-                            "Cnc not connected",
-                            MessageBoxButtons.OK);
-                        return false;
-                    }
-            */
-            // Move to safe Y position first
-            /*
-                    if (!Cnc.XYA(Cnc.CurrentX, 50.0, Cnc.CurrentA))
-                    {
-                        ShowMessageBox(
-                            "CNC_XYA: Safety Y move failed",
-                            "Move failed",
-                            MessageBoxButtons.OK);
-                        return false;
-                    }
-
-                    DisplayText("Safety Y move completed, now proceeding with requested move", KnownColor.Green);
-                }
-            */
-=======
         /*    
             if (Setting.Nozzles_current > 0 && Cnc.CurrentY < 50.0 && X >= 273.0)
             {
@@ -2486,7 +2452,7 @@ namespace LitePlacer
                 DisplayText("Safety Y move completed, now proceeding with requested move", KnownColor.Green);
             }
         */
->>>>>>> feature/multi-controller-integration
+
             // Safety check: If NO nozzle is attached and we're moving to X >= 273mm (picker area)
             // Z must be at home position (0) to avoid collision with pickers
             if (Setting.Nozzles_current == 0 && X >= 273.0 && Math.Abs(Cnc.CurrentZ) > 0.01)
@@ -14733,8 +14699,6 @@ namespace LitePlacer
     }
 
 
-<<<<<<< HEAD
-}   // end of: namespace LitePlacer
-=======
-    }	// end of: namespace LitePlacer
->>>>>>> feature/multi-controller-integration
+
+ }	// end of: namespace LitePlacer
+
