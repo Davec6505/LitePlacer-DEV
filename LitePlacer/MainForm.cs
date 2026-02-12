@@ -1,4 +1,4 @@
-﻿// Processing tables branch
+// Processing tables branch
 
 using HomographyEstimation;
 using System;
@@ -43,7 +43,11 @@ namespace LitePlacer
     public partial class FormMain : Form
     {
         public CNC Cnc { get; set; }
+<<<<<<< HEAD
         public enum ControlBoardType { TinyG, SKR3, unknown };
+=======
+        public enum ControlBoardType { TinyG, SKR3, MZ_CNC, unknown};
+>>>>>>> feature/multi-controller-integration
 
         Camera DownCamera;
         Camera UpCamera;
@@ -2422,6 +2426,7 @@ namespace LitePlacer
 
             // Safety check: If nozzle is loaded and we're moving to X >= 273mm (picker area)
             // with current Y < 50mm, first move Y to 50mm to avoid collision with pickers
+<<<<<<< HEAD
             /*    
                 if (Setting.Nozzles_current > 0 && Cnc.CurrentY < 50.0 && X >= 273.0)
                 {
@@ -2451,6 +2456,37 @@ namespace LitePlacer
                     DisplayText("Safety Y move completed, now proceeding with requested move", KnownColor.Green);
                 }
             */
+=======
+        /*    
+            if (Setting.Nozzles_current > 0 && Cnc.CurrentY < 50.0 && X >= 273.0)
+            {
+                DisplayText("Safety: Nozzle loaded and Y < 50mm, moving Y to 50mm before X movement to avoid picker collision", KnownColor.DarkOrange, true);
+                
+                // First, move Y to safe position (50mm) while keeping X and A at current position
+                if (!Cnc.Connected)
+                {
+                    ShowMessageBox(
+                        "CNC_XYA: Cnc not connected",
+                        "Cnc not connected",
+                        MessageBoxButtons.OK);
+                    return false;
+                }
+        */
+                // Move to safe Y position first
+        /*
+                if (!Cnc.XYA(Cnc.CurrentX, 50.0, Cnc.CurrentA))
+                {
+                    ShowMessageBox(
+                        "CNC_XYA: Safety Y move failed",
+                        "Move failed",
+                        MessageBoxButtons.OK);
+                    return false;
+                }
+                
+                DisplayText("Safety Y move completed, now proceeding with requested move", KnownColor.Green);
+            }
+        */
+>>>>>>> feature/multi-controller-integration
             // Safety check: If NO nozzle is attached and we're moving to X >= 273mm (picker area)
             // Z must be at home position (0) to avoid collision with pickers
             if (Setting.Nozzles_current == 0 && X >= 273.0 && Math.Abs(Cnc.CurrentZ) > 0.01)
@@ -5969,8 +6005,9 @@ namespace LitePlacer
 
 
                 case 1:
-                    Cnc.Nozzle_ProbeDown(0);
-                    DisplayText("Z at bottom: " + Cnc.CurrentZ.ToString("0.000", CultureInfo.InvariantCulture));
+                    // Use calibration-specific probe that preserves Z position
+                     Cnc.Nozzle_ProbeDown(0); // TODO: This method does not exist
+                    DisplayText("Z at probe trigger: " + Cnc.CurrentZ.ToString("0.000", CultureInfo.InvariantCulture));
                     NozzleHeightInstructions_label.Text = "Jog nozzle up so that it just touches the PCB.\n\r" +
                         "If the nozzle doesn't touch the PCB, click cancel, adjust the switch and start again.\n\r" +
                                 "Click \"Next\".";
@@ -9987,7 +10024,7 @@ namespace LitePlacer
             DisplayText("Transform results:");
             DisplayText("Xorigin= " + (Loc.X).ToString(CultureInfo.InvariantCulture));
             DisplayText("Yorigin= " + Loc.Y.ToString(CultureInfo.InvariantCulture));
-            // We do need rotation. Find out by rotatíng a unit vector:
+            // We do need rotation. Find out by rotat�ng a unit vector:
             Loc2.X = 1.0;
             Loc2.Y = 0.0;
             Loc2.W = 1.0;
@@ -10777,7 +10814,7 @@ namespace LitePlacer
                 // If layer is indicated and the component is not on this layer, skip it
                 // TODO: Notify user if component is not on either layer (unknown data), once only and continue.
                 // TODO: Fix bug: If component is not on either layer, skip it.
-                // TODO: Use list of strings for layers and other fields, add “TopLayer” and “BottomLayer” for AD17.
+                // TODO: Use list of strings for layers and other fields, add �TopLayer� and �BottomLayer� for AD17.
 
                 if (LayerDataPresent)
                 {
@@ -14696,4 +14733,8 @@ namespace LitePlacer
     }
 
 
+<<<<<<< HEAD
 }   // end of: namespace LitePlacer
+=======
+    }	// end of: namespace LitePlacer
+>>>>>>> feature/multi-controller-integration

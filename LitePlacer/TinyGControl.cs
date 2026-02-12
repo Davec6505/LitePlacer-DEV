@@ -35,6 +35,118 @@ namespace LitePlacer
             {
                 return false;
             }
+            
+            // CRITICAL: Force restore ALL Z-switch settings - EEPROM corruption detected
+            MainForm.DisplayText("=== FORCE RESTORING Z-SWITCH SETTINGS ===", KnownColor.DarkOrange);
+            MainForm.DisplayText("BEFORE: st=" + MainForm.TinyGBoard.st +
+                                ", zzb=" + MainForm.TinyGBoard.Zzb + 
+                                ", zlb=" + MainForm.TinyGBoard.Zlb +
+                                ", zsn=" + MainForm.TinyGBoard.Zsn + 
+                                ", zsx=" + MainForm.TinyGBoard.Zsx);
+            
+            // Force set switch type to NO (normally open)
+            MainForm.DisplayText("Setting switch type (st) to 0 (normally open)...");
+            if (!Write_m("{\"st\",0}", 500))
+            {
+                MainForm.DisplayText("*** Failed to set switch type!", KnownColor.DarkRed, true);
+            }
+            Thread.Sleep(200);
+            
+            // Force set Z zero backoff to 2.0mm (REQUIRED for homing to work)
+            MainForm.DisplayText("Setting Z zero backoff (zzb) to 2.0mm...");
+            if (!Write_m("{\"zzb\",2.0}", 500))
+            {
+                MainForm.DisplayText("*** Failed to set zzb!", KnownColor.DarkRed, true);
+            }
+            Thread.Sleep(200);
+            
+            // Force set Z latch backoff to 10mm
+            MainForm.DisplayText("Setting Z latch backoff (zlb) to 10mm...");
+            if (!Write_m("{\"zlb\",10}", 500))
+            {
+                MainForm.DisplayText("*** Failed to set zlb!", KnownColor.DarkRed, true);
+            }
+            Thread.Sleep(200);
+            
+            // Force set Z min switch to mode 3 (homing + limit)
+            MainForm.DisplayText("Setting Z min switch (zsn) to 3 (homing+limit)...");
+            if (!Write_m("{\"zsn\",3}", 500))
+            {
+                MainForm.DisplayText("*** Failed to set zsn!", KnownColor.DarkRed, true);
+            }
+            Thread.Sleep(200);
+            
+            // CRITICAL: Force set Z max switch to mode 2 (limit only) - THIS ENABLES THE ALARM!
+            MainForm.DisplayText("Setting Z max switch (zsx) to 2 (limit) - THIS ENABLES ALARM...");
+            if (!Write_m("{\"zsx\",2}", 500))
+            {
+                MainForm.DisplayText("*** Failed to set zsx!", KnownColor.DarkRed, true);
+            }
+            Thread.Sleep(200);
+            
+            // CRITICAL: Force TinyG to persist settings to EEPROM
+            MainForm.DisplayText("Forcing settings to persist to EEPROM...");
+            // Some TinyG versions use $$ to show all settings which forces save
+            Com.Write("$$\n");
+            Thread.Sleep(1500);
+            
+            // Re-read all Z settings to verify they stuck
+            MainForm.DisplayText("Re-reading Z-switch settings for verification...");
+            Write_m("{\"st\":\"\"}",  500);
+            Thread.Sleep(100);
+            Write_m("{\"zzb\":\"\"}", 500);
+            Thread.Sleep(100);
+            Write_m("{\"zlb\":\"\"}", 500);
+            Thread.Sleep(100);
+            Write_m("{\"zsn\":\"\"}", 500);
+            Thread.Sleep(100);
+            Write_m("{\"zsx\":\"\"}", 500);
+            Thread.Sleep(200);
+            
+            // Display final values
+            MainForm.DisplayText("=== VERIFICATION RESULTS ===", KnownColor.DarkCyan);
+            MainForm.DisplayText("AFTER:  st=" + MainForm.TinyGBoard.st +
+                                ", zzb=" + MainForm.TinyGBoard.Zzb + 
+                                ", zlb=" + MainForm.TinyGBoard.Zlb +
+                                ", zsn=" + MainForm.TinyGBoard.Zsn + 
+                                ", zsx=" + MainForm.TinyGBoard.Zsx, KnownColor.DarkCyan);
+            
+            // Verify critical values
+            bool SettingsOK = true;
+            if (MainForm.TinyGBoard.Zzb == "0" || MainForm.TinyGBoard.Zzb == "0.000")
+            {
+                MainForm.DisplayText("*** ERROR: zzb still = 0 after restore attempt!", KnownColor.DarkRed, true);
+                SettingsOK = false;
+            }
+            if (MainForm.TinyGBoard.Zsn == "0")
+            {
+                MainForm.DisplayText("*** ERROR: zsn still = 0 after restore attempt!", KnownColor.DarkRed, true);
+                SettingsOK = false;
+            }
+            if (MainForm.TinyGBoard.Zsx != "2")
+            {
+                MainForm.DisplayText("*** ERROR: zsx = " + MainForm.TinyGBoard.Zsx + " (should be 2) - ALARM DISABLED!", KnownColor.DarkRed, true);
+                SettingsOK = false;
+            }
+            
+            if (!SettingsOK)
+            {
+                MainForm.DisplayText("╔════════════════════════════════════════════════════════════╗", KnownColor.DarkRed, true);
+                MainForm.DisplayText("║ CRITICAL: TinyG EEPROM is corrupted or write-protected!   ║", KnownColor.DarkRed, true);
+                MainForm.DisplayText("║                                                            ║", KnownColor.DarkRed, true);
+                MainForm.DisplayText("║ IMMEDIATE ACTIONS REQUIRED:                                ║", KnownColor.DarkRed, true);
+                MainForm.DisplayText("║ 1. DO NOT USE Z AXIS - LIMIT ALARM IS DISABLED!           ║", KnownColor.DarkRed, true);
+                MainForm.DisplayText("║ 2. Power cycle TinyG (unplug USB + power, wait 10 sec)    ║", KnownColor.DarkRed, true);
+                MainForm.DisplayText("║ 3. Send this command: {\"defa\":1}                          ║", KnownColor.DarkRed, true);
+                MainForm.DisplayText("║    (This does a factory reset)                            ║", KnownColor.DarkRed, true);
+                MainForm.DisplayText("║ 4. Reconnect to LitePlacer                                 ║", KnownColor.DarkRed, true);
+                MainForm.DisplayText("╚════════════════════════════════════════════════════════════╝", KnownColor.DarkRed, true);
+            }
+            else
+            {
+                MainForm.DisplayText("=== Z-SWITCH SETTINGS SUCCESSFULLY RESTORED ===", KnownColor.DarkGreen);
+            }
+            
             // Do settings that need to be done always
             if (!Write_m("{\"me\":\"\"}"))      // motor power on
             {
@@ -363,25 +475,25 @@ namespace LitePlacer
 
         public void DisableZswitches()
         {
-            Write_m("{\"zsn\":0}", 100);
+            Write_m("{\"zsn\",0}", 100);
             Thread.Sleep(50);
-            Write_m("{\"zsx\":0}", 100);
+            Write_m("{\"zsx\",0}", 100);
             Thread.Sleep(50);
         }
 
 
         public void EnableZswitches()
         {
-            Write_m("{\"zsn\":3}", 100);
+            Write_m("{\"zsn\",3}", 100);
             Thread.Sleep(50);
-            Write_m("{\"zsx\":2}", 100);
+            Write_m("{\"zsx\",2}", 100);
             Thread.Sleep(50);
         }
-
 
         public bool Nozzle_ProbeDown(double backoff)
         {
             MainForm.DisplayText("Probing, TinyG");
+<<<<<<< HEAD
             bool success = false;
             string savedZzb = MainForm.TinyGBoard.Zzb;  // Save original value to restore
             
@@ -411,6 +523,14 @@ namespace LitePlacer
                     return false;
                 }
                 Thread.Sleep(50);
+=======
+            Write_m("{\"zsn\",0}", 150);
+            Thread.Sleep(50);
+            Write_m("{\"zsx\",1}", 150);
+            Thread.Sleep(50);
+            Write_m("{\"zzb\",0}", 150);
+            Thread.Sleep(50);
+>>>>>>> feature/multi-controller-integration
 
                 // Use G38.2 (straight probe) instead of G28.4 (homing)
                 // G38.2 monitors the probe/switch even when zzb=0
@@ -477,7 +597,6 @@ namespace LitePlacer
                 }
             }
         }
-
 
         public void MotorPowerOn()
         {

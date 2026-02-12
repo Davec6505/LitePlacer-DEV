@@ -91,6 +91,8 @@ namespace LitePlacer
         public static FormMain MainForm;
         private TinyGclass TinyG;
         public SKR3class SKR3;
+        private MZ_CNCControl MZ_CNC;  // Add MZ_CNC controller
+
 
         public bool SlackCompensation { get; set; }
         public double SlackCompensationDistance { get; set; }
@@ -123,6 +125,7 @@ namespace LitePlacer
             Com = new SerialComm(this, MainF);
             TinyG = new TinyGclass(MainForm, this, Com);
             SKR3 = new SKR3class(MainForm, this, Com);
+            MZ_CNC = new MZ_CNCControl(MainForm, this, Com);
         }
 
         // =================================================================================
@@ -140,6 +143,7 @@ namespace LitePlacer
                 regTimeout = value;
                 TinyG.RegularMoveTimeout = (int)value * 1000;  // in ms
                 SKR3.RegularMoveTimeout = (int)value * 1000;  // in ms
+                MZ_CNC.RegularMoveTimeout = (int)value * 1000;  // in ms
             }
         }
 
@@ -283,10 +287,17 @@ namespace LitePlacer
                 MainForm.DisplayText("*** Cnc.SetPosition(), no coordinates.", KnownColor.DarkRed, true);
                 return;
             }
-
             if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.SKR3)
             {
                 SKR3.SetPosition(X, Y, Z, A);
+                MainForm.Update_Xposition();
+                MainForm.Update_Yposition();
+                MainForm.Update_Zposition();
+                MainForm.Update_Aposition();
+            }
+            else if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.MZ_CNC)
+            {
+                MZ_CNC.SetPosition(X, Y, Z, A);
                 MainForm.Update_Xposition();
                 MainForm.Update_Yposition();
                 MainForm.Update_Zposition();
@@ -314,6 +325,10 @@ namespace LitePlacer
             {
                 TinyG.CancelJog();
             }
+            else if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.MZ_CNC)
+            {
+                MZ_CNC.CancelJog();
+            }
             else
             {
                 MainForm.DisplayText("*** Cnc.CancelJog(), unknown board.", KnownColor.DarkRed, true);
@@ -327,6 +342,10 @@ namespace LitePlacer
             {
                 SKR3.Jog(Speed, X, Y, Z, A);
             }
+            else if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.MZ_CNC)
+            {
+                MZ_CNC.Jog(Speed, X, Y, Z, A);
+            }
             else if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.TinyG)
             {
                 TinyG.Jog(Speed, X, Y, Z, A);
@@ -336,6 +355,7 @@ namespace LitePlacer
                 MainForm.DisplayText("*** Cnc.Jog(), unknown board.", KnownColor.DarkRed, true);
             }
         }
+
 
         #endregion Position
 
@@ -437,6 +457,9 @@ namespace LitePlacer
                 case FormMain.ControlBoardType.SKR3:
                     SKR3.LineReceived(line);
                     return;
+                case FormMain.ControlBoardType.MZ_CNC:
+                    MZ_CNC.LineReceived(line);
+                    return;
                 case FormMain.ControlBoardType.unknown:
                     UnknownBoardLineReceived(line);
                     return;
@@ -519,9 +542,32 @@ namespace LitePlacer
                     {
                         return true;
                     }
+                    if (CheckMZ_CNC())
+                    {
+                        return true;
+                    }
                     break;
                 case FormMain.ControlBoardType.SKR3:
                     MainForm.Setting.Controlboard = FormMain.ControlBoardType.unknown;
+                    if (CheckSKR3())
+                    {
+                        return true;
+                    }
+                    if (CheckMZ_CNC())
+                    {
+                        return true;
+                    }
+                    if (CheckTinyG())
+                    {
+                        return true;
+                    }
+                    break;
+                case FormMain.ControlBoardType.MZ_CNC:
+                    MainForm.Setting.Controlboard = FormMain.ControlBoardType.unknown;
+                    if (CheckMZ_CNC())
+                    {
+                        return true;
+                    }
                     if (CheckSKR3())
                     {
                         return true;
@@ -629,6 +675,52 @@ namespace LitePlacer
             return false;
         }
 
+        private bool CheckMZ_CNC()
+        {
+            if (ErrorState)
+            {
+                MainForm.DisplayText("*** CheckMZ_CNC() - error state", KnownColor.DarkRed, true);
+                return false;
+            }
+
+            MainForm.DisplayText("Checking for PIC32MZ GRBL board.");
+            ClearReceivedBuffers();
+            MainForm.Setting.Serial_EndCharacters = "\n";
+            Com.Write("\n\x18");   // ctrl-X (soft reset)
+            int delay = 0;
+            while (delay < 200)
+            {
+                if (LineAvailable)
+                {
+                    break;
+                }
+                else
+                {
+                    Thread.Sleep(1);
+                    delay++;
+                }
+            }
+            if (delay >= 200)
+            {
+                MainForm.DisplayText("*** CheckMZ_CNC() - no response", KnownColor.DarkRed, true);
+                return false;
+            }
+            string resp = "";
+            while (LineAvailable)
+            {
+                resp = resp + ReadLine();
+            }
+            // Look for GRBL v1.1 banner: "Grbl 1.1h ['$' for help]"
+            if (resp.Contains("Grbl") && (resp.Contains("1.1") || resp.Contains("['$' for help]")))
+            {
+                MainForm.DisplayText("PIC32MZ GRBL v1.1 board found.", KnownColor.DarkGreen);
+                MainForm.Setting.Controlboard = FormMain.ControlBoardType.MZ_CNC;
+                ClearReceivedBuffers();
+                return true;
+            }
+            return false;
+        }
+
         public bool JustConnected()
         {
             // Called after a control board connection is estabished and board type found.
@@ -636,6 +728,14 @@ namespace LitePlacer
             if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.SKR3)
             {
                 if (!SKR3.JustConnected())
+                {
+                    RaiseError();
+                    return false;
+                }
+            }
+            else if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.MZ_CNC)
+            {
+                if (!MZ_CNC.JustConnected())
                 {
                     RaiseError();
                     return false;
@@ -664,6 +764,19 @@ namespace LitePlacer
             if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.SKR3)
             {
                 if (SKR3.Write_m(command, Timeout))
+                {
+                    return true;
+                }
+                else
+                {
+                    RaiseError();
+                    return false;
+                }
+            };
+
+            if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.MZ_CNC)
+            {
+                if (MZ_CNC.Write_m(command, Timeout))
                 {
                     return true;
                 }
@@ -721,6 +834,12 @@ namespace LitePlacer
                     return false;
                 }
             }
+            else if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.MZ_CNC)
+            {
+                // MZ_CNC uses GRBL $130 setting - not runtime configurable
+                MainForm.DisplayText("MZ_CNC: Machine size set via $130 setting", KnownColor.DarkCyan);
+                return true;
+            }
             else if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.TinyG)
             {
                 if (TinyG.SetMachineSizeX(Xsize))
@@ -763,6 +882,12 @@ namespace LitePlacer
                     return false;
                 }
             }
+            else if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.MZ_CNC)
+            {
+                // MZ_CNC uses GRBL $131 setting - not runtime configurable
+                MainForm.DisplayText("MZ_CNC: Machine size set via $131 setting", KnownColor.DarkCyan);
+                return true;
+            }
             else if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.TinyG)
             {
                 if (TinyG.SetMachineSizeY(Ysize))
@@ -798,6 +923,12 @@ namespace LitePlacer
             {
                 SKR3.DisableZswitches();
             }
+            else if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.MZ_CNC)
+            {
+                // MZ_CNC GRBL: Z-switches controlled by $22 (homing enable) and $5 (limit invert)
+                // No runtime disable like TinyG - this is a TinyG-specific feature
+                MainForm.DisplayText("MZ_CNC: Z-switch disable not applicable (GRBL)", KnownColor.DarkCyan);
+            }
             else if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.TinyG)
             {
                 TinyG.DisableZswitches();
@@ -820,6 +951,12 @@ namespace LitePlacer
             if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.SKR3)
             {
                 SKR3.EnableZswitches();
+            }
+            else if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.MZ_CNC)
+            {
+                // MZ_CNC GRBL: Z-switches controlled by $22 (homing enable) and $5 (limit invert)
+                // No runtime enable like TinyG - this is a TinyG-specific feature
+                MainForm.DisplayText("MZ_CNC: Z-switch enable not applicable (GRBL)", KnownColor.DarkCyan);
             }
             else if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.TinyG)
             {
@@ -851,9 +988,20 @@ namespace LitePlacer
                     RaiseError();
                     return false;
                 }
-            };
-
-            if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.TinyG)
+            }
+            else if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.MZ_CNC)
+            {
+                if (MZ_CNC.Nozzle_ProbeDown(backoff))
+                {
+                    return true;
+                }
+                else
+                {
+                    RaiseError();
+                    return false;
+                }
+            }
+            else if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.TinyG)
             {
                 if (TinyG.Nozzle_ProbeDown(backoff))
                 {
@@ -864,7 +1012,7 @@ namespace LitePlacer
                     RaiseError();
                     return false;
                 }
-            };
+            }
 
             MainForm.DisplayText("*** Cnc.Nozzle_ProbeDown(), unknown board.", KnownColor.DarkRed, true);
             Connected = false;
@@ -885,6 +1033,12 @@ namespace LitePlacer
             if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.SKR3)
             {
                 SKR3.MotorPowerOn();
+            }
+            else if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.MZ_CNC)
+            {
+                // MZ_CNC GRBL: Motors automatically enabled when commands sent
+                // No explicit enable needed (GRBL behavior)
+                MainForm.DisplayText("MZ_CNC: Motors enabled automatically", KnownColor.DarkCyan);
             }
             else if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.TinyG)
             {
@@ -907,6 +1061,13 @@ namespace LitePlacer
             if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.SKR3)
             {
                 SKR3.MotorPowerOff();
+            }
+            else if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.MZ_CNC)
+            {
+                // MZ_CNC GRBL: Motors disabled after idle timeout ($1 setting)
+                // Manual disable: Send M18 (disable steppers)
+                MZ_CNC.RawWrite("M18");
+                MainForm.DisplayText("MZ_CNC: Motors disabled (M18)", KnownColor.DarkCyan);
             }
             else if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.TinyG)
             {
@@ -944,6 +1105,13 @@ namespace LitePlacer
                 SKR3.VacuumOn();
                 VacuumIsOn = true;
             }
+            else if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.MZ_CNC)
+            {
+                // MZ_CNC GRBL: Use M7 (mist coolant) for vacuum control
+                MZ_CNC.RawWrite("M7");
+                VacuumIsOn = true;
+                MainForm.DisplayText("MZ_CNC: Vacuum ON (M7)", KnownColor.DarkCyan);
+            }
             else if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.TinyG)
             {
                 TinyG.VacuumOn();
@@ -968,6 +1136,13 @@ namespace LitePlacer
             {
                 SKR3.VacuumOff();
                 VacuumIsOn = false;
+            }
+            else if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.MZ_CNC)
+            {
+                // MZ_CNC GRBL: Use M9 (all coolant off) for vacuum control
+                MZ_CNC.RawWrite("M9");
+                VacuumIsOn = false;
+                MainForm.DisplayText("MZ_CNC: Vacuum OFF (M9)", KnownColor.DarkCyan);
             }
             else if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.TinyG)
             {
@@ -1008,6 +1183,13 @@ namespace LitePlacer
                 SKR3.PumpOn();
                 PumpIsOn = true;
             }
+            else if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.MZ_CNC)
+            {
+                // MZ_CNC GRBL: Use M8 (flood coolant) for pump control
+                MZ_CNC.RawWrite("M8");
+                PumpIsOn = true;
+                MainForm.DisplayText("MZ_CNC: Pump ON (M8)", KnownColor.DarkCyan);
+            }
             else if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.TinyG)
             {
                 TinyG.PumpOn();
@@ -1032,6 +1214,13 @@ namespace LitePlacer
             {
                 SKR3.PumpOff();
                 PumpIsOn = false;
+            }
+            else if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.MZ_CNC)
+            {
+                // MZ_CNC GRBL: Use M9 (all coolant off) for pump control
+                MZ_CNC.RawWrite("M9");
+                PumpIsOn = false;
+                MainForm.DisplayText("MZ_CNC: Pump OFF (M9)", KnownColor.DarkCyan);
             }
             else if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.TinyG)
             {
@@ -1090,9 +1279,22 @@ namespace LitePlacer
                     Homing = false;
                     return false;
                 }
-            };
-
-            if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.TinyG)
+            }
+            else if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.MZ_CNC)
+            {
+                if (MZ_CNC.Home_m(axis))
+                {
+                    Homing = false;
+                    return true;
+                }
+                else
+                {
+                    RaiseError();
+                    Homing = false;
+                    return false;
+                }
+            }
+            else if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.TinyG)
             {
                 if (TinyG.Home_m(axis))
                 {
@@ -1105,7 +1307,7 @@ namespace LitePlacer
                     Homing = false;
                     return false;
                 }
-            };
+            }
 
             MainForm.DisplayText("*** Cnc.Home_m(), unknown board.", KnownColor.DarkRed, true);
             Connected = false;
@@ -1128,6 +1330,18 @@ namespace LitePlacer
             if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.SKR3)
             {
                 if (SKR3.XYA(X, Y, A, speed, MoveType))
+                {
+                    return true;
+                }
+                else
+                {
+                    RaiseError();
+                    return false;
+                }
+            }
+            else if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.MZ_CNC)
+            {
+                if (MZ_CNC.XYA(X, Y, A, speed, MoveType))
                 {
                     return true;
                 }

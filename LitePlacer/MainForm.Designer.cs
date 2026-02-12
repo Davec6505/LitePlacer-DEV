@@ -1437,7 +1437,11 @@ namespace LitePlacer
             this.NextX_Column,
             this.NextY_column});
             this.TapesOld_dataGridView.EditMode = System.Windows.Forms.DataGridViewEditMode.EditOnEnter;
+<<<<<<< HEAD
             this.TapesOld_dataGridView.Location = new System.Drawing.Point(655, 504);
+=======
+            this.TapesOld_dataGridView.Location = new System.Drawing.Point(8, 386);
+>>>>>>> feature/multi-controller-integration
             this.TapesOld_dataGridView.MultiSelect = false;
             this.TapesOld_dataGridView.Name = "TapesOld_dataGridView";
             this.TapesOld_dataGridView.RowHeadersVisible = false;
