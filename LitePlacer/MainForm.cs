@@ -314,11 +314,7 @@ namespace LitePlacer
             LabelTestButtons();
             AttachHelpHandlers(this.Controls);
 
-            if (!CreateDataBackups())
-            {
-                ShowMessageBox("Failed to create data backups. See log for details.", "Startup Error", MessageBoxButtons.OK);
-                // Environment.Exit(0);
-            }
+            // Backup creation removed from startup - only backup on app close to avoid creating multiple timestamped folders
 
             BasicSetupTab_Begin();      // Form comes up with basic setup tab, but the tab change event doesn't fire
 
@@ -515,7 +511,7 @@ namespace LitePlacer
         private bool CreateDataBackups()
         {
             string FilesPath = GetPath();
-            string BackupsPath = FilesPath + BACKUP_DIRNAME + "\\" + DateTime.Now.ToString("yyyy-MM-dd HH.mm.ss");
+            string BackupsPath = FilesPath + BACKUP_DIRNAME;  // Single backup folder, no timestamp subdirectories
             DisplayText("Creating data file backups to " + BackupsPath);
             try
             {
@@ -526,6 +522,7 @@ namespace LitePlacer
                     // On first runs, not all data files exist. that is not an error
                     if (File.Exists(fName))
                     {
+                        // Overwrite existing backup files in the single backup folder
                         File.Copy(System.IO.Path.Combine(FilesPath, fName), System.IO.Path.Combine(BackupsPath, fName), true);
                     }
                 }
