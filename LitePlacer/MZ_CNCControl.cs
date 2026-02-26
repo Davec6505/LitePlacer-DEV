@@ -414,9 +414,9 @@ namespace LitePlacer
                     case 24: Settings.HomingDirInvert = value; break;
                     case 25: Settings.HomingFeed = value; break;
                     case 26: Settings.HomingSeek = value; break;
-                    case 27: Settings.HomingDebounce = value; break;
-                    case 30: Settings.HomingPulloff = value; break;
-                    case 31: Settings.MaxSpindleSpeed = value; break;
+                    case 27: Settings.HomingPulloff = value; break;  // *** CRITICAL FIX: $27 is pull-off in mm
+                    case 30: Settings.MaxSpindleSpeed = value; break;  // *** CRITICAL FIX: $30 is spindle RPM
+                    case 31: break;  // Reserved
                     case 100: Settings.StepsPerMmX = value; break;
                     case 101: Settings.StepsPerMmY = value; break;
                     case 102: Settings.StepsPerMmZ = value; break;

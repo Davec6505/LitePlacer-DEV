@@ -29,7 +29,7 @@ LitePlacer now supports **three CNC controller types**:
   - Acceleration - `$120`, `$121`, `$122`, `$123`
   - Steps/mm calculation and display
   - Homing speed (seek rate) - `$26`
-  - Homing backoff (pull-off) - `$30`
+  - Homing backoff (pull-off) - `$27`
   - Motor current, microsteps, interpolation (stored in AppSettings)
 
 #### ? **Movement & Control**
@@ -139,15 +139,15 @@ Same as before, plus:
 
 ### Known Quirks
 
-**Homing Pull-Off Units (`$30`):**
-- PIC32MZ firmware reports `$30` in **firmware-specific units** (not mm!)
-- Conversion factor: **÷12000** to get mm value
-- Example: `$30=12000` displayed as `1.000` mm in UI
-- When sending updates: multiply mm × 12000 for firmware value
+**None!** Your PIC32MZ firmware is **standard GRBL v1.1** - no special quirks.
 
 **GRBL Settings Format:**
 - Always use `CultureInfo.InvariantCulture` for decimal point (`.` not `,`)
 - Example: `$110=5000.0` NOT `$110=5000,0`
+
+**GRBL Homing Settings:**
+- `$27` = Homing pull-off distance (mm) - **Use this for homing backoff!**
+- `$30` = Max spindle speed (RPM) - **NOT related to homing!**
 
 ---
 

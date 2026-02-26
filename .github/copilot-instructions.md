@@ -100,16 +100,17 @@ Write_m("{\"st\",0}", 150);       // Set switch type
 **Important Notes:**
 - GRBL uses `$xxx=value` for settings (not JSON!)
 - Settings use `CultureInfo.InvariantCulture` for decimal formatting (always `.` not `,`)
-- PIC32MZ firmware has quirk: `$30` (homing pull-off) reported in firmware units, divide by 12000 for mm
-- Use `$30` for homing pull-off (applies to all axes)
-- Use `$26` for homing seek rate (applies to all axes)
+- `$27` = Homing pull-off distance in mm (standard GRBL v1.1)
+- `$26` = Homing seek rate in mm/min (applies to all axes)
+- `$30` = Max spindle speed (RPM) - **NOT related to homing!**
 
 **Examples of correct GRBL commands:**
 ```csharp
-Write_m("$110=5000.0");           // Set X max rate
-Write_m("$120=500.0");            // Set X acceleration
-Write_m("$26=1000.0");            // Set homing seek rate
-Write_m("$30=1.0");               // Set homing pull-off (in mm * 12000 for PIC32MZ)
+Write_m("$110=5000.0");           // Set X max rate (mm/min)
+Write_m("$120=500.0");            // Set X acceleration (mm/sec^2)
+Write_m("$26=1000.0");            // Set homing seek rate (mm/min)
+Write_m("$27=2.0");               // Set homing pull-off distance (mm)
+Write_m("$30=24000.0");           // Set max spindle speed (RPM)
 Write_m("$H");                    // Start homing cycle
 Write_m("G38.2 Z10 F100");       // Probe down to Z10 at 100mm/min
 Write_m("M7");                    // Vacuum ON (mist coolant)
@@ -122,13 +123,13 @@ Write_m("M9");                    // Vacuum/Pump OFF (all coolant)
 - Settings echo: `$110=5000.000` (confirms new value)
 - Acknowledgment: `ok` (command accepted)
 
-**CRITICAL - PIC32MZ Homing Settings:**
-- `$25` = Homing seek rate (mm/min) - Standard GRBL
-- `$27` = Homing pull-off (mm) - Standard GRBL  
-- `$30` = Homing pull-off (firmware units) - **PIC32MZ QUIRK!**
-  - Conversion: `$30 value ÷ 12000 = mm`
-  - Example: `$30=24000` ? `24000 ÷ 12000 = 2.0 mm`
-  - **Use $25 for homing seek, $30 for pull-off** (both exist!)
+**GRBL v1.1 Homing Settings (Standard):**
+- `$25` = Homing seek rate (mm/min)
+- `$27` = Homing pull-off distance (mm)
+- `$30` = Max spindle speed (RPM) - **NOT related to homing!**
+
+**Note:** There is NO PIC32MZ firmware quirk. Your firmware is standard GRBL v1.1.
+Use `$27` for homing pull-off in millimeters.
 
 **MZ_CNC Settings UI:**
 - Event handlers use **KeyPress** with **Enter key** to apply changes

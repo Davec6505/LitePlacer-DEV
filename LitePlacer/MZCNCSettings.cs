@@ -56,11 +56,9 @@ namespace LitePlacer
             // Homing speed - $26 (seek rate)
             MZCNCXhomingSpeed_maskedTextBox.Text = settings.HomingSeek.ToString("0.0");
             
-            // Homing backoff - $30 (pull-off distance)
-            // NOTE: PIC32MZ GRBL reports $30 in firmware-specific units (may be steps or µm)
-            // Divide by 12000 to get actual mm value displayed in UGS
-            double homingBackoff = settings.HomingPulloff / 12000.0;
-            MZCNCXHomingBackoff_maskedTextBox.Text = homingBackoff.ToString("0.000");
+            // Homing backoff - $27 (pull-off distance in mm)
+            // Standard GRBL v1.1 setting - value is already in millimeters
+            MZCNCXHomingBackoff_maskedTextBox.Text = settings.HomingPulloff.ToString("0.000");
             
             // Interpolation - default to off
             MZCNCXinterpolate_checkBox.Checked = false;
@@ -78,9 +76,8 @@ namespace LitePlacer
             MZCNCYdeg09_radioButton.Checked = false;
             MZCNCYCurrent_maskedTextBox.Text = "800";
             MZCNCYhomingSpeed_maskedTextBox.Text = settings.HomingSeek.ToString("0.0");
-            // NOTE: PIC32MZ GRBL reports $30 in firmware-specific units
-            homingBackoff = settings.HomingPulloff / 12000.0;
-            MZCNCYHomingBackoff_maskedTextBox.Text = homingBackoff.ToString("0.000");
+            // Homing backoff - $27 (standard GRBL in mm)
+            MZCNCYHomingBackoff_maskedTextBox.Text = settings.HomingPulloff.ToString("0.000");
             MZCNCYinterpolate_checkBox.Checked = false;
 
             // =============== Z-AXIS SETTINGS ===============
@@ -96,9 +93,8 @@ namespace LitePlacer
             MZCNCZdeg09_radioButton.Checked = false;
             MZCNCZCurrent_maskedTextBox.Text = "800";
             MZCNCZhomingSpeed_maskedTextBox.Text = settings.HomingSeek.ToString("0.0");
-            // NOTE: PIC32MZ GRBL reports $30 in firmware-specific units
-            homingBackoff = settings.HomingPulloff / 12000.0;
-            MZCNCZHomingBackoff_maskedTextBox.Text = homingBackoff.ToString("0.000");
+            // Homing backoff - $27 (standard GRBL in mm)
+            MZCNCZHomingBackoff_maskedTextBox.Text = settings.HomingPulloff.ToString("0.000");
             MZCNCZinterpolate_checkBox.Checked = false;
 
             // =============== A-AXIS SETTINGS ===============
@@ -175,12 +171,11 @@ namespace LitePlacer
             {
                 if (double.TryParse(MZCNCXHomingBackoff_maskedTextBox.Text, out double backoff))
                 {
-                    // Convert mm to firmware units (multiply by 12000)
-                    double firmwareValue = backoff * 12000.0;
-                    string cmd = $"$30={firmwareValue.ToString("0.0", CultureInfo.InvariantCulture)}";
+                    // Standard GRBL $27 setting (homing pull-off in mm)
+                    string cmd = $"$27={backoff.ToString("0.000", CultureInfo.InvariantCulture)}";
                     if (Cnc.MZ_CNC.Write_m(cmd))
                     {
-                        DisplayText($"Homing pull-off set to {backoff} mm (firmware value: {firmwareValue})", System.Drawing.KnownColor.DarkGreen);
+                        DisplayText($"Homing pull-off set to {backoff} mm", System.Drawing.KnownColor.DarkGreen);
                     }
                 }
             }
@@ -233,7 +228,7 @@ namespace LitePlacer
         {
             if (e.KeyChar == '\r')
             {
-                // Y uses same $30 as X (global homing pull-off)
+                // Y uses same $27 as X (global homing pull-off in mm)
                 MZCNCXHomingBackoff_maskedTextBox_KeyPress(sender, e);
             }
         }
@@ -285,7 +280,7 @@ namespace LitePlacer
         {
             if (e.KeyChar == '\r')
             {
-                // Z uses same $30 as X (global homing pull-off)
+                // Z uses same $27 as X (global homing pull-off in mm)
                 MZCNCXHomingBackoff_maskedTextBox_KeyPress(sender, e);
             }
         }
