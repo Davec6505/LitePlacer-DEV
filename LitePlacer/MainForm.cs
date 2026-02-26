@@ -14591,6 +14591,13 @@ namespace LitePlacer
         {
 
         }
+
+        private void MZCNCYspeed_maskedTextBox_MaskInputRejected(object sender, MaskInputRejectedEventArgs e)
+        {
+
+        }
+
+
     }	// end of: 	public partial class FormMain : Form
 
 

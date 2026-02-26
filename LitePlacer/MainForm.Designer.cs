@@ -41,8 +41,8 @@ namespace LitePlacer
         {
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormMain));
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
             this.Park_button = new System.Windows.Forms.Button();
             this.TestNozzleRecognition_button = new System.Windows.Forms.Button();
             this.DownCamZoomFactor_textBox = new System.Windows.Forms.TextBox();
@@ -327,11 +327,11 @@ namespace LitePlacer
             this.MZCNCA_tabPage = new System.Windows.Forms.TabPage();
             this.label310 = new System.Windows.Forms.Label();
             this.label311 = new System.Windows.Forms.Label();
-            this.MZCNCAinterpolate_checkBox = new System.Windows.Forms.CheckBox();
             this.label312 = new System.Windows.Forms.Label();
             this.label313 = new System.Windows.Forms.Label();
             this.MZCNCACurrent_maskedTextBox = new System.Windows.Forms.MaskedTextBox();
             this.MZCNCAtravelPerRev_textBox = new System.Windows.Forms.TextBox();
+            this.MZCNCAinterpolate_checkBox = new System.Windows.Forms.CheckBox();
             this.label314 = new System.Windows.Forms.Label();
             this.label315 = new System.Windows.Forms.Label();
             this.MZCNCAdeg18_radioButton = new System.Windows.Forms.RadioButton();
@@ -3804,7 +3804,6 @@ namespace LitePlacer
             this.MZCNCXacceleration_maskedTextBox.Tag = "120";
             this.MZCNCXacceleration_maskedTextBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.MZCNCXacceleration_maskedTextBox.TextMaskFormat = System.Windows.Forms.MaskFormat.ExcludePromptAndLiterals;
-            this.MZCNCXacceleration_maskedTextBox.MaskInputRejected += new System.Windows.Forms.MaskInputRejectedEventHandler(this.maskedTextBox4_MaskInputRejected);
             // 
             // label270
             // 
@@ -3826,6 +3825,7 @@ namespace LitePlacer
             this.MZCNCXspeed_maskedTextBox.Tag = "110";
             this.MZCNCXspeed_maskedTextBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
             this.MZCNCXspeed_maskedTextBox.TextMaskFormat = System.Windows.Forms.MaskFormat.ExcludePromptAndLiterals;
+            this.MZCNCXspeed_maskedTextBox.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.MZCNCXspeed_maskedTextBox_KeyPress);
             // 
             // label271
             // 
@@ -4564,17 +4564,6 @@ namespace LitePlacer
             this.label311.TabIndex = 152;
             this.label311.Text = "Speed:";
             // 
-            // MZCNCAinterpolate_checkBox
-            // 
-            this.MZCNCAinterpolate_checkBox.AutoSize = true;
-            this.MZCNCAinterpolate_checkBox.Location = new System.Drawing.Point(193, 121);
-            this.MZCNCAinterpolate_checkBox.Name = "MZCNCAinterpolate_checkBox";
-            this.MZCNCAinterpolate_checkBox.Size = new System.Drawing.Size(97, 21);
-            this.MZCNCAinterpolate_checkBox.TabIndex = 148;
-            this.MZCNCAinterpolate_checkBox.Text = "Interpolate";
-            this.toolTip1.SetToolTip(this.MZCNCAinterpolate_checkBox, "Interpolates 16x microstepping to 256x");
-            this.MZCNCAinterpolate_checkBox.UseVisualStyleBackColor = true;
-            // 
             // label312
             // 
             this.label312.AutoSize = true;
@@ -4612,6 +4601,17 @@ namespace LitePlacer
             this.MZCNCAtravelPerRev_textBox.Size = new System.Drawing.Size(54, 23);
             this.MZCNCAtravelPerRev_textBox.TabIndex = 140;
             this.MZCNCAtravelPerRev_textBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            // 
+            // MZCNCAinterpolate_checkBox
+            // 
+            this.MZCNCAinterpolate_checkBox.AutoSize = true;
+            this.MZCNCAinterpolate_checkBox.Location = new System.Drawing.Point(193, 121);
+            this.MZCNCAinterpolate_checkBox.Name = "MZCNCAinterpolate_checkBox";
+            this.MZCNCAinterpolate_checkBox.Size = new System.Drawing.Size(97, 21);
+            this.MZCNCAinterpolate_checkBox.TabIndex = 148;
+            this.MZCNCAinterpolate_checkBox.Text = "Interpolate";
+            this.toolTip1.SetToolTip(this.MZCNCAinterpolate_checkBox, "Interpolates 16x microstepping to 256x");
+            this.MZCNCAinterpolate_checkBox.UseVisualStyleBackColor = true;
             // 
             // label314
             // 
@@ -9569,14 +9569,14 @@ namespace LitePlacer
             | System.Windows.Forms.AnchorStyles.Right)));
             this.JobData_GridView.CellBorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.Raised;
             this.JobData_GridView.ClipboardCopyMode = System.Windows.Forms.DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
-            dataGridViewCellStyle3.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle3.BackColor = System.Drawing.SystemColors.Control;
-            dataGridViewCellStyle3.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            dataGridViewCellStyle3.ForeColor = System.Drawing.SystemColors.WindowText;
-            dataGridViewCellStyle3.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle3.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle3.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.JobData_GridView.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle3;
+            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle1.BackColor = System.Drawing.SystemColors.Control;
+            dataGridViewCellStyle1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            dataGridViewCellStyle1.ForeColor = System.Drawing.SystemColors.WindowText;
+            dataGridViewCellStyle1.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle1.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.JobData_GridView.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle1;
             this.JobData_GridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.JobData_GridView.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.JobDataValueColumn,
@@ -9692,14 +9692,14 @@ namespace LitePlacer
             | System.Windows.Forms.AnchorStyles.Right)));
             this.CadData_GridView.CellBorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.Raised;
             this.CadData_GridView.ClipboardCopyMode = System.Windows.Forms.DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
-            dataGridViewCellStyle4.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle4.BackColor = System.Drawing.SystemColors.Control;
-            dataGridViewCellStyle4.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            dataGridViewCellStyle4.ForeColor = System.Drawing.SystemColors.WindowText;
-            dataGridViewCellStyle4.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle4.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle4.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.CadData_GridView.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle4;
+            dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle2.BackColor = System.Drawing.SystemColors.Control;
+            dataGridViewCellStyle2.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            dataGridViewCellStyle2.ForeColor = System.Drawing.SystemColors.WindowText;
+            dataGridViewCellStyle2.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle2.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle2.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.CadData_GridView.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle2;
             this.CadData_GridView.ColumnHeadersHeight = 29;
             this.CadData_GridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
             this.CadData_GridView.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
