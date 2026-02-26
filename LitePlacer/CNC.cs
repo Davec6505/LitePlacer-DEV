@@ -91,7 +91,7 @@ namespace LitePlacer
         public static FormMain MainForm;
         private TinyGclass TinyG;
         public SKR3class SKR3;
-        private MZ_CNCControl MZ_CNC;  // Add MZ_CNC controller
+        public MZ_CNCControl MZ_CNC;  // MZ_CNC controller (public for settings UI access)
 
 
         public bool SlackCompensation { get; set; }
@@ -686,9 +686,13 @@ namespace LitePlacer
             MainForm.DisplayText("Checking for PIC32MZ GRBL board.");
             ClearReceivedBuffers();
             MainForm.Setting.Serial_EndCharacters = "\n";
+            
+            // Send soft reset and wait for response
             Com.Write("\n\x18");   // ctrl-X (soft reset)
+            Thread.Sleep(100);     // Give board time to reset and send banner
+            
             int delay = 0;
-            while (delay < 200)
+            while (delay < 300)  // Increased timeout to 300ms
             {
                 if (LineAvailable)
                 {
@@ -700,20 +704,32 @@ namespace LitePlacer
                     delay++;
                 }
             }
-            if (delay >= 200)
+            if (delay >= 300)
             {
                 MainForm.DisplayText("*** CheckMZ_CNC() - no response", KnownColor.DarkRed, true);
                 return false;
             }
+            
+            // Collect ALL lines from the response (banner might be multi-line)
             string resp = "";
+            Thread.Sleep(50); // Let all response lines arrive
             while (LineAvailable)
             {
                 resp = resp + ReadLine();
             }
-            // Look for GRBL v1.1 banner: "Grbl 1.1h ['$' for help]"
-            if (resp.Contains("Grbl") && (resp.Contains("1.1") || resp.Contains("['$' for help]")))
+            
+            // Look for GRBL v1.1 signatures:
+            // Standard format: "Grbl 1.1h ['$' for help]"
+            // Alternate format: "[VER:1.1h.YYYYMMDD]" (some builds)
+            // Custom format: "Pic32mzCNC v1.1h ['$' for help]" (user's firmware)
+            bool isGRBL11 = (resp.Contains("Grbl") && resp.Contains("1.1")) ||  // Standard GRBL banner
+                            resp.Contains("[VER:1.1") ||                          // $I response format
+                            resp.Contains("Pic32mzCNC") ||                        // Custom PIC32MZ firmware
+                            resp.Contains("['$' for help]");                      // Help text variant
+            
+            if (isGRBL11)
             {
-                MainForm.DisplayText("PIC32MZ GRBL v1.1 board found.", KnownColor.DarkGreen);
+                MainForm.DisplayText("PIC32MZ GRBL v1.1 board found: " + resp.Substring(0, Math.Min(50, resp.Length)), KnownColor.DarkGreen);
                 MainForm.Setting.Controlboard = FormMain.ControlBoardType.MZ_CNC;
                 ClearReceivedBuffers();
                 return true;
@@ -759,8 +775,75 @@ namespace LitePlacer
         }
 
 
+        // =================================================================================
+        // Protocol Guards - Ensure correct command format for each board type
+        // =================================================================================
+        
+        /// <summary>
+        /// Check if command is JSON format (TinyG protocol)
+        /// </summary>
+        private bool IsJsonCommand(string command)
+        {
+            if (string.IsNullOrEmpty(command)) return false;
+            string trimmed = command.Trim();
+            return trimmed.StartsWith("{") && trimmed.Contains(":");
+        }
+        
+        /// <summary>
+        /// Check if command is GRBL $ setting format
+        /// </summary>
+        private bool IsGrblSettingCommand(string command)
+        {
+            if (string.IsNullOrEmpty(command)) return false;
+            string trimmed = command.Trim();
+            return trimmed.StartsWith("$") && (trimmed.Contains("=") || trimmed.Length <= 3);
+        }
+        
+        /// <summary>
+        /// Validate command protocol matches board type
+        /// </summary>
+        private bool ValidateCommandProtocol(string command)
+        {
+            bool isJson = IsJsonCommand(command);
+            bool isGrblSetting = IsGrblSettingCommand(command);
+            
+            switch (MainForm.Setting.Controlboard)
+            {
+                case FormMain.ControlBoardType.TinyG:
+                    if (isGrblSetting)
+                    {
+                        MainForm.DisplayText("*** PROTOCOL ERROR: GRBL command '" + command + "' sent to TinyG board!", KnownColor.DarkRed, true);
+                        MainForm.DisplayText("*** TinyG uses JSON format: {\"parameter\":value}", KnownColor.DarkOrange);
+                        return false;
+                    }
+                    break;
+                    
+                case FormMain.ControlBoardType.MZ_CNC:
+                case FormMain.ControlBoardType.SKR3:
+                    if (isJson)
+                    {
+                        MainForm.DisplayText("*** PROTOCOL ERROR: JSON command '" + command + "' sent to GRBL board!", KnownColor.DarkRed, true);
+                        MainForm.DisplayText("*** GRBL uses $ format: $parameter=value", KnownColor.DarkOrange);
+                        return false;
+                    }
+                    break;
+                    
+                case FormMain.ControlBoardType.unknown:
+                    break;
+            }
+            
+            return true;
+        }
+
         public bool Write_m(string command, int Timeout = 250)
         {
+            // PROTOCOL GUARD: Validate command format matches board type
+            if (!ValidateCommandProtocol(command))
+            {
+                MainForm.DisplayText("*** Command blocked due to protocol mismatch", KnownColor.DarkRed, true);
+                return false;
+            }
+            
             if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.SKR3)
             {
                 if (SKR3.Write_m(command, Timeout))
@@ -1392,6 +1475,18 @@ namespace LitePlacer
                     return false;
                 }
             }
+            else if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.MZ_CNC)
+            {
+                if (MZ_CNC.A(A, speed, MoveType))
+                {
+                    return true;
+                }
+                else
+                {
+                    RaiseError();
+                    return false;
+                }
+            }
             else if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.TinyG)
             {
                 if (TinyG.A(A, speed, MoveType))
@@ -1424,6 +1519,18 @@ namespace LitePlacer
             if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.SKR3)
             {
                 if (SKR3.Z(Z, speed, MoveType))
+                {
+                    return true;
+                }
+                else
+                {
+                    RaiseError();
+                    return false;
+                }
+            }
+            else if (MainForm.Setting.Controlboard == FormMain.ControlBoardType.MZ_CNC)
+            {
+                if (MZ_CNC.Z(Z, speed, MoveType))
                 {
                     return true;
                 }

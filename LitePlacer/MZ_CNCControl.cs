@@ -32,6 +32,46 @@ namespace LitePlacer
         // CONCURRENCY FIX #2: Add lock object for thread-safe access to shared state
         private readonly object writeLock = new object();
         
+        // GRBL Settings Storage - parsed from $$ command
+        public class GRBLSettings
+        {
+            public double StepPulseTime { get; set; }           // $0
+            public double StepIdleDelay { get; set; }           // $1
+            public int StepPortInvert { get; set; }             // $2
+            public int DirPortInvert { get; set; }              // $3
+            public int StepEnableInvert { get; set; }           // $4
+            public int LimitPinsInvert { get; set; }            // $5
+            public double JunctionDeviation { get; set; }       // $11
+            public double ArcTolerance { get; set; }            // $12
+            public double ReportInches { get; set; }            // $13
+            public int SoftLimits { get; set; }                 // $21
+            public int HardLimits { get; set; }                 // $22
+            public int HomingEnable { get; set; }               // $23
+            public double HomingDirInvert { get; set; }         // $24
+            public double HomingFeed { get; set; }              // $25
+            public double HomingSeek { get; set; }              // $26
+            public double HomingDebounce { get; set; }          // $27
+            public double HomingPulloff { get; set; }           // $30
+            public double MaxSpindleSpeed { get; set; }         // $31
+            public double StepsPerMmX { get; set; }             // $100
+            public double StepsPerMmY { get; set; }             // $101
+            public double StepsPerMmZ { get; set; }             // $102
+            public double StepsPerMmA { get; set; }             // $103
+            public double MaxRateX { get; set; }                // $110
+            public double MaxRateY { get; set; }                // $111
+            public double MaxRateZ { get; set; }                // $112
+            public double MaxRateA { get; set; }                // $113
+            public double AccelX { get; set; }                  // $120
+            public double AccelY { get; set; }                  // $121
+            public double AccelZ { get; set; }                  // $122
+            public double AccelA { get; set; }                  // $123
+            public double MaxTravelX { get; set; }              // $130
+            public double MaxTravelY { get; set; }              // $131
+            public double MaxTravelZ { get; set; }              // $132
+        }
+        
+        public GRBLSettings Settings { get; private set; } = new GRBLSettings();
+        
         // =================================================================================
         #region Communications
 
@@ -50,28 +90,38 @@ namespace LitePlacer
             if (!LoadGRBLSettings())
             {
                 MainForm.DisplayText("*** Warning: Could not load GRBL settings", KnownColor.DarkOrange);
+                return false; // Fail if settings don't load properly
             }
+            
+            // Small delay to ensure all setting responses are fully processed
+            Thread.Sleep(100);
             
             // Set machine to absolute positioning mode (G90)
             if (!Write_m("G90"))
             {
+                MainForm.DisplayText("*** G90 command failed", KnownColor.DarkRed);
                 return false;
             }
             
             // Set units to millimeters (G21)
             if (!Write_m("G21"))
             {
+                MainForm.DisplayText("*** G21 command failed", KnownColor.DarkRed);
                 return false;
             }
             
             // Select XY plane (G17)
             if (!Write_m("G17"))
             {
+                MainForm.DisplayText("*** G17 command failed", KnownColor.DarkRed);
                 return false;
             }
             
-            // Clear any alarm state
-            Write_m("$X");
+            // Clear any alarm state (don't fail if this doesn't work)
+            Write_m("$X", 500);
+            
+            // Load settings UI
+            MainForm.MZ_CNCSettings_Load();
             
             MainForm.DisplayText("MZ_CNC initialization complete", KnownColor.DarkGreen);
             return true;
@@ -80,15 +130,24 @@ namespace LitePlacer
         private bool LoadGRBLSettings()
         {
             // Request all settings from GRBL
-            string response = GetResponse_m("$$", 1000, false);
-            if (string.IsNullOrEmpty(response))
+            // Use Write_m() to properly wait for "ok" completion
+            MainForm.DisplayText("=== Loading GRBL Settings ($$) ===", KnownColor.DarkCyan);
+            
+            // Write_m waits for "ok" which comes AFTER all setting lines
+            // Need longer timeout - 40+ settings lines take time
+            if (!Write_m("$$", 3000)) // 3 second timeout for all settings to arrive
             {
+                MainForm.DisplayText("*** Could not load GRBL settings", KnownColor.DarkRed);
                 return false;
             }
             
-            // Parse and display key settings
-            MainForm.DisplayText("=== GRBL Settings Loaded ===", KnownColor.DarkCyan);
-            // Settings will be displayed via normal response handling
+            // Display key parsed settings
+            MainForm.DisplayText($"=== GRBL Settings Loaded ===", KnownColor.DarkGreen);
+            MainForm.DisplayText($"  Machine Size: X={Settings.MaxTravelX:0.0}, Y={Settings.MaxTravelY:0.0}, Z={Settings.MaxTravelZ:0.0} mm", KnownColor.DarkCyan);
+            MainForm.DisplayText($"  Max Rates: X={Settings.MaxRateX:0.0}, Y={Settings.MaxRateY:0.0}, Z={Settings.MaxRateZ:0.0}, A={Settings.MaxRateA:0.0} mm/min", KnownColor.DarkCyan);
+            MainForm.DisplayText($"  Steps/mm: X={Settings.StepsPerMmX:0.0}, Y={Settings.StepsPerMmY:0.0}, Z={Settings.StepsPerMmZ:0.0}, A={Settings.StepsPerMmA:0.0}", KnownColor.DarkCyan);
+            MainForm.DisplayText($"  Homing: Enable={Settings.HomingEnable}, Hard Limits={Settings.HardLimits}", KnownColor.DarkCyan);
+            
             return true;
         }
 
@@ -162,11 +221,13 @@ namespace LitePlacer
                 i++;
                 if (i > Timeout)
                 {
-                    MainForm.ShowMessageBox(
-                        "MZ_CNC.Write_m: Timeout on command " + cmd,
-                        "Timeout",
-                        MessageBoxButtons.OK);
+                    // Use DisplayText instead of ShowMessageBox to avoid UI freeze
+                    MainForm.DisplayText("*** MZ_CNC.Write_m: Timeout on command " + cmd, KnownColor.DarkRed, true);
                     ClearReceivedLine();
+                    lock (writeLock)
+                    {
+                        WriteBusy = false; // Reset state on timeout
+                    }
                     return false;
                 }
             }
@@ -225,10 +286,8 @@ namespace LitePlacer
                 {
                     if (report)
                     {
-                        MainForm.ShowMessageBox(
-                            "MZ_CNC.GetResponse_m: Timeout on command " + cmd,
-                            "Timeout",
-                            MessageBoxButtons.OK);
+                        // Use DisplayText instead of ShowMessageBox to avoid UI freeze
+                        MainForm.DisplayText("*** MZ_CNC.GetResponse_m: Timeout on command " + cmd, KnownColor.DarkRed, true);
                     }
                     ClearReceivedLine();
                   
@@ -249,8 +308,8 @@ namespace LitePlacer
         // Called from SerialComm when data arrives
         public void LineReceived(string line)
         {
-            // CONCURRENCY FIX #6: Use Invoke() for thread-safe UI updates
-            MainForm.Invoke((MethodInvoker)delegate
+            // CONCURRENCY FIX #6: Use BeginInvoke() for non-blocking UI updates
+            MainForm.BeginInvoke((MethodInvoker)delegate
             {
                 MainForm.DisplayText("<== " + line);
             });
@@ -265,10 +324,17 @@ namespace LitePlacer
                 return;
             }
             
+            // Parse GRBL settings lines (format: $120=500.000)
+            if (line.StartsWith("$") && line.Contains("="))
+            {
+                ParseGRBLSetting(line);
+                // Don't return - let it accumulate for GetResponse_m too
+            }
+            
             // Handle error responses
             if (line.StartsWith("error:"))
             {
-                MainForm.Invoke((MethodInvoker)delegate
+                MainForm.BeginInvoke((MethodInvoker)delegate
                 {
                     MainForm.DisplayText("*** GRBL Error: " + line, KnownColor.DarkRed, true);
                 });
@@ -282,7 +348,7 @@ namespace LitePlacer
             // Handle alarm responses
             if (line.StartsWith("ALARM:"))
             {
-                MainForm.Invoke((MethodInvoker)delegate
+                MainForm.BeginInvoke((MethodInvoker)delegate
                 {
                     MainForm.DisplayText("*** GRBL ALARM: " + line, KnownColor.DarkRed, true);
                     MainForm.DisplayText("*** Send $X to clear alarm", KnownColor.DarkOrange);
@@ -310,6 +376,67 @@ namespace LitePlacer
             lock (writeLock)
             {
                 LineAvailable = true;
+            }
+        }
+        
+        /// <summary>
+        /// Parse a single GRBL setting line (e.g., "$120=500.000")
+        /// </summary>
+        private void ParseGRBLSetting(string line)
+        {
+            try
+            {
+                // Format: $NNN=value
+                int equalsPos = line.IndexOf('=');
+                if (equalsPos < 2) return; // Need at least "$N="
+                
+                string numberPart = line.Substring(1, equalsPos - 1); // Skip '$', get number
+                string valuePart = line.Substring(equalsPos + 1);
+                
+                if (!int.TryParse(numberPart, out int settingNum)) return;
+                if (!double.TryParse(valuePart, NumberStyles.Float, CultureInfo.InvariantCulture, out double value)) return;
+                
+                // Map setting number to property
+                switch (settingNum)
+                {
+                    case 0: Settings.StepPulseTime = value; break;
+                    case 1: Settings.StepIdleDelay = value; break;
+                    case 2: Settings.StepPortInvert = (int)value; break;
+                    case 3: Settings.DirPortInvert = (int)value; break;
+                    case 4: Settings.StepEnableInvert = (int)value; break;
+                    case 5: Settings.LimitPinsInvert = (int)value; break;
+                    case 11: Settings.JunctionDeviation = value; break;
+                    case 12: Settings.ArcTolerance = value; break;
+                    case 13: Settings.ReportInches = value; break;
+                    case 21: Settings.SoftLimits = (int)value; break;
+                    case 22: Settings.HardLimits = (int)value; break;
+                    case 23: Settings.HomingEnable = (int)value; break;
+                    case 24: Settings.HomingDirInvert = value; break;
+                    case 25: Settings.HomingFeed = value; break;
+                    case 26: Settings.HomingSeek = value; break;
+                    case 27: Settings.HomingDebounce = value; break;
+                    case 30: Settings.HomingPulloff = value; break;
+                    case 31: Settings.MaxSpindleSpeed = value; break;
+                    case 100: Settings.StepsPerMmX = value; break;
+                    case 101: Settings.StepsPerMmY = value; break;
+                    case 102: Settings.StepsPerMmZ = value; break;
+                    case 103: Settings.StepsPerMmA = value; break;
+                    case 110: Settings.MaxRateX = value; break;
+                    case 111: Settings.MaxRateY = value; break;
+                    case 112: Settings.MaxRateZ = value; break;
+                    case 113: Settings.MaxRateA = value; break;
+                    case 120: Settings.AccelX = value; break;
+                    case 121: Settings.AccelY = value; break;
+                    case 122: Settings.AccelZ = value; break;
+                    case 123: Settings.AccelA = value; break;
+                    case 130: Settings.MaxTravelX = value; break;
+                    case 131: Settings.MaxTravelY = value; break;
+                    case 132: Settings.MaxTravelZ = value; break;
+                }
+            }
+            catch (Exception ex)
+            {
+                MainForm.DisplayText("*** Error parsing GRBL setting: " + ex.Message, KnownColor.DarkOrange);
             }
         }
 

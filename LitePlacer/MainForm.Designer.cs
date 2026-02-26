@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -41,8 +41,8 @@ namespace LitePlacer
         {
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormMain));
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
             this.Park_button = new System.Windows.Forms.Button();
             this.TestNozzleRecognition_button = new System.Windows.Forms.Button();
             this.DownCamZoomFactor_textBox = new System.Windows.Forms.TextBox();
@@ -236,6 +236,116 @@ namespace LitePlacer
             this.CameraSetupTest_button = new System.Windows.Forms.Button();
             this.ImageTest_checkBox = new System.Windows.Forms.CheckBox();
             this.tabPageBasicSetup = new System.Windows.Forms.TabPage();
+            this.MZCNCMotors_tabControl = new System.Windows.Forms.TabControl();
+            this.MZCNCX_tabPage = new System.Windows.Forms.TabPage();
+            this.label256 = new System.Windows.Forms.Label();
+            this.label257 = new System.Windows.Forms.Label();
+            this.MZCNCXhomingSpeed_maskedTextBox = new System.Windows.Forms.MaskedTextBox();
+            this.label258 = new System.Windows.Forms.Label();
+            this.label259 = new System.Windows.Forms.Label();
+            this.label260 = new System.Windows.Forms.Label();
+            this.label261 = new System.Windows.Forms.Label();
+            this.MZCNCXHomingBackoff_maskedTextBox = new System.Windows.Forms.MaskedTextBox();
+            this.label262 = new System.Windows.Forms.Label();
+            this.label263 = new System.Windows.Forms.Label();
+            this.label264 = new System.Windows.Forms.Label();
+            this.MZCNCXCurrent_maskedTextBox = new System.Windows.Forms.MaskedTextBox();
+            this.MZCNCXtravelPerRev_textBox = new System.Windows.Forms.TextBox();
+            this.MZCNCXinterpolate_checkBox = new System.Windows.Forms.CheckBox();
+            this.label265 = new System.Windows.Forms.Label();
+            this.label266 = new System.Windows.Forms.Label();
+            this.MZCNCXdeg18_radioButton = new System.Windows.Forms.RadioButton();
+            this.MZCNCXdeg09_radioButton = new System.Windows.Forms.RadioButton();
+            this.label267 = new System.Windows.Forms.Label();
+            this.label268 = new System.Windows.Forms.Label();
+            this.label269 = new System.Windows.Forms.Label();
+            this.MZCNCXacceleration_maskedTextBox = new System.Windows.Forms.MaskedTextBox();
+            this.label270 = new System.Windows.Forms.Label();
+            this.MZCNCXspeed_maskedTextBox = new System.Windows.Forms.MaskedTextBox();
+            this.label271 = new System.Windows.Forms.Label();
+            this.MZCNCXmicrosteps_maskedTextBox = new System.Windows.Forms.MaskedTextBox();
+            this.label272 = new System.Windows.Forms.Label();
+            this.label273 = new System.Windows.Forms.Label();
+            this.MZCNCY_tabPage = new System.Windows.Forms.TabPage();
+            this.label274 = new System.Windows.Forms.Label();
+            this.label275 = new System.Windows.Forms.Label();
+            this.label276 = new System.Windows.Forms.Label();
+            this.label277 = new System.Windows.Forms.Label();
+            this.MZCNCYhomingSpeed_maskedTextBox = new System.Windows.Forms.MaskedTextBox();
+            this.label278 = new System.Windows.Forms.Label();
+            this.label279 = new System.Windows.Forms.Label();
+            this.MZCNCYHomingBackoff_maskedTextBox = new System.Windows.Forms.MaskedTextBox();
+            this.label280 = new System.Windows.Forms.Label();
+            this.label281 = new System.Windows.Forms.Label();
+            this.label282 = new System.Windows.Forms.Label();
+            this.MZCNCYCurrent_maskedTextBox = new System.Windows.Forms.MaskedTextBox();
+            this.MZCNCYtravelPerRev_textBox = new System.Windows.Forms.TextBox();
+            this.MZCNCYinterpolate_checkBox = new System.Windows.Forms.CheckBox();
+            this.label283 = new System.Windows.Forms.Label();
+            this.label284 = new System.Windows.Forms.Label();
+            this.MZCNCYdeg18_radioButton = new System.Windows.Forms.RadioButton();
+            this.MZCNCYdeg09_radioButton = new System.Windows.Forms.RadioButton();
+            this.label285 = new System.Windows.Forms.Label();
+            this.label286 = new System.Windows.Forms.Label();
+            this.label287 = new System.Windows.Forms.Label();
+            this.MZCNCYacceleration_maskedTextBox = new System.Windows.Forms.MaskedTextBox();
+            this.label288 = new System.Windows.Forms.Label();
+            this.MZCNCYspeed_maskedTextBox = new System.Windows.Forms.MaskedTextBox();
+            this.label289 = new System.Windows.Forms.Label();
+            this.MZCNCYmicrosteps_maskedTextBox = new System.Windows.Forms.MaskedTextBox();
+            this.label290 = new System.Windows.Forms.Label();
+            this.label291 = new System.Windows.Forms.Label();
+            this.MZCNCZ_tabPage = new System.Windows.Forms.TabPage();
+            this.label292 = new System.Windows.Forms.Label();
+            this.label293 = new System.Windows.Forms.Label();
+            this.MZCNCZhomingSpeed_maskedTextBox = new System.Windows.Forms.MaskedTextBox();
+            this.label294 = new System.Windows.Forms.Label();
+            this.label295 = new System.Windows.Forms.Label();
+            this.MZCNCZHomingBackoff_maskedTextBox = new System.Windows.Forms.MaskedTextBox();
+            this.label296 = new System.Windows.Forms.Label();
+            this.label297 = new System.Windows.Forms.Label();
+            this.label298 = new System.Windows.Forms.Label();
+            this.label299 = new System.Windows.Forms.Label();
+            this.label300 = new System.Windows.Forms.Label();
+            this.MZCNCZCurrent_maskedTextBox = new System.Windows.Forms.MaskedTextBox();
+            this.MZCNCZtravelPerRev_textBox = new System.Windows.Forms.TextBox();
+            this.MZCNCZinterpolate_checkBox = new System.Windows.Forms.CheckBox();
+            this.label301 = new System.Windows.Forms.Label();
+            this.label302 = new System.Windows.Forms.Label();
+            this.MZCNCZdeg18_radioButton = new System.Windows.Forms.RadioButton();
+            this.MZCNCZdeg09_radioButton = new System.Windows.Forms.RadioButton();
+            this.label303 = new System.Windows.Forms.Label();
+            this.label304 = new System.Windows.Forms.Label();
+            this.label305 = new System.Windows.Forms.Label();
+            this.MZCNCZacceleration_maskedTextBox = new System.Windows.Forms.MaskedTextBox();
+            this.label306 = new System.Windows.Forms.Label();
+            this.MZCNCZspeed_maskedTextBox = new System.Windows.Forms.MaskedTextBox();
+            this.label307 = new System.Windows.Forms.Label();
+            this.MZCNCZmicrosteps_maskedTextBox = new System.Windows.Forms.MaskedTextBox();
+            this.label308 = new System.Windows.Forms.Label();
+            this.label309 = new System.Windows.Forms.Label();
+            this.MZCNCA_tabPage = new System.Windows.Forms.TabPage();
+            this.label310 = new System.Windows.Forms.Label();
+            this.label311 = new System.Windows.Forms.Label();
+            this.MZCNCAinterpolate_checkBox = new System.Windows.Forms.CheckBox();
+            this.label312 = new System.Windows.Forms.Label();
+            this.label313 = new System.Windows.Forms.Label();
+            this.MZCNCACurrent_maskedTextBox = new System.Windows.Forms.MaskedTextBox();
+            this.MZCNCAtravelPerRev_textBox = new System.Windows.Forms.TextBox();
+            this.label314 = new System.Windows.Forms.Label();
+            this.label315 = new System.Windows.Forms.Label();
+            this.MZCNCAdeg18_radioButton = new System.Windows.Forms.RadioButton();
+            this.MZCNCAdeg09_radioButton = new System.Windows.Forms.RadioButton();
+            this.label316 = new System.Windows.Forms.Label();
+            this.label317 = new System.Windows.Forms.Label();
+            this.label318 = new System.Windows.Forms.Label();
+            this.MZCNCAacceleration_maskedTextBox = new System.Windows.Forms.MaskedTextBox();
+            this.label319 = new System.Windows.Forms.Label();
+            this.MZCNCAspeed_maskedTextBox = new System.Windows.Forms.MaskedTextBox();
+            this.label320 = new System.Windows.Forms.Label();
+            this.MZCNCAmicrosteps_maskedTextBox = new System.Windows.Forms.MaskedTextBox();
+            this.label321 = new System.Windows.Forms.Label();
+            this.label322 = new System.Windows.Forms.Label();
             this.Test_button1 = new System.Windows.Forms.Button();
             this.label255 = new System.Windows.Forms.Label();
             this.label254 = new System.Windows.Forms.Label();
@@ -913,6 +1023,11 @@ namespace LitePlacer
             this.groupBox5.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.Temp_dataGridView)).BeginInit();
             this.tabPageBasicSetup.SuspendLayout();
+            this.MZCNCMotors_tabControl.SuspendLayout();
+            this.MZCNCX_tabPage.SuspendLayout();
+            this.MZCNCY_tabPage.SuspendLayout();
+            this.MZCNCZ_tabPage.SuspendLayout();
+            this.MZCNCA_tabPage.SuspendLayout();
             this.SKR3Motors_tabControl.SuspendLayout();
             this.tabPage1.SuspendLayout();
             this.tabPage2.SuspendLayout();
@@ -1647,7 +1762,7 @@ namespace LitePlacer
             this.TapeUp_button.Name = "TapeUp_button";
             this.TapeUp_button.Size = new System.Drawing.Size(32, 23);
             this.TapeUp_button.TabIndex = 19;
-            this.TapeUp_button.Text = "▲";
+            this.TapeUp_button.Text = "?";
             this.toolTip1.SetToolTip(this.TapeUp_button, "Moves the selected tape definition up on the table.");
             this.TapeUp_button.UseVisualStyleBackColor = true;
             this.TapeUp_button.Click += new System.EventHandler(this.TapeUp_button_Click);
@@ -1659,7 +1774,7 @@ namespace LitePlacer
             this.TapeDown_button.Size = new System.Drawing.Size(32, 23);
             this.TapeDown_button.TabIndex = 20;
             this.TapeDown_button.Tag = "https://liteplacer.com/tape-positions-page/";
-            this.TapeDown_button.Text = "▼";
+            this.TapeDown_button.Text = "?";
             this.toolTip1.SetToolTip(this.TapeDown_button, "Moves the selected tape definition down on the table.");
             this.TapeDown_button.UseVisualStyleBackColor = true;
             this.TapeDown_button.Click += new System.EventHandler(this.TapeDown_button_Click);
@@ -3289,6 +3404,7 @@ namespace LitePlacer
             // 
             // tabPageBasicSetup
             // 
+            this.tabPageBasicSetup.Controls.Add(this.MZCNCMotors_tabControl);
             this.tabPageBasicSetup.Controls.Add(this.Test_button1);
             this.tabPageBasicSetup.Controls.Add(this.label255);
             this.tabPageBasicSetup.Controls.Add(this.label254);
@@ -3412,6 +3528,1230 @@ namespace LitePlacer
             this.tabPageBasicSetup.Text = "Basic Setup";
             this.tabPageBasicSetup.UseVisualStyleBackColor = true;
             // 
+            // MZCNCMotors_tabControl
+            // 
+            this.MZCNCMotors_tabControl.Controls.Add(this.MZCNCX_tabPage);
+            this.MZCNCMotors_tabControl.Controls.Add(this.MZCNCY_tabPage);
+            this.MZCNCMotors_tabControl.Controls.Add(this.MZCNCZ_tabPage);
+            this.MZCNCMotors_tabControl.Controls.Add(this.MZCNCA_tabPage);
+            this.MZCNCMotors_tabControl.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.MZCNCMotors_tabControl.Location = new System.Drawing.Point(6, 191);
+            this.MZCNCMotors_tabControl.Name = "MZCNCMotors_tabControl";
+            this.MZCNCMotors_tabControl.SelectedIndex = 0;
+            this.MZCNCMotors_tabControl.Size = new System.Drawing.Size(325, 362);
+            this.MZCNCMotors_tabControl.TabIndex = 144;
+            this.MZCNCMotors_tabControl.Visible = false;
+            // 
+            // MZCNCX_tabPage
+            // 
+            this.MZCNCX_tabPage.Controls.Add(this.label256);
+            this.MZCNCX_tabPage.Controls.Add(this.label257);
+            this.MZCNCX_tabPage.Controls.Add(this.MZCNCXhomingSpeed_maskedTextBox);
+            this.MZCNCX_tabPage.Controls.Add(this.label258);
+            this.MZCNCX_tabPage.Controls.Add(this.label259);
+            this.MZCNCX_tabPage.Controls.Add(this.label260);
+            this.MZCNCX_tabPage.Controls.Add(this.label261);
+            this.MZCNCX_tabPage.Controls.Add(this.MZCNCXHomingBackoff_maskedTextBox);
+            this.MZCNCX_tabPage.Controls.Add(this.label262);
+            this.MZCNCX_tabPage.Controls.Add(this.label263);
+            this.MZCNCX_tabPage.Controls.Add(this.label264);
+            this.MZCNCX_tabPage.Controls.Add(this.MZCNCXCurrent_maskedTextBox);
+            this.MZCNCX_tabPage.Controls.Add(this.MZCNCXtravelPerRev_textBox);
+            this.MZCNCX_tabPage.Controls.Add(this.MZCNCXinterpolate_checkBox);
+            this.MZCNCX_tabPage.Controls.Add(this.label265);
+            this.MZCNCX_tabPage.Controls.Add(this.label266);
+            this.MZCNCX_tabPage.Controls.Add(this.MZCNCXdeg18_radioButton);
+            this.MZCNCX_tabPage.Controls.Add(this.MZCNCXdeg09_radioButton);
+            this.MZCNCX_tabPage.Controls.Add(this.label267);
+            this.MZCNCX_tabPage.Controls.Add(this.label268);
+            this.MZCNCX_tabPage.Controls.Add(this.label269);
+            this.MZCNCX_tabPage.Controls.Add(this.MZCNCXacceleration_maskedTextBox);
+            this.MZCNCX_tabPage.Controls.Add(this.label270);
+            this.MZCNCX_tabPage.Controls.Add(this.MZCNCXspeed_maskedTextBox);
+            this.MZCNCX_tabPage.Controls.Add(this.label271);
+            this.MZCNCX_tabPage.Controls.Add(this.MZCNCXmicrosteps_maskedTextBox);
+            this.MZCNCX_tabPage.Controls.Add(this.label272);
+            this.MZCNCX_tabPage.Controls.Add(this.label273);
+            this.MZCNCX_tabPage.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.MZCNCX_tabPage.Location = new System.Drawing.Point(4, 34);
+            this.MZCNCX_tabPage.Name = "MZCNCX_tabPage";
+            this.MZCNCX_tabPage.Padding = new System.Windows.Forms.Padding(3);
+            this.MZCNCX_tabPage.Size = new System.Drawing.Size(317, 324);
+            this.MZCNCX_tabPage.TabIndex = 0;
+            this.MZCNCX_tabPage.Text = "X";
+            this.MZCNCX_tabPage.UseVisualStyleBackColor = true;
+            // 
+            // label256
+            // 
+            this.label256.AutoSize = true;
+            this.label256.Location = new System.Drawing.Point(2, 284);
+            this.label256.Name = "label256";
+            this.label256.Size = new System.Drawing.Size(110, 17);
+            this.label256.TabIndex = 125;
+            this.label256.Tag = "";
+            this.label256.Text = "Homing backoff:";
+            // 
+            // label257
+            // 
+            this.label257.AutoSize = true;
+            this.label257.Location = new System.Drawing.Point(153, 284);
+            this.label257.Name = "label257";
+            this.label257.Size = new System.Drawing.Size(30, 17);
+            this.label257.TabIndex = 124;
+            this.label257.Tag = "";
+            this.label257.Text = "mm";
+            // 
+            // MZCNCXhomingSpeed_maskedTextBox
+            // 
+            this.MZCNCXhomingSpeed_maskedTextBox.Location = new System.Drawing.Point(93, 281);
+            this.MZCNCXhomingSpeed_maskedTextBox.Mask = "99999";
+            this.MZCNCXhomingSpeed_maskedTextBox.Name = "MZCNCXhomingSpeed_maskedTextBox";
+            this.MZCNCXhomingSpeed_maskedTextBox.PromptChar = ' ';
+            this.MZCNCXhomingSpeed_maskedTextBox.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.MZCNCXhomingSpeed_maskedTextBox.Size = new System.Drawing.Size(54, 23);
+            this.MZCNCXhomingSpeed_maskedTextBox.TabIndex = 123;
+            this.MZCNCXhomingSpeed_maskedTextBox.Tag = "";
+            this.MZCNCXhomingSpeed_maskedTextBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.MZCNCXhomingSpeed_maskedTextBox.TextMaskFormat = System.Windows.Forms.MaskFormat.ExcludePromptAndLiterals;
+            // 
+            // label258
+            // 
+            this.label258.AutoSize = true;
+            this.label258.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label258.Location = new System.Drawing.Point(6, 230);
+            this.label258.Name = "label258";
+            this.label258.Size = new System.Drawing.Size(79, 20);
+            this.label258.TabIndex = 122;
+            this.label258.Text = "Homing:";
+            // 
+            // label259
+            // 
+            this.label259.AutoSize = true;
+            this.label259.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label259.Location = new System.Drawing.Point(6, 94);
+            this.label259.Name = "label259";
+            this.label259.Size = new System.Drawing.Size(63, 20);
+            this.label259.TabIndex = 121;
+            this.label259.Text = "Motor:";
+            // 
+            // label260
+            // 
+            this.label260.AutoSize = true;
+            this.label260.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label260.Location = new System.Drawing.Point(6, 8);
+            this.label260.Name = "label260";
+            this.label260.Size = new System.Drawing.Size(67, 20);
+            this.label260.TabIndex = 120;
+            this.label260.Text = "Speed:";
+            // 
+            // label261
+            // 
+            this.label261.AutoSize = true;
+            this.label261.Location = new System.Drawing.Point(9, 258);
+            this.label261.Name = "label261";
+            this.label261.Size = new System.Drawing.Size(103, 17);
+            this.label261.TabIndex = 118;
+            this.label261.Tag = "https://liteplacer.com/motors-setup/";
+            this.label261.Text = "Homing speed:";
+            // 
+            // MZCNCXHomingBackoff_maskedTextBox
+            // 
+            this.MZCNCXHomingBackoff_maskedTextBox.Location = new System.Drawing.Point(93, 255);
+            this.MZCNCXHomingBackoff_maskedTextBox.Mask = "99999";
+            this.MZCNCXHomingBackoff_maskedTextBox.Name = "MZCNCXHomingBackoff_maskedTextBox";
+            this.MZCNCXHomingBackoff_maskedTextBox.PromptChar = ' ';
+            this.MZCNCXHomingBackoff_maskedTextBox.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.MZCNCXHomingBackoff_maskedTextBox.Size = new System.Drawing.Size(54, 23);
+            this.MZCNCXHomingBackoff_maskedTextBox.TabIndex = 119;
+            this.MZCNCXHomingBackoff_maskedTextBox.Tag = "";
+            this.MZCNCXHomingBackoff_maskedTextBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.MZCNCXHomingBackoff_maskedTextBox.TextMaskFormat = System.Windows.Forms.MaskFormat.ExcludePromptAndLiterals;
+            // 
+            // label262
+            // 
+            this.label262.AutoSize = true;
+            this.label262.Location = new System.Drawing.Point(153, 258);
+            this.label262.Name = "label262";
+            this.label262.Size = new System.Drawing.Size(56, 17);
+            this.label262.TabIndex = 117;
+            this.label262.Tag = "";
+            this.label262.Text = "mm/min";
+            // 
+            // label263
+            // 
+            this.label263.AutoSize = true;
+            this.label263.Location = new System.Drawing.Point(153, 204);
+            this.label263.Name = "label263";
+            this.label263.Size = new System.Drawing.Size(28, 17);
+            this.label263.TabIndex = 116;
+            this.label263.Text = "mA";
+            // 
+            // label264
+            // 
+            this.label264.AutoSize = true;
+            this.label264.Location = new System.Drawing.Point(43, 204);
+            this.label264.Name = "label264";
+            this.label264.Size = new System.Drawing.Size(59, 17);
+            this.label264.TabIndex = 115;
+            this.label264.Text = "Current:";
+            // 
+            // MZCNCXCurrent_maskedTextBox
+            // 
+            this.MZCNCXCurrent_maskedTextBox.Location = new System.Drawing.Point(93, 201);
+            this.MZCNCXCurrent_maskedTextBox.Mask = "99999";
+            this.MZCNCXCurrent_maskedTextBox.Name = "MZCNCXCurrent_maskedTextBox";
+            this.MZCNCXCurrent_maskedTextBox.PromptChar = ' ';
+            this.MZCNCXCurrent_maskedTextBox.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.MZCNCXCurrent_maskedTextBox.Size = new System.Drawing.Size(54, 23);
+            this.MZCNCXCurrent_maskedTextBox.TabIndex = 114;
+            this.MZCNCXCurrent_maskedTextBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.MZCNCXCurrent_maskedTextBox.TextMaskFormat = System.Windows.Forms.MaskFormat.ExcludePromptAndLiterals;
+            // 
+            // MZCNCXtravelPerRev_textBox
+            // 
+            this.MZCNCXtravelPerRev_textBox.Location = new System.Drawing.Point(93, 175);
+            this.MZCNCXtravelPerRev_textBox.Name = "MZCNCXtravelPerRev_textBox";
+            this.MZCNCXtravelPerRev_textBox.Size = new System.Drawing.Size(54, 23);
+            this.MZCNCXtravelPerRev_textBox.TabIndex = 19;
+            this.MZCNCXtravelPerRev_textBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            // 
+            // MZCNCXinterpolate_checkBox
+            // 
+            this.MZCNCXinterpolate_checkBox.AutoSize = true;
+            this.MZCNCXinterpolate_checkBox.Location = new System.Drawing.Point(193, 121);
+            this.MZCNCXinterpolate_checkBox.Name = "MZCNCXinterpolate_checkBox";
+            this.MZCNCXinterpolate_checkBox.Size = new System.Drawing.Size(97, 21);
+            this.MZCNCXinterpolate_checkBox.TabIndex = 113;
+            this.MZCNCXinterpolate_checkBox.Text = "Interpolate";
+            this.toolTip1.SetToolTip(this.MZCNCXinterpolate_checkBox, "Interpolates 16x microstepping to 256x");
+            this.MZCNCXinterpolate_checkBox.UseVisualStyleBackColor = true;
+            // 
+            // label265
+            // 
+            this.label265.AutoSize = true;
+            this.label265.Location = new System.Drawing.Point(8, 178);
+            this.label265.Name = "label265";
+            this.label265.Size = new System.Drawing.Size(105, 17);
+            this.label265.TabIndex = 25;
+            this.label265.Text = "Travel per rev.:";
+            // 
+            // label266
+            // 
+            this.label266.AutoSize = true;
+            this.label266.Location = new System.Drawing.Point(153, 178);
+            this.label266.Name = "label266";
+            this.label266.Size = new System.Drawing.Size(30, 17);
+            this.label266.TabIndex = 24;
+            this.label266.Text = "mm";
+            // 
+            // MZCNCXdeg18_radioButton
+            // 
+            this.MZCNCXdeg18_radioButton.AutoSize = true;
+            this.MZCNCXdeg18_radioButton.Location = new System.Drawing.Point(163, 150);
+            this.MZCNCXdeg18_radioButton.Name = "MZCNCXdeg18_radioButton";
+            this.MZCNCXdeg18_radioButton.Size = new System.Drawing.Size(81, 21);
+            this.MZCNCXdeg18_radioButton.TabIndex = 28;
+            this.MZCNCXdeg18_radioButton.TabStop = true;
+            this.MZCNCXdeg18_radioButton.Text = "1.8 deg.";
+            this.MZCNCXdeg18_radioButton.UseVisualStyleBackColor = true;
+            // 
+            // MZCNCXdeg09_radioButton
+            // 
+            this.MZCNCXdeg09_radioButton.AutoSize = true;
+            this.MZCNCXdeg09_radioButton.Location = new System.Drawing.Point(93, 150);
+            this.MZCNCXdeg09_radioButton.Name = "MZCNCXdeg09_radioButton";
+            this.MZCNCXdeg09_radioButton.Size = new System.Drawing.Size(81, 21);
+            this.MZCNCXdeg09_radioButton.TabIndex = 27;
+            this.MZCNCXdeg09_radioButton.TabStop = true;
+            this.MZCNCXdeg09_radioButton.Text = "0.9 deg.";
+            this.MZCNCXdeg09_radioButton.UseVisualStyleBackColor = true;
+            // 
+            // label267
+            // 
+            this.label267.AutoSize = true;
+            this.label267.Location = new System.Drawing.Point(46, 33);
+            this.label267.Name = "label267";
+            this.label267.Size = new System.Drawing.Size(53, 17);
+            this.label267.TabIndex = 12;
+            this.label267.Text = "Speed:";
+            // 
+            // label268
+            // 
+            this.label268.AutoSize = true;
+            this.label268.Location = new System.Drawing.Point(142, 33);
+            this.label268.Name = "label268";
+            this.label268.Size = new System.Drawing.Size(56, 17);
+            this.label268.TabIndex = 11;
+            this.label268.Text = "mm/min";
+            // 
+            // label269
+            // 
+            this.label269.AutoSize = true;
+            this.label269.Location = new System.Drawing.Point(26, 152);
+            this.label269.Name = "label269";
+            this.label269.Size = new System.Drawing.Size(80, 17);
+            this.label269.TabIndex = 22;
+            this.label269.Text = "Step angle:";
+            // 
+            // MZCNCXacceleration_maskedTextBox
+            // 
+            this.MZCNCXacceleration_maskedTextBox.Location = new System.Drawing.Point(93, 56);
+            this.MZCNCXacceleration_maskedTextBox.Name = "MZCNCXacceleration_maskedTextBox";
+            this.MZCNCXacceleration_maskedTextBox.PromptChar = ' ';
+            this.MZCNCXacceleration_maskedTextBox.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.MZCNCXacceleration_maskedTextBox.Size = new System.Drawing.Size(43, 23);
+            this.MZCNCXacceleration_maskedTextBox.TabIndex = 13;
+            this.MZCNCXacceleration_maskedTextBox.Tag = "120";
+            this.MZCNCXacceleration_maskedTextBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.MZCNCXacceleration_maskedTextBox.TextMaskFormat = System.Windows.Forms.MaskFormat.ExcludePromptAndLiterals;
+            this.MZCNCXacceleration_maskedTextBox.MaskInputRejected += new System.Windows.Forms.MaskInputRejectedEventHandler(this.maskedTextBox4_MaskInputRejected);
+            // 
+            // label270
+            // 
+            this.label270.AutoSize = true;
+            this.label270.Location = new System.Drawing.Point(142, 59);
+            this.label270.Name = "label270";
+            this.label270.Size = new System.Drawing.Size(56, 17);
+            this.label270.TabIndex = 15;
+            this.label270.Text = "mm/s^2";
+            // 
+            // MZCNCXspeed_maskedTextBox
+            // 
+            this.MZCNCXspeed_maskedTextBox.Location = new System.Drawing.Point(93, 30);
+            this.MZCNCXspeed_maskedTextBox.Name = "MZCNCXspeed_maskedTextBox";
+            this.MZCNCXspeed_maskedTextBox.PromptChar = ' ';
+            this.MZCNCXspeed_maskedTextBox.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.MZCNCXspeed_maskedTextBox.Size = new System.Drawing.Size(43, 23);
+            this.MZCNCXspeed_maskedTextBox.TabIndex = 17;
+            this.MZCNCXspeed_maskedTextBox.Tag = "110";
+            this.MZCNCXspeed_maskedTextBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.MZCNCXspeed_maskedTextBox.TextMaskFormat = System.Windows.Forms.MaskFormat.ExcludePromptAndLiterals;
+            // 
+            // label271
+            // 
+            this.label271.AutoSize = true;
+            this.label271.Location = new System.Drawing.Point(123, 123);
+            this.label271.Name = "label271";
+            this.label271.Size = new System.Drawing.Size(84, 17);
+            this.label271.TabIndex = 18;
+            this.label271.Text = "[1, 2, 4, 8...]";
+            // 
+            // MZCNCXmicrosteps_maskedTextBox
+            // 
+            this.MZCNCXmicrosteps_maskedTextBox.Location = new System.Drawing.Point(93, 120);
+            this.MZCNCXmicrosteps_maskedTextBox.Mask = "99999";
+            this.MZCNCXmicrosteps_maskedTextBox.Name = "MZCNCXmicrosteps_maskedTextBox";
+            this.MZCNCXmicrosteps_maskedTextBox.PromptChar = ' ';
+            this.MZCNCXmicrosteps_maskedTextBox.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.MZCNCXmicrosteps_maskedTextBox.Size = new System.Drawing.Size(24, 23);
+            this.MZCNCXmicrosteps_maskedTextBox.TabIndex = 20;
+            this.MZCNCXmicrosteps_maskedTextBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.MZCNCXmicrosteps_maskedTextBox.TextMaskFormat = System.Windows.Forms.MaskFormat.ExcludePromptAndLiterals;
+            // 
+            // label272
+            // 
+            this.label272.AutoSize = true;
+            this.label272.Location = new System.Drawing.Point(18, 59);
+            this.label272.Name = "label272";
+            this.label272.Size = new System.Drawing.Size(90, 17);
+            this.label272.TabIndex = 16;
+            this.label272.Text = "Acceleration:";
+            // 
+            // label273
+            // 
+            this.label273.AutoSize = true;
+            this.label273.Location = new System.Drawing.Point(26, 123);
+            this.label273.Name = "label273";
+            this.label273.Size = new System.Drawing.Size(80, 17);
+            this.label273.TabIndex = 19;
+            this.label273.Text = "Microsteps:";
+            // 
+            // MZCNCY_tabPage
+            // 
+            this.MZCNCY_tabPage.Controls.Add(this.label274);
+            this.MZCNCY_tabPage.Controls.Add(this.label275);
+            this.MZCNCY_tabPage.Controls.Add(this.label276);
+            this.MZCNCY_tabPage.Controls.Add(this.label277);
+            this.MZCNCY_tabPage.Controls.Add(this.MZCNCYhomingSpeed_maskedTextBox);
+            this.MZCNCY_tabPage.Controls.Add(this.label278);
+            this.MZCNCY_tabPage.Controls.Add(this.label279);
+            this.MZCNCY_tabPage.Controls.Add(this.MZCNCYHomingBackoff_maskedTextBox);
+            this.MZCNCY_tabPage.Controls.Add(this.label280);
+            this.MZCNCY_tabPage.Controls.Add(this.label281);
+            this.MZCNCY_tabPage.Controls.Add(this.label282);
+            this.MZCNCY_tabPage.Controls.Add(this.MZCNCYCurrent_maskedTextBox);
+            this.MZCNCY_tabPage.Controls.Add(this.MZCNCYtravelPerRev_textBox);
+            this.MZCNCY_tabPage.Controls.Add(this.MZCNCYinterpolate_checkBox);
+            this.MZCNCY_tabPage.Controls.Add(this.label283);
+            this.MZCNCY_tabPage.Controls.Add(this.label284);
+            this.MZCNCY_tabPage.Controls.Add(this.MZCNCYdeg18_radioButton);
+            this.MZCNCY_tabPage.Controls.Add(this.MZCNCYdeg09_radioButton);
+            this.MZCNCY_tabPage.Controls.Add(this.label285);
+            this.MZCNCY_tabPage.Controls.Add(this.label286);
+            this.MZCNCY_tabPage.Controls.Add(this.label287);
+            this.MZCNCY_tabPage.Controls.Add(this.MZCNCYacceleration_maskedTextBox);
+            this.MZCNCY_tabPage.Controls.Add(this.label288);
+            this.MZCNCY_tabPage.Controls.Add(this.MZCNCYspeed_maskedTextBox);
+            this.MZCNCY_tabPage.Controls.Add(this.label289);
+            this.MZCNCY_tabPage.Controls.Add(this.MZCNCYmicrosteps_maskedTextBox);
+            this.MZCNCY_tabPage.Controls.Add(this.label290);
+            this.MZCNCY_tabPage.Controls.Add(this.label291);
+            this.MZCNCY_tabPage.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.MZCNCY_tabPage.Location = new System.Drawing.Point(4, 34);
+            this.MZCNCY_tabPage.Name = "MZCNCY_tabPage";
+            this.MZCNCY_tabPage.Padding = new System.Windows.Forms.Padding(3);
+            this.MZCNCY_tabPage.Size = new System.Drawing.Size(317, 324);
+            this.MZCNCY_tabPage.TabIndex = 1;
+            this.MZCNCY_tabPage.Text = "Y";
+            this.MZCNCY_tabPage.UseVisualStyleBackColor = true;
+            // 
+            // label274
+            // 
+            this.label274.AutoSize = true;
+            this.label274.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label274.Location = new System.Drawing.Point(6, 94);
+            this.label274.Name = "label274";
+            this.label274.Size = new System.Drawing.Size(63, 20);
+            this.label274.TabIndex = 141;
+            this.label274.Text = "Motor:";
+            // 
+            // label275
+            // 
+            this.label275.AutoSize = true;
+            this.label275.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label275.Location = new System.Drawing.Point(6, 8);
+            this.label275.Name = "label275";
+            this.label275.Size = new System.Drawing.Size(67, 20);
+            this.label275.TabIndex = 140;
+            this.label275.Text = "Speed:";
+            // 
+            // label276
+            // 
+            this.label276.AutoSize = true;
+            this.label276.Location = new System.Drawing.Point(2, 284);
+            this.label276.Name = "label276";
+            this.label276.Size = new System.Drawing.Size(110, 17);
+            this.label276.TabIndex = 139;
+            this.label276.Tag = "";
+            this.label276.Text = "Homing backoff:";
+            // 
+            // label277
+            // 
+            this.label277.AutoSize = true;
+            this.label277.Location = new System.Drawing.Point(153, 284);
+            this.label277.Name = "label277";
+            this.label277.Size = new System.Drawing.Size(30, 17);
+            this.label277.TabIndex = 138;
+            this.label277.Tag = "";
+            this.label277.Text = "mm";
+            // 
+            // MZCNCYhomingSpeed_maskedTextBox
+            // 
+            this.MZCNCYhomingSpeed_maskedTextBox.Location = new System.Drawing.Point(93, 281);
+            this.MZCNCYhomingSpeed_maskedTextBox.Mask = "99999";
+            this.MZCNCYhomingSpeed_maskedTextBox.Name = "MZCNCYhomingSpeed_maskedTextBox";
+            this.MZCNCYhomingSpeed_maskedTextBox.PromptChar = ' ';
+            this.MZCNCYhomingSpeed_maskedTextBox.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.MZCNCYhomingSpeed_maskedTextBox.Size = new System.Drawing.Size(54, 23);
+            this.MZCNCYhomingSpeed_maskedTextBox.TabIndex = 137;
+            this.MZCNCYhomingSpeed_maskedTextBox.Tag = "";
+            this.MZCNCYhomingSpeed_maskedTextBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.MZCNCYhomingSpeed_maskedTextBox.TextMaskFormat = System.Windows.Forms.MaskFormat.ExcludePromptAndLiterals;
+            // 
+            // label278
+            // 
+            this.label278.AutoSize = true;
+            this.label278.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label278.Location = new System.Drawing.Point(6, 230);
+            this.label278.Name = "label278";
+            this.label278.Size = new System.Drawing.Size(79, 20);
+            this.label278.TabIndex = 136;
+            this.label278.Text = "Homing:";
+            // 
+            // label279
+            // 
+            this.label279.AutoSize = true;
+            this.label279.Location = new System.Drawing.Point(9, 258);
+            this.label279.Name = "label279";
+            this.label279.Size = new System.Drawing.Size(103, 17);
+            this.label279.TabIndex = 134;
+            this.label279.Tag = "https://liteplacer.com/motors-setup/";
+            this.label279.Text = "Homing speed:";
+            // 
+            // MZCNCYHomingBackoff_maskedTextBox
+            // 
+            this.MZCNCYHomingBackoff_maskedTextBox.Location = new System.Drawing.Point(93, 255);
+            this.MZCNCYHomingBackoff_maskedTextBox.Mask = "99999";
+            this.MZCNCYHomingBackoff_maskedTextBox.Name = "MZCNCYHomingBackoff_maskedTextBox";
+            this.MZCNCYHomingBackoff_maskedTextBox.PromptChar = ' ';
+            this.MZCNCYHomingBackoff_maskedTextBox.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.MZCNCYHomingBackoff_maskedTextBox.Size = new System.Drawing.Size(54, 23);
+            this.MZCNCYHomingBackoff_maskedTextBox.TabIndex = 135;
+            this.MZCNCYHomingBackoff_maskedTextBox.Tag = "";
+            this.MZCNCYHomingBackoff_maskedTextBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.MZCNCYHomingBackoff_maskedTextBox.TextMaskFormat = System.Windows.Forms.MaskFormat.ExcludePromptAndLiterals;
+            // 
+            // label280
+            // 
+            this.label280.AutoSize = true;
+            this.label280.Location = new System.Drawing.Point(153, 258);
+            this.label280.Name = "label280";
+            this.label280.Size = new System.Drawing.Size(56, 17);
+            this.label280.TabIndex = 133;
+            this.label280.Tag = "";
+            this.label280.Text = "mm/min";
+            // 
+            // label281
+            // 
+            this.label281.AutoSize = true;
+            this.label281.Location = new System.Drawing.Point(153, 204);
+            this.label281.Name = "label281";
+            this.label281.Size = new System.Drawing.Size(28, 17);
+            this.label281.TabIndex = 132;
+            this.label281.Text = "mA";
+            // 
+            // label282
+            // 
+            this.label282.AutoSize = true;
+            this.label282.Location = new System.Drawing.Point(43, 204);
+            this.label282.Name = "label282";
+            this.label282.Size = new System.Drawing.Size(59, 17);
+            this.label282.TabIndex = 131;
+            this.label282.Text = "Current:";
+            // 
+            // MZCNCYCurrent_maskedTextBox
+            // 
+            this.MZCNCYCurrent_maskedTextBox.Location = new System.Drawing.Point(93, 201);
+            this.MZCNCYCurrent_maskedTextBox.Mask = "99999";
+            this.MZCNCYCurrent_maskedTextBox.Name = "MZCNCYCurrent_maskedTextBox";
+            this.MZCNCYCurrent_maskedTextBox.PromptChar = ' ';
+            this.MZCNCYCurrent_maskedTextBox.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.MZCNCYCurrent_maskedTextBox.Size = new System.Drawing.Size(54, 23);
+            this.MZCNCYCurrent_maskedTextBox.TabIndex = 130;
+            this.MZCNCYCurrent_maskedTextBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.MZCNCYCurrent_maskedTextBox.TextMaskFormat = System.Windows.Forms.MaskFormat.ExcludePromptAndLiterals;
+            // 
+            // MZCNCYtravelPerRev_textBox
+            // 
+            this.MZCNCYtravelPerRev_textBox.Location = new System.Drawing.Point(93, 175);
+            this.MZCNCYtravelPerRev_textBox.Name = "MZCNCYtravelPerRev_textBox";
+            this.MZCNCYtravelPerRev_textBox.Size = new System.Drawing.Size(54, 23);
+            this.MZCNCYtravelPerRev_textBox.TabIndex = 121;
+            this.MZCNCYtravelPerRev_textBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            // 
+            // MZCNCYinterpolate_checkBox
+            // 
+            this.MZCNCYinterpolate_checkBox.AutoSize = true;
+            this.MZCNCYinterpolate_checkBox.Location = new System.Drawing.Point(193, 121);
+            this.MZCNCYinterpolate_checkBox.Name = "MZCNCYinterpolate_checkBox";
+            this.MZCNCYinterpolate_checkBox.Size = new System.Drawing.Size(97, 21);
+            this.MZCNCYinterpolate_checkBox.TabIndex = 129;
+            this.MZCNCYinterpolate_checkBox.Text = "Interpolate";
+            this.toolTip1.SetToolTip(this.MZCNCYinterpolate_checkBox, "Interpolates 16x microstepping to 256x");
+            this.MZCNCYinterpolate_checkBox.UseVisualStyleBackColor = true;
+            // 
+            // label283
+            // 
+            this.label283.AutoSize = true;
+            this.label283.Location = new System.Drawing.Point(8, 178);
+            this.label283.Name = "label283";
+            this.label283.Size = new System.Drawing.Size(105, 17);
+            this.label283.TabIndex = 126;
+            this.label283.Text = "Travel per rev.:";
+            // 
+            // label284
+            // 
+            this.label284.AutoSize = true;
+            this.label284.Location = new System.Drawing.Point(153, 178);
+            this.label284.Name = "label284";
+            this.label284.Size = new System.Drawing.Size(30, 17);
+            this.label284.TabIndex = 125;
+            this.label284.Text = "mm";
+            // 
+            // MZCNCYdeg18_radioButton
+            // 
+            this.MZCNCYdeg18_radioButton.AutoSize = true;
+            this.MZCNCYdeg18_radioButton.Location = new System.Drawing.Point(163, 150);
+            this.MZCNCYdeg18_radioButton.Name = "MZCNCYdeg18_radioButton";
+            this.MZCNCYdeg18_radioButton.Size = new System.Drawing.Size(81, 21);
+            this.MZCNCYdeg18_radioButton.TabIndex = 128;
+            this.MZCNCYdeg18_radioButton.TabStop = true;
+            this.MZCNCYdeg18_radioButton.Text = "1.8 deg.";
+            this.MZCNCYdeg18_radioButton.UseVisualStyleBackColor = true;
+            // 
+            // MZCNCYdeg09_radioButton
+            // 
+            this.MZCNCYdeg09_radioButton.AutoSize = true;
+            this.MZCNCYdeg09_radioButton.Location = new System.Drawing.Point(93, 150);
+            this.MZCNCYdeg09_radioButton.Name = "MZCNCYdeg09_radioButton";
+            this.MZCNCYdeg09_radioButton.Size = new System.Drawing.Size(81, 21);
+            this.MZCNCYdeg09_radioButton.TabIndex = 127;
+            this.MZCNCYdeg09_radioButton.TabStop = true;
+            this.MZCNCYdeg09_radioButton.Text = "0.9 deg.";
+            this.MZCNCYdeg09_radioButton.UseVisualStyleBackColor = true;
+            // 
+            // label285
+            // 
+            this.label285.AutoSize = true;
+            this.label285.Location = new System.Drawing.Point(46, 33);
+            this.label285.Name = "label285";
+            this.label285.Size = new System.Drawing.Size(53, 17);
+            this.label285.TabIndex = 115;
+            this.label285.Text = "Speed:";
+            // 
+            // label286
+            // 
+            this.label286.AutoSize = true;
+            this.label286.Location = new System.Drawing.Point(142, 33);
+            this.label286.Name = "label286";
+            this.label286.Size = new System.Drawing.Size(56, 17);
+            this.label286.TabIndex = 114;
+            this.label286.Text = "mm/min";
+            // 
+            // label287
+            // 
+            this.label287.AutoSize = true;
+            this.label287.Location = new System.Drawing.Point(26, 152);
+            this.label287.Name = "label287";
+            this.label287.Size = new System.Drawing.Size(80, 17);
+            this.label287.TabIndex = 124;
+            this.label287.Text = "Step angle:";
+            // 
+            // MZCNCYacceleration_maskedTextBox
+            // 
+            this.MZCNCYacceleration_maskedTextBox.Location = new System.Drawing.Point(93, 56);
+            this.MZCNCYacceleration_maskedTextBox.Name = "MZCNCYacceleration_maskedTextBox";
+            this.MZCNCYacceleration_maskedTextBox.PromptChar = ' ';
+            this.MZCNCYacceleration_maskedTextBox.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.MZCNCYacceleration_maskedTextBox.Size = new System.Drawing.Size(43, 23);
+            this.MZCNCYacceleration_maskedTextBox.TabIndex = 116;
+            this.MZCNCYacceleration_maskedTextBox.Tag = "121";
+            this.MZCNCYacceleration_maskedTextBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.MZCNCYacceleration_maskedTextBox.TextMaskFormat = System.Windows.Forms.MaskFormat.ExcludePromptAndLiterals;
+            // 
+            // label288
+            // 
+            this.label288.AutoSize = true;
+            this.label288.Location = new System.Drawing.Point(142, 59);
+            this.label288.Name = "label288";
+            this.label288.Size = new System.Drawing.Size(56, 17);
+            this.label288.TabIndex = 117;
+            this.label288.Text = "mm/s^2";
+            // 
+            // MZCNCYspeed_maskedTextBox
+            // 
+            this.MZCNCYspeed_maskedTextBox.Location = new System.Drawing.Point(93, 30);
+            this.MZCNCYspeed_maskedTextBox.Name = "MZCNCYspeed_maskedTextBox";
+            this.MZCNCYspeed_maskedTextBox.PromptChar = ' ';
+            this.MZCNCYspeed_maskedTextBox.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.MZCNCYspeed_maskedTextBox.Size = new System.Drawing.Size(43, 23);
+            this.MZCNCYspeed_maskedTextBox.TabIndex = 119;
+            this.MZCNCYspeed_maskedTextBox.Tag = "111";
+            this.MZCNCYspeed_maskedTextBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.MZCNCYspeed_maskedTextBox.TextMaskFormat = System.Windows.Forms.MaskFormat.ExcludePromptAndLiterals;
+            // 
+            // label289
+            // 
+            this.label289.AutoSize = true;
+            this.label289.Location = new System.Drawing.Point(123, 123);
+            this.label289.Name = "label289";
+            this.label289.Size = new System.Drawing.Size(84, 17);
+            this.label289.TabIndex = 120;
+            this.label289.Text = "[1, 2, 4, 8...]";
+            // 
+            // MZCNCYmicrosteps_maskedTextBox
+            // 
+            this.MZCNCYmicrosteps_maskedTextBox.Location = new System.Drawing.Point(93, 120);
+            this.MZCNCYmicrosteps_maskedTextBox.Mask = "99999";
+            this.MZCNCYmicrosteps_maskedTextBox.Name = "MZCNCYmicrosteps_maskedTextBox";
+            this.MZCNCYmicrosteps_maskedTextBox.PromptChar = ' ';
+            this.MZCNCYmicrosteps_maskedTextBox.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.MZCNCYmicrosteps_maskedTextBox.Size = new System.Drawing.Size(24, 23);
+            this.MZCNCYmicrosteps_maskedTextBox.TabIndex = 123;
+            this.MZCNCYmicrosteps_maskedTextBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.MZCNCYmicrosteps_maskedTextBox.TextMaskFormat = System.Windows.Forms.MaskFormat.ExcludePromptAndLiterals;
+            // 
+            // label290
+            // 
+            this.label290.AutoSize = true;
+            this.label290.Location = new System.Drawing.Point(18, 59);
+            this.label290.Name = "label290";
+            this.label290.Size = new System.Drawing.Size(90, 17);
+            this.label290.TabIndex = 118;
+            this.label290.Text = "Acceleration:";
+            // 
+            // label291
+            // 
+            this.label291.AutoSize = true;
+            this.label291.Location = new System.Drawing.Point(26, 123);
+            this.label291.Name = "label291";
+            this.label291.Size = new System.Drawing.Size(80, 17);
+            this.label291.TabIndex = 122;
+            this.label291.Text = "Microsteps:";
+            // 
+            // MZCNCZ_tabPage
+            // 
+            this.MZCNCZ_tabPage.Controls.Add(this.label292);
+            this.MZCNCZ_tabPage.Controls.Add(this.label293);
+            this.MZCNCZ_tabPage.Controls.Add(this.MZCNCZhomingSpeed_maskedTextBox);
+            this.MZCNCZ_tabPage.Controls.Add(this.label294);
+            this.MZCNCZ_tabPage.Controls.Add(this.label295);
+            this.MZCNCZ_tabPage.Controls.Add(this.MZCNCZHomingBackoff_maskedTextBox);
+            this.MZCNCZ_tabPage.Controls.Add(this.label296);
+            this.MZCNCZ_tabPage.Controls.Add(this.label297);
+            this.MZCNCZ_tabPage.Controls.Add(this.label298);
+            this.MZCNCZ_tabPage.Controls.Add(this.label299);
+            this.MZCNCZ_tabPage.Controls.Add(this.label300);
+            this.MZCNCZ_tabPage.Controls.Add(this.MZCNCZCurrent_maskedTextBox);
+            this.MZCNCZ_tabPage.Controls.Add(this.MZCNCZtravelPerRev_textBox);
+            this.MZCNCZ_tabPage.Controls.Add(this.MZCNCZinterpolate_checkBox);
+            this.MZCNCZ_tabPage.Controls.Add(this.label301);
+            this.MZCNCZ_tabPage.Controls.Add(this.label302);
+            this.MZCNCZ_tabPage.Controls.Add(this.MZCNCZdeg18_radioButton);
+            this.MZCNCZ_tabPage.Controls.Add(this.MZCNCZdeg09_radioButton);
+            this.MZCNCZ_tabPage.Controls.Add(this.label303);
+            this.MZCNCZ_tabPage.Controls.Add(this.label304);
+            this.MZCNCZ_tabPage.Controls.Add(this.label305);
+            this.MZCNCZ_tabPage.Controls.Add(this.MZCNCZacceleration_maskedTextBox);
+            this.MZCNCZ_tabPage.Controls.Add(this.label306);
+            this.MZCNCZ_tabPage.Controls.Add(this.MZCNCZspeed_maskedTextBox);
+            this.MZCNCZ_tabPage.Controls.Add(this.label307);
+            this.MZCNCZ_tabPage.Controls.Add(this.MZCNCZmicrosteps_maskedTextBox);
+            this.MZCNCZ_tabPage.Controls.Add(this.label308);
+            this.MZCNCZ_tabPage.Controls.Add(this.label309);
+            this.MZCNCZ_tabPage.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.MZCNCZ_tabPage.Location = new System.Drawing.Point(4, 34);
+            this.MZCNCZ_tabPage.Name = "MZCNCZ_tabPage";
+            this.MZCNCZ_tabPage.Padding = new System.Windows.Forms.Padding(3);
+            this.MZCNCZ_tabPage.Size = new System.Drawing.Size(317, 324);
+            this.MZCNCZ_tabPage.TabIndex = 2;
+            this.MZCNCZ_tabPage.Text = "Z";
+            this.MZCNCZ_tabPage.UseVisualStyleBackColor = true;
+            // 
+            // label292
+            // 
+            this.label292.AutoSize = true;
+            this.label292.Location = new System.Drawing.Point(2, 284);
+            this.label292.Name = "label292";
+            this.label292.Size = new System.Drawing.Size(110, 17);
+            this.label292.TabIndex = 160;
+            this.label292.Tag = "";
+            this.label292.Text = "Homing backoff:";
+            // 
+            // label293
+            // 
+            this.label293.AutoSize = true;
+            this.label293.Location = new System.Drawing.Point(153, 284);
+            this.label293.Name = "label293";
+            this.label293.Size = new System.Drawing.Size(30, 17);
+            this.label293.TabIndex = 159;
+            this.label293.Tag = "";
+            this.label293.Text = "mm";
+            // 
+            // MZCNCZhomingSpeed_maskedTextBox
+            // 
+            this.MZCNCZhomingSpeed_maskedTextBox.Location = new System.Drawing.Point(93, 281);
+            this.MZCNCZhomingSpeed_maskedTextBox.Mask = "99999";
+            this.MZCNCZhomingSpeed_maskedTextBox.Name = "MZCNCZhomingSpeed_maskedTextBox";
+            this.MZCNCZhomingSpeed_maskedTextBox.PromptChar = ' ';
+            this.MZCNCZhomingSpeed_maskedTextBox.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.MZCNCZhomingSpeed_maskedTextBox.Size = new System.Drawing.Size(54, 23);
+            this.MZCNCZhomingSpeed_maskedTextBox.TabIndex = 158;
+            this.MZCNCZhomingSpeed_maskedTextBox.Tag = "";
+            this.MZCNCZhomingSpeed_maskedTextBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.MZCNCZhomingSpeed_maskedTextBox.TextMaskFormat = System.Windows.Forms.MaskFormat.ExcludePromptAndLiterals;
+            // 
+            // label294
+            // 
+            this.label294.AutoSize = true;
+            this.label294.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label294.Location = new System.Drawing.Point(6, 230);
+            this.label294.Name = "label294";
+            this.label294.Size = new System.Drawing.Size(79, 20);
+            this.label294.TabIndex = 157;
+            this.label294.Text = "Homing:";
+            // 
+            // label295
+            // 
+            this.label295.AutoSize = true;
+            this.label295.Location = new System.Drawing.Point(9, 258);
+            this.label295.Name = "label295";
+            this.label295.Size = new System.Drawing.Size(103, 17);
+            this.label295.TabIndex = 155;
+            this.label295.Tag = "https://liteplacer.com/motors-setup/";
+            this.label295.Text = "Homing speed:";
+            // 
+            // MZCNCZHomingBackoff_maskedTextBox
+            // 
+            this.MZCNCZHomingBackoff_maskedTextBox.Location = new System.Drawing.Point(93, 255);
+            this.MZCNCZHomingBackoff_maskedTextBox.Mask = "99999";
+            this.MZCNCZHomingBackoff_maskedTextBox.Name = "MZCNCZHomingBackoff_maskedTextBox";
+            this.MZCNCZHomingBackoff_maskedTextBox.PromptChar = ' ';
+            this.MZCNCZHomingBackoff_maskedTextBox.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.MZCNCZHomingBackoff_maskedTextBox.Size = new System.Drawing.Size(54, 23);
+            this.MZCNCZHomingBackoff_maskedTextBox.TabIndex = 156;
+            this.MZCNCZHomingBackoff_maskedTextBox.Tag = "";
+            this.MZCNCZHomingBackoff_maskedTextBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.MZCNCZHomingBackoff_maskedTextBox.TextMaskFormat = System.Windows.Forms.MaskFormat.ExcludePromptAndLiterals;
+            // 
+            // label296
+            // 
+            this.label296.AutoSize = true;
+            this.label296.Location = new System.Drawing.Point(153, 258);
+            this.label296.Name = "label296";
+            this.label296.Size = new System.Drawing.Size(56, 17);
+            this.label296.TabIndex = 154;
+            this.label296.Tag = "";
+            this.label296.Text = "mm/min";
+            // 
+            // label297
+            // 
+            this.label297.AutoSize = true;
+            this.label297.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label297.Location = new System.Drawing.Point(6, 94);
+            this.label297.Name = "label297";
+            this.label297.Size = new System.Drawing.Size(63, 20);
+            this.label297.TabIndex = 153;
+            this.label297.Text = "Motor:";
+            // 
+            // label298
+            // 
+            this.label298.AutoSize = true;
+            this.label298.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label298.Location = new System.Drawing.Point(6, 8);
+            this.label298.Name = "label298";
+            this.label298.Size = new System.Drawing.Size(67, 20);
+            this.label298.TabIndex = 152;
+            this.label298.Text = "Speed:";
+            // 
+            // label299
+            // 
+            this.label299.AutoSize = true;
+            this.label299.Location = new System.Drawing.Point(153, 204);
+            this.label299.Name = "label299";
+            this.label299.Size = new System.Drawing.Size(28, 17);
+            this.label299.TabIndex = 151;
+            this.label299.Text = "mA";
+            // 
+            // label300
+            // 
+            this.label300.AutoSize = true;
+            this.label300.Location = new System.Drawing.Point(43, 204);
+            this.label300.Name = "label300";
+            this.label300.Size = new System.Drawing.Size(59, 17);
+            this.label300.TabIndex = 150;
+            this.label300.Text = "Current:";
+            // 
+            // MZCNCZCurrent_maskedTextBox
+            // 
+            this.MZCNCZCurrent_maskedTextBox.Location = new System.Drawing.Point(93, 201);
+            this.MZCNCZCurrent_maskedTextBox.Mask = "99999";
+            this.MZCNCZCurrent_maskedTextBox.Name = "MZCNCZCurrent_maskedTextBox";
+            this.MZCNCZCurrent_maskedTextBox.PromptChar = ' ';
+            this.MZCNCZCurrent_maskedTextBox.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.MZCNCZCurrent_maskedTextBox.Size = new System.Drawing.Size(54, 23);
+            this.MZCNCZCurrent_maskedTextBox.TabIndex = 149;
+            this.MZCNCZCurrent_maskedTextBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.MZCNCZCurrent_maskedTextBox.TextMaskFormat = System.Windows.Forms.MaskFormat.ExcludePromptAndLiterals;
+            // 
+            // MZCNCZtravelPerRev_textBox
+            // 
+            this.MZCNCZtravelPerRev_textBox.Location = new System.Drawing.Point(93, 175);
+            this.MZCNCZtravelPerRev_textBox.Name = "MZCNCZtravelPerRev_textBox";
+            this.MZCNCZtravelPerRev_textBox.Size = new System.Drawing.Size(54, 23);
+            this.MZCNCZtravelPerRev_textBox.TabIndex = 140;
+            this.MZCNCZtravelPerRev_textBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            // 
+            // MZCNCZinterpolate_checkBox
+            // 
+            this.MZCNCZinterpolate_checkBox.AutoSize = true;
+            this.MZCNCZinterpolate_checkBox.Location = new System.Drawing.Point(193, 121);
+            this.MZCNCZinterpolate_checkBox.Name = "MZCNCZinterpolate_checkBox";
+            this.MZCNCZinterpolate_checkBox.Size = new System.Drawing.Size(97, 21);
+            this.MZCNCZinterpolate_checkBox.TabIndex = 148;
+            this.MZCNCZinterpolate_checkBox.Text = "Interpolate";
+            this.toolTip1.SetToolTip(this.MZCNCZinterpolate_checkBox, "Interpolates 16x microstepping to 256x");
+            this.MZCNCZinterpolate_checkBox.UseVisualStyleBackColor = true;
+            // 
+            // label301
+            // 
+            this.label301.AutoSize = true;
+            this.label301.Location = new System.Drawing.Point(8, 178);
+            this.label301.Name = "label301";
+            this.label301.Size = new System.Drawing.Size(105, 17);
+            this.label301.TabIndex = 145;
+            this.label301.Text = "Travel per rev.:";
+            // 
+            // label302
+            // 
+            this.label302.AutoSize = true;
+            this.label302.Location = new System.Drawing.Point(153, 178);
+            this.label302.Name = "label302";
+            this.label302.Size = new System.Drawing.Size(30, 17);
+            this.label302.TabIndex = 144;
+            this.label302.Text = "mm";
+            // 
+            // MZCNCZdeg18_radioButton
+            // 
+            this.MZCNCZdeg18_radioButton.AutoSize = true;
+            this.MZCNCZdeg18_radioButton.Location = new System.Drawing.Point(163, 150);
+            this.MZCNCZdeg18_radioButton.Name = "MZCNCZdeg18_radioButton";
+            this.MZCNCZdeg18_radioButton.Size = new System.Drawing.Size(81, 21);
+            this.MZCNCZdeg18_radioButton.TabIndex = 147;
+            this.MZCNCZdeg18_radioButton.TabStop = true;
+            this.MZCNCZdeg18_radioButton.Text = "1.8 deg.";
+            this.MZCNCZdeg18_radioButton.UseVisualStyleBackColor = true;
+            // 
+            // MZCNCZdeg09_radioButton
+            // 
+            this.MZCNCZdeg09_radioButton.AutoSize = true;
+            this.MZCNCZdeg09_radioButton.Location = new System.Drawing.Point(93, 150);
+            this.MZCNCZdeg09_radioButton.Name = "MZCNCZdeg09_radioButton";
+            this.MZCNCZdeg09_radioButton.Size = new System.Drawing.Size(81, 21);
+            this.MZCNCZdeg09_radioButton.TabIndex = 146;
+            this.MZCNCZdeg09_radioButton.TabStop = true;
+            this.MZCNCZdeg09_radioButton.Text = "0.9 deg.";
+            this.MZCNCZdeg09_radioButton.UseVisualStyleBackColor = true;
+            // 
+            // label303
+            // 
+            this.label303.AutoSize = true;
+            this.label303.Location = new System.Drawing.Point(46, 33);
+            this.label303.Name = "label303";
+            this.label303.Size = new System.Drawing.Size(53, 17);
+            this.label303.TabIndex = 134;
+            this.label303.Text = "Speed:";
+            // 
+            // label304
+            // 
+            this.label304.AutoSize = true;
+            this.label304.Location = new System.Drawing.Point(142, 33);
+            this.label304.Name = "label304";
+            this.label304.Size = new System.Drawing.Size(56, 17);
+            this.label304.TabIndex = 133;
+            this.label304.Text = "mm/min";
+            // 
+            // label305
+            // 
+            this.label305.AutoSize = true;
+            this.label305.Location = new System.Drawing.Point(26, 152);
+            this.label305.Name = "label305";
+            this.label305.Size = new System.Drawing.Size(80, 17);
+            this.label305.TabIndex = 143;
+            this.label305.Text = "Step angle:";
+            // 
+            // MZCNCZacceleration_maskedTextBox
+            // 
+            this.MZCNCZacceleration_maskedTextBox.Location = new System.Drawing.Point(93, 56);
+            this.MZCNCZacceleration_maskedTextBox.Name = "MZCNCZacceleration_maskedTextBox";
+            this.MZCNCZacceleration_maskedTextBox.PromptChar = ' ';
+            this.MZCNCZacceleration_maskedTextBox.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.MZCNCZacceleration_maskedTextBox.Size = new System.Drawing.Size(43, 23);
+            this.MZCNCZacceleration_maskedTextBox.TabIndex = 135;
+            this.MZCNCZacceleration_maskedTextBox.Tag = "122";
+            this.MZCNCZacceleration_maskedTextBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.MZCNCZacceleration_maskedTextBox.TextMaskFormat = System.Windows.Forms.MaskFormat.ExcludePromptAndLiterals;
+            // 
+            // label306
+            // 
+            this.label306.AutoSize = true;
+            this.label306.Location = new System.Drawing.Point(142, 59);
+            this.label306.Name = "label306";
+            this.label306.Size = new System.Drawing.Size(56, 17);
+            this.label306.TabIndex = 136;
+            this.label306.Text = "mm/s^2";
+            // 
+            // MZCNCZspeed_maskedTextBox
+            // 
+            this.MZCNCZspeed_maskedTextBox.Location = new System.Drawing.Point(93, 30);
+            this.MZCNCZspeed_maskedTextBox.Name = "MZCNCZspeed_maskedTextBox";
+            this.MZCNCZspeed_maskedTextBox.PromptChar = ' ';
+            this.MZCNCZspeed_maskedTextBox.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.MZCNCZspeed_maskedTextBox.Size = new System.Drawing.Size(43, 23);
+            this.MZCNCZspeed_maskedTextBox.TabIndex = 138;
+            this.MZCNCZspeed_maskedTextBox.Tag = "112";
+            this.MZCNCZspeed_maskedTextBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.MZCNCZspeed_maskedTextBox.TextMaskFormat = System.Windows.Forms.MaskFormat.ExcludePromptAndLiterals;
+            // 
+            // label307
+            // 
+            this.label307.AutoSize = true;
+            this.label307.Location = new System.Drawing.Point(123, 123);
+            this.label307.Name = "label307";
+            this.label307.Size = new System.Drawing.Size(84, 17);
+            this.label307.TabIndex = 139;
+            this.label307.Text = "[1, 2, 4, 8...]";
+            // 
+            // MZCNCZmicrosteps_maskedTextBox
+            // 
+            this.MZCNCZmicrosteps_maskedTextBox.Location = new System.Drawing.Point(93, 120);
+            this.MZCNCZmicrosteps_maskedTextBox.Mask = "99999";
+            this.MZCNCZmicrosteps_maskedTextBox.Name = "MZCNCZmicrosteps_maskedTextBox";
+            this.MZCNCZmicrosteps_maskedTextBox.PromptChar = ' ';
+            this.MZCNCZmicrosteps_maskedTextBox.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.MZCNCZmicrosteps_maskedTextBox.Size = new System.Drawing.Size(24, 23);
+            this.MZCNCZmicrosteps_maskedTextBox.TabIndex = 142;
+            this.MZCNCZmicrosteps_maskedTextBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.MZCNCZmicrosteps_maskedTextBox.TextMaskFormat = System.Windows.Forms.MaskFormat.ExcludePromptAndLiterals;
+            // 
+            // label308
+            // 
+            this.label308.AutoSize = true;
+            this.label308.Location = new System.Drawing.Point(18, 59);
+            this.label308.Name = "label308";
+            this.label308.Size = new System.Drawing.Size(90, 17);
+            this.label308.TabIndex = 137;
+            this.label308.Text = "Acceleration:";
+            // 
+            // label309
+            // 
+            this.label309.AutoSize = true;
+            this.label309.Location = new System.Drawing.Point(26, 123);
+            this.label309.Name = "label309";
+            this.label309.Size = new System.Drawing.Size(80, 17);
+            this.label309.TabIndex = 141;
+            this.label309.Text = "Microsteps:";
+            // 
+            // MZCNCA_tabPage
+            // 
+            this.MZCNCA_tabPage.Controls.Add(this.label310);
+            this.MZCNCA_tabPage.Controls.Add(this.label311);
+            this.MZCNCA_tabPage.Controls.Add(this.label312);
+            this.MZCNCA_tabPage.Controls.Add(this.label313);
+            this.MZCNCA_tabPage.Controls.Add(this.MZCNCACurrent_maskedTextBox);
+            this.MZCNCA_tabPage.Controls.Add(this.MZCNCAtravelPerRev_textBox);
+            this.MZCNCA_tabPage.Controls.Add(this.MZCNCAinterpolate_checkBox);
+            this.MZCNCA_tabPage.Controls.Add(this.label314);
+            this.MZCNCA_tabPage.Controls.Add(this.label315);
+            this.MZCNCA_tabPage.Controls.Add(this.MZCNCAdeg18_radioButton);
+            this.MZCNCA_tabPage.Controls.Add(this.MZCNCAdeg09_radioButton);
+            this.MZCNCA_tabPage.Controls.Add(this.label316);
+            this.MZCNCA_tabPage.Controls.Add(this.label317);
+            this.MZCNCA_tabPage.Controls.Add(this.label318);
+            this.MZCNCA_tabPage.Controls.Add(this.MZCNCAacceleration_maskedTextBox);
+            this.MZCNCA_tabPage.Controls.Add(this.label319);
+            this.MZCNCA_tabPage.Controls.Add(this.MZCNCAspeed_maskedTextBox);
+            this.MZCNCA_tabPage.Controls.Add(this.label320);
+            this.MZCNCA_tabPage.Controls.Add(this.MZCNCAmicrosteps_maskedTextBox);
+            this.MZCNCA_tabPage.Controls.Add(this.label321);
+            this.MZCNCA_tabPage.Controls.Add(this.label322);
+            this.MZCNCA_tabPage.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.MZCNCA_tabPage.Location = new System.Drawing.Point(4, 34);
+            this.MZCNCA_tabPage.Name = "MZCNCA_tabPage";
+            this.MZCNCA_tabPage.Padding = new System.Windows.Forms.Padding(3);
+            this.MZCNCA_tabPage.Size = new System.Drawing.Size(317, 324);
+            this.MZCNCA_tabPage.TabIndex = 3;
+            this.MZCNCA_tabPage.Text = "A";
+            this.MZCNCA_tabPage.UseVisualStyleBackColor = true;
+            // 
+            // label310
+            // 
+            this.label310.AutoSize = true;
+            this.label310.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label310.Location = new System.Drawing.Point(6, 94);
+            this.label310.Name = "label310";
+            this.label310.Size = new System.Drawing.Size(63, 20);
+            this.label310.TabIndex = 154;
+            this.label310.Text = "Motor:";
+            // 
+            // label311
+            // 
+            this.label311.AutoSize = true;
+            this.label311.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label311.Location = new System.Drawing.Point(6, 8);
+            this.label311.Name = "label311";
+            this.label311.Size = new System.Drawing.Size(67, 20);
+            this.label311.TabIndex = 152;
+            this.label311.Text = "Speed:";
+            // 
+            // MZCNCAinterpolate_checkBox
+            // 
+            this.MZCNCAinterpolate_checkBox.AutoSize = true;
+            this.MZCNCAinterpolate_checkBox.Location = new System.Drawing.Point(193, 121);
+            this.MZCNCAinterpolate_checkBox.Name = "MZCNCAinterpolate_checkBox";
+            this.MZCNCAinterpolate_checkBox.Size = new System.Drawing.Size(97, 21);
+            this.MZCNCAinterpolate_checkBox.TabIndex = 148;
+            this.MZCNCAinterpolate_checkBox.Text = "Interpolate";
+            this.toolTip1.SetToolTip(this.MZCNCAinterpolate_checkBox, "Interpolates 16x microstepping to 256x");
+            this.MZCNCAinterpolate_checkBox.UseVisualStyleBackColor = true;
+            // 
+            // label312
+            // 
+            this.label312.AutoSize = true;
+            this.label312.Location = new System.Drawing.Point(200, 211);
+            this.label312.Name = "label312";
+            this.label312.Size = new System.Drawing.Size(28, 17);
+            this.label312.TabIndex = 151;
+            this.label312.Text = "mA";
+            // 
+            // label313
+            // 
+            this.label313.AutoSize = true;
+            this.label313.Location = new System.Drawing.Point(88, 211);
+            this.label313.Name = "label313";
+            this.label313.Size = new System.Drawing.Size(59, 17);
+            this.label313.TabIndex = 150;
+            this.label313.Text = "Current:";
+            // 
+            // MZCNCACurrent_maskedTextBox
+            // 
+            this.MZCNCACurrent_maskedTextBox.Location = new System.Drawing.Point(140, 208);
+            this.MZCNCACurrent_maskedTextBox.Mask = "99999";
+            this.MZCNCACurrent_maskedTextBox.Name = "MZCNCACurrent_maskedTextBox";
+            this.MZCNCACurrent_maskedTextBox.PromptChar = ' ';
+            this.MZCNCACurrent_maskedTextBox.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.MZCNCACurrent_maskedTextBox.Size = new System.Drawing.Size(54, 23);
+            this.MZCNCACurrent_maskedTextBox.TabIndex = 149;
+            this.MZCNCACurrent_maskedTextBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.MZCNCACurrent_maskedTextBox.TextMaskFormat = System.Windows.Forms.MaskFormat.ExcludePromptAndLiterals;
+            // 
+            // MZCNCAtravelPerRev_textBox
+            // 
+            this.MZCNCAtravelPerRev_textBox.Location = new System.Drawing.Point(140, 180);
+            this.MZCNCAtravelPerRev_textBox.Name = "MZCNCAtravelPerRev_textBox";
+            this.MZCNCAtravelPerRev_textBox.Size = new System.Drawing.Size(54, 23);
+            this.MZCNCAtravelPerRev_textBox.TabIndex = 140;
+            this.MZCNCAtravelPerRev_textBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            // 
+            // label314
+            // 
+            this.label314.AutoSize = true;
+            this.label314.Location = new System.Drawing.Point(26, 183);
+            this.label314.Name = "label314";
+            this.label314.Size = new System.Drawing.Size(145, 17);
+            this.label314.TabIndex = 145;
+            this.label314.Text = "Angle per motor  rev.:";
+            // 
+            // label315
+            // 
+            this.label315.AutoSize = true;
+            this.label315.Location = new System.Drawing.Point(200, 183);
+            this.label315.Name = "label315";
+            this.label315.Size = new System.Drawing.Size(60, 17);
+            this.label315.TabIndex = 144;
+            this.label315.Text = "degrees";
+            // 
+            // MZCNCAdeg18_radioButton
+            // 
+            this.MZCNCAdeg18_radioButton.AutoSize = true;
+            this.MZCNCAdeg18_radioButton.Location = new System.Drawing.Point(163, 150);
+            this.MZCNCAdeg18_radioButton.Name = "MZCNCAdeg18_radioButton";
+            this.MZCNCAdeg18_radioButton.Size = new System.Drawing.Size(81, 21);
+            this.MZCNCAdeg18_radioButton.TabIndex = 147;
+            this.MZCNCAdeg18_radioButton.TabStop = true;
+            this.MZCNCAdeg18_radioButton.Text = "1.8 deg.";
+            this.MZCNCAdeg18_radioButton.UseVisualStyleBackColor = true;
+            // 
+            // MZCNCAdeg09_radioButton
+            // 
+            this.MZCNCAdeg09_radioButton.AutoSize = true;
+            this.MZCNCAdeg09_radioButton.Location = new System.Drawing.Point(93, 150);
+            this.MZCNCAdeg09_radioButton.Name = "MZCNCAdeg09_radioButton";
+            this.MZCNCAdeg09_radioButton.Size = new System.Drawing.Size(81, 21);
+            this.MZCNCAdeg09_radioButton.TabIndex = 146;
+            this.MZCNCAdeg09_radioButton.TabStop = true;
+            this.MZCNCAdeg09_radioButton.Text = "0.9 deg.";
+            this.MZCNCAdeg09_radioButton.UseVisualStyleBackColor = true;
+            // 
+            // label316
+            // 
+            this.label316.AutoSize = true;
+            this.label316.Location = new System.Drawing.Point(46, 33);
+            this.label316.Name = "label316";
+            this.label316.Size = new System.Drawing.Size(53, 17);
+            this.label316.TabIndex = 134;
+            this.label316.Text = "Speed:";
+            // 
+            // label317
+            // 
+            this.label317.AutoSize = true;
+            this.label317.Location = new System.Drawing.Point(142, 33);
+            this.label317.Name = "label317";
+            this.label317.Size = new System.Drawing.Size(56, 17);
+            this.label317.TabIndex = 133;
+            this.label317.Text = "mm/min";
+            // 
+            // label318
+            // 
+            this.label318.AutoSize = true;
+            this.label318.Location = new System.Drawing.Point(26, 152);
+            this.label318.Name = "label318";
+            this.label318.Size = new System.Drawing.Size(80, 17);
+            this.label318.TabIndex = 143;
+            this.label318.Text = "Step angle:";
+            // 
+            // MZCNCAacceleration_maskedTextBox
+            // 
+            this.MZCNCAacceleration_maskedTextBox.Location = new System.Drawing.Point(93, 56);
+            this.MZCNCAacceleration_maskedTextBox.Name = "MZCNCAacceleration_maskedTextBox";
+            this.MZCNCAacceleration_maskedTextBox.PromptChar = ' ';
+            this.MZCNCAacceleration_maskedTextBox.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.MZCNCAacceleration_maskedTextBox.Size = new System.Drawing.Size(43, 23);
+            this.MZCNCAacceleration_maskedTextBox.TabIndex = 135;
+            this.MZCNCAacceleration_maskedTextBox.Tag = "123";
+            this.MZCNCAacceleration_maskedTextBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.MZCNCAacceleration_maskedTextBox.TextMaskFormat = System.Windows.Forms.MaskFormat.ExcludePromptAndLiterals;
+            // 
+            // label319
+            // 
+            this.label319.AutoSize = true;
+            this.label319.Location = new System.Drawing.Point(142, 59);
+            this.label319.Name = "label319";
+            this.label319.Size = new System.Drawing.Size(56, 17);
+            this.label319.TabIndex = 136;
+            this.label319.Text = "mm/s^2";
+            // 
+            // MZCNCAspeed_maskedTextBox
+            // 
+            this.MZCNCAspeed_maskedTextBox.Location = new System.Drawing.Point(93, 30);
+            this.MZCNCAspeed_maskedTextBox.Name = "MZCNCAspeed_maskedTextBox";
+            this.MZCNCAspeed_maskedTextBox.PromptChar = ' ';
+            this.MZCNCAspeed_maskedTextBox.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.MZCNCAspeed_maskedTextBox.Size = new System.Drawing.Size(43, 23);
+            this.MZCNCAspeed_maskedTextBox.TabIndex = 138;
+            this.MZCNCAspeed_maskedTextBox.Tag = "113";
+            this.MZCNCAspeed_maskedTextBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.MZCNCAspeed_maskedTextBox.TextMaskFormat = System.Windows.Forms.MaskFormat.ExcludePromptAndLiterals;
+            // 
+            // label320
+            // 
+            this.label320.AutoSize = true;
+            this.label320.Location = new System.Drawing.Point(123, 123);
+            this.label320.Name = "label320";
+            this.label320.Size = new System.Drawing.Size(84, 17);
+            this.label320.TabIndex = 139;
+            this.label320.Text = "[1, 2, 4, 8...]";
+            // 
+            // MZCNCAmicrosteps_maskedTextBox
+            // 
+            this.MZCNCAmicrosteps_maskedTextBox.Location = new System.Drawing.Point(93, 120);
+            this.MZCNCAmicrosteps_maskedTextBox.Mask = "99999";
+            this.MZCNCAmicrosteps_maskedTextBox.Name = "MZCNCAmicrosteps_maskedTextBox";
+            this.MZCNCAmicrosteps_maskedTextBox.PromptChar = ' ';
+            this.MZCNCAmicrosteps_maskedTextBox.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.MZCNCAmicrosteps_maskedTextBox.Size = new System.Drawing.Size(24, 23);
+            this.MZCNCAmicrosteps_maskedTextBox.TabIndex = 142;
+            this.MZCNCAmicrosteps_maskedTextBox.TextAlign = System.Windows.Forms.HorizontalAlignment.Right;
+            this.MZCNCAmicrosteps_maskedTextBox.TextMaskFormat = System.Windows.Forms.MaskFormat.ExcludePromptAndLiterals;
+            // 
+            // label321
+            // 
+            this.label321.AutoSize = true;
+            this.label321.Location = new System.Drawing.Point(18, 59);
+            this.label321.Name = "label321";
+            this.label321.Size = new System.Drawing.Size(90, 17);
+            this.label321.TabIndex = 137;
+            this.label321.Text = "Acceleration:";
+            // 
+            // label322
+            // 
+            this.label322.AutoSize = true;
+            this.label322.Location = new System.Drawing.Point(26, 123);
+            this.label322.Name = "label322";
+            this.label322.Size = new System.Drawing.Size(80, 17);
+            this.label322.TabIndex = 141;
+            this.label322.Text = "Microsteps:";
+            // 
             // Test_button1
             // 
             this.Test_button1.Location = new System.Drawing.Point(374, 475);
@@ -3461,7 +4801,7 @@ namespace LitePlacer
             this.SKR3Motors_tabControl.Controls.Add(this.tabPage3);
             this.SKR3Motors_tabControl.Controls.Add(this.tabPage4);
             this.SKR3Motors_tabControl.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.SKR3Motors_tabControl.Location = new System.Drawing.Point(744, 138);
+            this.SKR3Motors_tabControl.Location = new System.Drawing.Point(6, 191);
             this.SKR3Motors_tabControl.Name = "SKR3Motors_tabControl";
             this.SKR3Motors_tabControl.SelectedIndex = 0;
             this.SKR3Motors_tabControl.Size = new System.Drawing.Size(325, 362);
@@ -8229,14 +9569,14 @@ namespace LitePlacer
             | System.Windows.Forms.AnchorStyles.Right)));
             this.JobData_GridView.CellBorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.Raised;
             this.JobData_GridView.ClipboardCopyMode = System.Windows.Forms.DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
-            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle1.BackColor = System.Drawing.SystemColors.Control;
-            dataGridViewCellStyle1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            dataGridViewCellStyle1.ForeColor = System.Drawing.SystemColors.WindowText;
-            dataGridViewCellStyle1.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle1.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.JobData_GridView.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle1;
+            dataGridViewCellStyle3.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle3.BackColor = System.Drawing.SystemColors.Control;
+            dataGridViewCellStyle3.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            dataGridViewCellStyle3.ForeColor = System.Drawing.SystemColors.WindowText;
+            dataGridViewCellStyle3.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle3.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle3.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.JobData_GridView.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle3;
             this.JobData_GridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.JobData_GridView.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.JobDataValueColumn,
@@ -8352,14 +9692,14 @@ namespace LitePlacer
             | System.Windows.Forms.AnchorStyles.Right)));
             this.CadData_GridView.CellBorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.Raised;
             this.CadData_GridView.ClipboardCopyMode = System.Windows.Forms.DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
-            dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle2.BackColor = System.Drawing.SystemColors.Control;
-            dataGridViewCellStyle2.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            dataGridViewCellStyle2.ForeColor = System.Drawing.SystemColors.WindowText;
-            dataGridViewCellStyle2.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle2.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle2.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.CadData_GridView.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle2;
+            dataGridViewCellStyle4.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle4.BackColor = System.Drawing.SystemColors.Control;
+            dataGridViewCellStyle4.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            dataGridViewCellStyle4.ForeColor = System.Drawing.SystemColors.WindowText;
+            dataGridViewCellStyle4.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle4.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle4.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.CadData_GridView.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle4;
             this.CadData_GridView.ColumnHeadersHeight = 29;
             this.CadData_GridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
             this.CadData_GridView.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
@@ -8622,7 +9962,7 @@ namespace LitePlacer
             this.IntParameterDown10_button.Size = new System.Drawing.Size(20, 17);
             this.IntParameterDown10_button.TabIndex = 318;
             this.IntParameterDown10_button.Tag = "https://liteplacer.com/setup-video-processing-page/";
-            this.IntParameterDown10_button.Text = "▼";
+            this.IntParameterDown10_button.Text = "?";
             this.IntParameterDown10_button.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             this.toolTip1.SetToolTip(this.IntParameterDown10_button, "-10");
             this.IntParameterDown10_button.UseVisualStyleBackColor = true;
@@ -8637,7 +9977,7 @@ namespace LitePlacer
             this.IntParameterUp10_button.Size = new System.Drawing.Size(20, 17);
             this.IntParameterUp10_button.TabIndex = 317;
             this.IntParameterUp10_button.Tag = "https://liteplacer.com/setup-video-processing-page/";
-            this.IntParameterUp10_button.Text = "▲";
+            this.IntParameterUp10_button.Text = "?";
             this.IntParameterUp10_button.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             this.toolTip1.SetToolTip(this.IntParameterUp10_button, "+10");
             this.IntParameterUp10_button.UseVisualStyleBackColor = true;
@@ -9457,7 +10797,7 @@ namespace LitePlacer
             this.LeftArrowImage_button.Size = new System.Drawing.Size(32, 23);
             this.LeftArrowImage_button.TabIndex = 2;
             this.LeftArrowImage_button.Tag = "https://liteplacer.com/measurement-delay-2/";
-            this.LeftArrowImage_button.Text = "◀";
+            this.LeftArrowImage_button.Text = "?";
             this.LeftArrowImage_button.UseVisualStyleBackColor = true;
             this.LeftArrowImage_button.Click += new System.EventHandler(this.LeftArrowImage_button_Click);
             // 
@@ -9468,7 +10808,7 @@ namespace LitePlacer
             this.RightArrowImage_button.Size = new System.Drawing.Size(32, 23);
             this.RightArrowImage_button.TabIndex = 1;
             this.RightArrowImage_button.Tag = "https://liteplacer.com/measurement-delay-2/";
-            this.RightArrowImage_button.Text = "▶";
+            this.RightArrowImage_button.Text = "?";
             this.RightArrowImage_button.UseVisualStyleBackColor = true;
             this.RightArrowImage_button.Click += new System.EventHandler(this.RightArrowImage_button_Click);
             // 
@@ -11432,6 +12772,15 @@ namespace LitePlacer
             ((System.ComponentModel.ISupportInitialize)(this.Temp_dataGridView)).EndInit();
             this.tabPageBasicSetup.ResumeLayout(false);
             this.tabPageBasicSetup.PerformLayout();
+            this.MZCNCMotors_tabControl.ResumeLayout(false);
+            this.MZCNCX_tabPage.ResumeLayout(false);
+            this.MZCNCX_tabPage.PerformLayout();
+            this.MZCNCY_tabPage.ResumeLayout(false);
+            this.MZCNCY_tabPage.PerformLayout();
+            this.MZCNCZ_tabPage.ResumeLayout(false);
+            this.MZCNCZ_tabPage.PerformLayout();
+            this.MZCNCA_tabPage.ResumeLayout(false);
+            this.MZCNCA_tabPage.PerformLayout();
             this.SKR3Motors_tabControl.ResumeLayout(false);
             this.tabPage1.ResumeLayout(false);
             this.tabPage1.PerformLayout();
@@ -12375,8 +13724,119 @@ namespace LitePlacer
         private System.Windows.Forms.CheckBox UpcamMirror_checkBox;
         private System.Windows.Forms.Button Test_button1;
         private Camera.ProtectedPictureBox2 Cam_pictureBox;
+        public TabControl MZCNCMotors_tabControl;
+        private TabPage MZCNCX_tabPage;
+        private Label label256;
+        private Label label257;
+        public MaskedTextBox MZCNCXhomingSpeed_maskedTextBox;
+        private Label label258;
+        private Label label259;
+        private Label label260;
+        private Label label261;
+        public MaskedTextBox MZCNCXHomingBackoff_maskedTextBox;
+        private Label label262;
+        private Label label263;
+        private Label label264;
+        private MaskedTextBox MZCNCXCurrent_maskedTextBox;
+        private TextBox MZCNCXtravelPerRev_textBox;
+        public CheckBox MZCNCXinterpolate_checkBox;
+        private Label label265;
+        private Label label266;
+        private RadioButton MZCNCXdeg18_radioButton;
+        private RadioButton MZCNCXdeg09_radioButton;
+        private Label label267;
+        private Label label268;
+        private Label label269;
+        private MaskedTextBox MZCNCXacceleration_maskedTextBox;
+        private Label label270;
+        private MaskedTextBox MZCNCXspeed_maskedTextBox;
+        private Label label271;
+        private MaskedTextBox MZCNCXmicrosteps_maskedTextBox;
+        private Label label272;
+        private Label label273;
+        private TabPage MZCNCY_tabPage;
+        private Label label274;
+        private Label label275;
+        private Label label276;
+        private Label label277;
+        public MaskedTextBox MZCNCYhomingSpeed_maskedTextBox;
+        private Label label278;
+        private Label label279;
+        public MaskedTextBox MZCNCYHomingBackoff_maskedTextBox;
+        private Label label280;
+        private Label label281;
+        private Label label282;
+        private MaskedTextBox MZCNCYCurrent_maskedTextBox;
+        private TextBox MZCNCYtravelPerRev_textBox;
+        public CheckBox MZCNCYinterpolate_checkBox;
+        private Label label283;
+        private Label label284;
+        private RadioButton MZCNCYdeg18_radioButton;
+        private RadioButton MZCNCYdeg09_radioButton;
+        private Label label285;
+        private Label label286;
+        private Label label287;
+        private MaskedTextBox MZCNCYacceleration_maskedTextBox;
+        private Label label288;
+        private MaskedTextBox MZCNCYspeed_maskedTextBox;
+        private Label label289;
+        private MaskedTextBox MZCNCYmicrosteps_maskedTextBox;
+        private Label label290;
+        private Label label291;
+        private TabPage MZCNCZ_tabPage;
+        private Label label292;
+        private Label label293;
+        public MaskedTextBox MZCNCZhomingSpeed_maskedTextBox;
+        private Label label294;
+        private Label label295;
+        public MaskedTextBox MZCNCZHomingBackoff_maskedTextBox;
+        private Label label296;
+        private Label label297;
+        private Label label298;
+        private Label label299;
+        private Label label300;
+        private MaskedTextBox MZCNCZCurrent_maskedTextBox;
+        private TextBox MZCNCZtravelPerRev_textBox;
+        public CheckBox MZCNCZinterpolate_checkBox;
+        private Label label301;
+        private Label label302;
+        private RadioButton MZCNCZdeg18_radioButton;
+        private RadioButton MZCNCZdeg09_radioButton;
+        private Label label303;
+        private Label label304;
+        private Label label305;
+        private MaskedTextBox MZCNCZacceleration_maskedTextBox;
+        private Label label306;
+        private MaskedTextBox MZCNCZspeed_maskedTextBox;
+        private Label label307;
+        private MaskedTextBox MZCNCZmicrosteps_maskedTextBox;
+        private Label label308;
+        private Label label309;
+        private TabPage MZCNCA_tabPage;
+        private Label label310;
+        private Label label311;
+        private CheckBox MZCNCAinterpolate_checkBox;
+        private Label label312;
+        private Label label313;
+        private MaskedTextBox MZCNCACurrent_maskedTextBox;
+        private TextBox MZCNCAtravelPerRev_textBox;
+        private Label label314;
+        private Label label315;
+        private RadioButton MZCNCAdeg18_radioButton;
+        private RadioButton MZCNCAdeg09_radioButton;
+        private Label label316;
+        private Label label317;
+        private Label label318;
+        private MaskedTextBox MZCNCAacceleration_maskedTextBox;
+        private Label label319;
+        private MaskedTextBox MZCNCAspeed_maskedTextBox;
+        private Label label320;
+        private MaskedTextBox MZCNCAmicrosteps_maskedTextBox;
+        private Label label321;
+        private Label label322;
     }
 }
     
+
 
 

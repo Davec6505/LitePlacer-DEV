@@ -5133,13 +5133,22 @@ namespace LitePlacer
                 case ControlBoardType.TinyG:
                     Motors_label.Text = "Axes setup (TinyG board):";
                     SKR3Motors_tabControl.Visible = false;
+                    MZCNCMotors_tabControl.Visible = false;
                     TinyGMotors_tabControl.Visible = true;
                     return;
                 case ControlBoardType.SKR3:
                     Motors_label.Text = "Axes setup (SKR 3 board):";
                     TinyGMotors_tabControl.Visible = false;
+                    MZCNCMotors_tabControl.Visible = false;
                     SKR3Motors_tabControl.Visible = true;
                     return;
+                case ControlBoardType.MZ_CNC:
+                    TinyGMotors_tabControl.Visible = false;
+                    SKR3Motors_tabControl.Visible = false;
+                    MZCNCMotors_tabControl.Visible = true;
+                    Motors_label.Text = "MZ_CNC Settings:";
+                    Board_label.Text = "MZ_CNC found.";
+                    break;
                 default:            // should not happen
                     Motors_label.Text = "Connected to unknown (default) board";
                     TinyGMotors_tabControl.Visible = false;
@@ -14578,6 +14587,10 @@ namespace LitePlacer
             DisplayText("Test_button1: " + test, KnownColor.DarkGreen, true);
         }
 
+        private void maskedTextBox4_MaskInputRejected(object sender, MaskInputRejectedEventArgs e)
+        {
+
+        }
     }	// end of: 	public partial class FormMain : Form
 
 
@@ -14698,4 +14711,5 @@ namespace LitePlacer
 
 
  }	// end of: namespace LitePlacer
+
 

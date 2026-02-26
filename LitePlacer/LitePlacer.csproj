@@ -196,6 +196,9 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>MainForm.resx</DependentUpon>
     </Compile>
+    <Compile Include="MZCNCSettings.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="MZ_CNCControl.cs" />
     <Compile Include="SKR3Control.cs" />
     <Compile Include="SKR3Settings.cs">
