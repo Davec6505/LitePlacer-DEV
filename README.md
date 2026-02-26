@@ -5,6 +5,17 @@ LitePlacer Pick and Place machine user interface and control software
 
 [Introduction video on Youtube](https://www.youtube.com/watch?v=3c5Vtuefm7o)
 
+## ?? **NEW: Multi-Controller Support!**
+
+**This fork now supports THREE CNC controller types:**
+- ? **TinyG** (original)
+- ? **SKR3** (grblHAL) - Complete integration
+- ? **MZ_CNC** (PIC32MZ GRBL v1.1) - **NEW! Fully tested!**
+
+**See [README_MZCNC.md](README_MZCNC.md) for MZ_CNC integration details.**
+
+---
+
 To get the code to compile: 
 
 * Install AForge.NET

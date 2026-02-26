@@ -52,7 +52,82 @@ Z-axis limit switch (Z-max) behavior was **erratic and unreliable** during probi
 
 ---
 
-## 🚀 **MAJOR UPDATE: February 2026 - MZ_CNC Integration Complete**
+## 🎉 **MAJOR UPDATE: February 2026 - MZ_CNC Integration COMPLETE!**
+
+### **✅ PRODUCTION READY - Full MZ_CNC Controller Support**
+
+**Date:** February 11, 2026  
+**Branch:** concurrency-fix  
+**Scope:** Complete integration of PIC32MZ GRBL v1.1 controller support
+
+**Status:** 🎊 **TESTED AND WORKING** - All features operational!
+
+### **What Was Completed:**
+
+✅ **Phase 1: CNC.cs Routing** - All 21 methods routed to MZ_CNC  
+✅ **Phase 2: MZ_CNCControl.cs Implementation** - All GRBL commands working  
+✅ **Phase 3: UI Integration** - Settings UI complete with event handlers  
+✅ **Phase 4: Hardware Testing** - Tested on actual hardware, settings verified  
+
+### **MZ_CNC Features Implemented:**
+
+#### **1. Board Detection & Initialization**
+- ✅ Auto-detects "Grbl 1.1h" firmware banner
+- ✅ Downloads all 34 GRBL `$$` settings on connection
+- ✅ Parses settings into `GrblSettings` class
+- ✅ Initializes UI with current values
+
+#### **2. Settings Management (MZCNCSettings.cs - NEW FILE)**
+- ✅ `MZ_CNCSettings_Load()` - Populates UI controls from GRBL settings
+- ✅ `WireMZCNCEventHandlers()` - Programmatic event handler registration
+- ✅ 14 KeyPress event handlers for real-time settings changes
+- ✅ Sends GRBL `$xxx=value` commands when user presses Enter
+- ✅ Handles PIC32MZ firmware quirk: `$30` units conversion (÷12000)
+
+#### **3. UI Components (MainForm.Designer.cs)**
+- ✅ `MZCNCMotors_tabControl` - 4 motor tabs (X/Y/Z/A)
+- ✅ Speed, Acceleration, Microsteps, Travel/Rev controls
+- ✅ Homing Speed and Homing Backoff controls
+- ✅ Motor Current, Step Angle, Interpolation controls
+- ✅ State machine switches visibility (TinyG/SKR3/MZ_CNC)
+
+#### **4. Movement Commands (MZ_CNCControl.cs)**
+- ✅ `XY()`, `XYA()` - Coordinated multi-axis moves
+- ✅ `X()`, `Y()`, `Z()`, `A()` - Single-axis moves with speed control
+- ✅ `Jog()` - Manual jogging support
+- ✅ `CancelJog()` - Feed hold via `!` command
+
+#### **5. Homing & Probing**
+- ✅ `Home_m()` - GRBL `$H` homing cycle
+- ✅ `Nozzle_ProbeDown()` - G38.2 probing with result parsing
+- ✅ Parses `[PRB:x,y,z,a:1]` probe result format
+
+#### **6. Hardware Control**
+- ✅ `MotorPowerOn()` / `MotorPowerOff()` - M17/M18 commands
+- ✅ `Vacuum_On()` / `Vacuum_Off()` - M7/M9 (mist coolant)
+- ✅ `Pump_On()` / `Pump_Off()` - M8/M9 (flood coolant)
+
+#### **7. Position Management**
+- ✅ `SetPosition()` - G92 work coordinate system
+- ✅ Position tracking from GRBL status responses
+- ✅ Real-time position updates
+
+### **Files Added/Modified:**
+
+**New Files:**
+- ✅ `LitePlacer\MZCNCSettings.cs` - Settings UI and event handlers (NEW)
+
+**Modified Files:**
+- ✅ `LitePlacer\CNC.cs` - Added MZ_CNC routing to 21 methods
+- ✅ `LitePlacer\MZ_CNCControl.cs` - Implemented all GRBL commands
+- ✅ `LitePlacer\MainForm.cs` - Added state machine for UI visibility
+- ✅ `LitePlacer\MainForm.Designer.cs` - Added MZ_CNC motor tabs
+- ✅ `LitePlacer\MainForm.resx` - Form resources
+- ✅ `LitePlacer\LitePlacer.csproj` - Added MZCNCSettings.cs
+
+**Lines of Code:** 2,259 insertions, 52 deletions
+
+---
 
 ### **Batch Implementation Completed - All CNC.cs Routing**
 

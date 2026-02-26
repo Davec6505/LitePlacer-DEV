@@ -88,6 +88,46 @@ Write_m("{\"zzb\",2.0}", 150);    // Set zero backoff
 Write_m("{\"st\",0}", 150);       // Set switch type
 ```
 
+## MZ_CNC (GRBL) Commands
+
+**CRITICAL:** MZ_CNC uses **STANDARD GRBL v1.1** protocol!
+
+? **CORRECT for GRBL:** `$110=5000.0` (Settings)  
+? **CORRECT for GRBL:** `G0 X10 Y20` (Movement)  
+? **CORRECT for GRBL:** `G38.2 Z10` (Probing)  
+? **CORRECT for GRBL:** `$H` (Homing)  
+
+**Important Notes:**
+- GRBL uses `$xxx=value` for settings (not JSON!)
+- Settings use `CultureInfo.InvariantCulture` for decimal formatting (always `.` not `,`)
+- PIC32MZ firmware has quirk: `$30` (homing pull-off) reported in firmware units, divide by 12000 for mm
+- Use `$30` for homing pull-off (applies to all axes)
+- Use `$26` for homing seek rate (applies to all axes)
+
+**Examples of correct GRBL commands:**
+```csharp
+Write_m("$110=5000.0");           // Set X max rate
+Write_m("$120=500.0");            // Set X acceleration
+Write_m("$26=1000.0");            // Set homing seek rate
+Write_m("$30=1.0");               // Set homing pull-off (in mm * 12000 for PIC32MZ)
+Write_m("$H");                    // Start homing cycle
+Write_m("G38.2 Z10 F100");       // Probe down to Z10 at 100mm/min
+Write_m("M7");                    // Vacuum ON (mist coolant)
+Write_m("M9");                    // Vacuum/Pump OFF (all coolant)
+```
+
+**GRBL Response Parsing:**
+- Status reports: `<Idle|MPos:0.000,0.000,79.000,0.000|...>`
+- Probe results: `[PRB:10.123,20.456,5.789,0.000:1]`
+- Settings echo: `$110=5000.000` (confirms new value)
+- Acknowledgment: `ok` (command accepted)
+
+**MZ_CNC Settings UI:**
+- Event handlers use **KeyPress** with **Enter key** to apply changes
+- All event handlers send `$xxx=value` commands via `Cnc.MZ_CNC.Write_m()`
+- Handlers validate input before sending to controller
+- Success/failure logged with color-coded messages
+
 ## Code Style
 
 ### Comments
