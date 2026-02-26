@@ -171,7 +171,19 @@ namespace LitePlacer
 
             // Homing settings
             if (!WriteOneMZCNCSetting("$26", settings.HomingSeek.ToString("0.0", CultureInfo.InvariantCulture))) return false;
-            if (!WriteOneMZCNCSetting("$30", settings.HomingPulloff.ToString("0.0", CultureInfo.InvariantCulture))) return false;
+            if (!WriteOneMZCNCSetting("$27", settings.HomingPulloff.ToString("0.000", CultureInfo.InvariantCulture))) return false;
+
+            // Explicitly save settings to NVM flash (PIC32MZ-specific command)
+            DisplayText("Saving settings to NVM flash...", KnownColor.DarkCyan);
+            if (!Cnc.MZ_CNC.Write_m("$SAVE", 1000))
+            {
+                DisplayText("*** Warning: $SAVE command failed. Settings may not persist after power cycle!", KnownColor.DarkOrange);
+                // Don't return false - settings may still be in RAM and functional
+            }
+            else
+            {
+                DisplayText("Settings saved to flash successfully.", KnownColor.DarkGreen);
+            }
 
             DisplayText("All MZ_CNC settings written to controller successfully.", KnownColor.DarkGreen);
             return true;
@@ -273,8 +285,8 @@ namespace LitePlacer
         public double StepsPerMmA { get; set; } = 156.0;   // Updated to match PIC32MZ default
 
         // Homing settings
-        public double HomingSeek { get; set; } = 500.0;       // $25 (homing seek rate in mm/min)
-        public double HomingPulloff { get; set; } = 24000.0;  // $30 (firmware units: 24000 = 2.0mm when ÷12000)
+        public double HomingSeek { get; set; } = 500.0;       // $26 (homing seek rate in mm/min)
+        public double HomingPulloff { get; set; } = 2.0;  // $27 
 
         // ==========  AppSettings-only values  ==========
         // These are NOT stored in GRBL firmware, only in LitePlacer settings
@@ -304,3 +316,4 @@ namespace LitePlacer
         public bool AInterpolate { get; set; } = false;
     }
 }
+
