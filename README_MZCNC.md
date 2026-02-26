@@ -126,6 +126,13 @@ Same as before, plus:
 - Step angle (1.8° or 0.9°)
 - Interpolation enable/disable
 
+**Settings File Management:**
+- **Separate settings files** per controller: `TinyG_Settings.json`, `MZ_CNC_Settings.json`
+- **Board Settings Save** button: Saves current MZ_CNC configuration to file
+- **Board Settings Load** button: Loads configuration from file and writes to controller
+- **Board Built-In Settings** button: Resets MZ_CNC to default values
+- Settings auto-saved on application exit (if enabled in preferences)
+
 ---
 
 ## PIC32MZ Firmware Notes

@@ -91,6 +91,42 @@ namespace LitePlacer
         // =================================================================================
         #endregion SKR3
 
+        // =================================================================================
+        #region MZ_CNC
+        /*
+        MZ_CNC_xxx should be in MZCNCSettings.cs in a
+            public partial class MySettings
+            {
+            }
+        block. Visual Studio bug doesn't allow that, so they are here. :-(
+        
+        MZ_CNC settings file path (similar to TinyG)
+        */
+        public string MZCNCsettingsFile { get; set; } = "MZ_CNC_Settings.json";
+
+        // AppSettings-only values (not stored in GRBL firmware)
+        public int MZCNC_XCurrent { get; set; } = 800; //mA
+        public int MZCNC_YCurrent { get; set; } = 800; //mA
+        public int MZCNC_ZCurrent { get; set; } = 800; //mA
+        public int MZCNC_ACurrent { get; set; } = 800; //mA
+
+        public int MZCNC_XMicroStep { get; set; } = 8;
+        public int MZCNC_YMicroStep { get; set; } = 8;
+        public int MZCNC_ZMicroStep { get; set; } = 8;
+        public int MZCNC_AMicroStep { get; set; } = 8;
+
+        public bool MZCNC_XDeg18 { get; set; } = true;  // true=1.8°, false=0.9°
+        public bool MZCNC_YDeg18 { get; set; } = true;
+        public bool MZCNC_ZDeg18 { get; set; } = true;
+        public bool MZCNC_ADeg18 { get; set; } = true;
+
+        public bool MZCNC_XInterpolate { get; set; } = false;
+        public bool MZCNC_YInterpolate { get; set; } = false;
+        public bool MZCNC_ZInterpolate { get; set; } = false;
+        public bool MZCNC_AInterpolate { get; set; } = false;
+        // =================================================================================
+        #endregion MZ_CNC
+
         public bool Cam_ShowPixels { get; set; } = false;
         public bool Cameras_KeepActive { get; set; } = false;
         public bool Cameras_RobustSwitch { get; set; } = false;

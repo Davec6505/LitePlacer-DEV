@@ -122,11 +122,36 @@ Write_m("M9");                    // Vacuum/Pump OFF (all coolant)
 - Settings echo: `$110=5000.000` (confirms new value)
 - Acknowledgment: `ok` (command accepted)
 
+**CRITICAL - PIC32MZ Homing Settings:**
+- `$25` = Homing seek rate (mm/min) - Standard GRBL
+- `$27` = Homing pull-off (mm) - Standard GRBL  
+- `$30` = Homing pull-off (firmware units) - **PIC32MZ QUIRK!**
+  - Conversion: `$30 value ÷ 12000 = mm`
+  - Example: `$30=24000` ? `24000 ÷ 12000 = 2.0 mm`
+  - **Use $25 for homing seek, $30 for pull-off** (both exist!)
+
 **MZ_CNC Settings UI:**
 - Event handlers use **KeyPress** with **Enter key** to apply changes
 - All event handlers send `$xxx=value` commands via `Cnc.MZ_CNC.Write_m()`
 - Handlers validate input before sending to controller
 - Success/failure logged with color-coded messages
+
+**MZ_CNC Settings Files:**
+- **Separate settings files** for each controller type (TinyG, SKR3, MZ_CNC)
+- **Board Settings Save/Load** buttons repurposed for all controllers
+- MZ_CNC uses `MZ_CNC_Settings.json` file format (like TinyG pattern)
+- Settings include GRBL-writable values + AppSettings-only values
+- Files stored in application directory (same as TinyG settings)
+
+**Settings File Format:**
+```
+MZ_CNC  \n\r
+{
+  "XSpeed": 5000.0,
+  "XAccel": 500.0,
+  ...
+}
+```
 
 ## Code Style
 

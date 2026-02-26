@@ -199,6 +199,9 @@
     <Compile Include="MZCNCSettings.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="MZCNCSettingsFile.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="MZ_CNCControl.cs" />
     <Compile Include="SKR3Control.cs" />
     <Compile Include="SKR3Settings.cs">

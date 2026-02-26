@@ -14174,6 +14174,19 @@ namespace LitePlacer
                 }
                 return;
             }
+
+            if (Setting.Controlboard == ControlBoardType.MZ_CNC)
+            {
+                MZCNCSettings currentSettings = CaptureMZCNCSettingsFromUI();
+                AppSettings_saveFileDialog.FileName = Setting.MZCNCsettingsFile;
+                if (AppSettings_saveFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    SaveMZCNCSettings(currentSettings, AppSettings_saveFileDialog.FileName);
+                    Setting.MZCNCsettingsFile = AppSettings_saveFileDialog.FileName;
+                }
+                return;
+            }
+
             DisplayText("*** Skipping saving board settings file; board type unknown or unsupported");
         }
 
@@ -14203,6 +14216,23 @@ namespace LitePlacer
                 }
                 return;
             }
+
+            if (Setting.Controlboard == ControlBoardType.MZ_CNC)
+            {
+                MZCNCSettings mzSettings = new MZCNCSettings();
+                AppSettings_openFileDialog.FileName = Setting.MZCNCsettingsFile;
+                if (AppSettings_openFileDialog.ShowDialog() == DialogResult.OK)
+                {
+                    if (!LoadMZCNCSettings(ref mzSettings, AppSettings_openFileDialog.FileName))
+                    {
+                        return;
+                    }
+                    Setting.MZCNCsettingsFile = AppSettings_openFileDialog.FileName;
+                    WriteAllMZCNCSettings_m();
+                }
+                return;
+            }
+
             DisplayText("*** Skipping loading board settings operation; board type unknown or unsupported");
         }
 
@@ -14220,6 +14250,21 @@ namespace LitePlacer
                 WriteAllTinyGSettings_m();
                 return;
             }
+
+            if (Setting.Controlboard == ControlBoardType.MZ_CNC)
+            {
+                MZCNCSettings defaultSettings = new MZCNCSettings();
+                if (!WriteMZCNCSettingsToController(defaultSettings))
+                {
+                    DisplayText("*** Failed to write default settings to MZ_CNC controller", KnownColor.DarkRed);
+                    return;
+                }
+                DisplayText("Default settings restored to MZ_CNC controller", KnownColor.DarkGreen);
+                Cnc.MZ_CNC.JustConnected();
+                MZ_CNCSettings_Load();
+                return;
+            }
+
             DisplayText("*** Skipping loading board settings operation; board type unknown or unsupported");
         }
 
