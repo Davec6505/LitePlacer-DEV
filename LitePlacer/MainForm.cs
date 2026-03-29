@@ -12283,35 +12283,28 @@ namespace LitePlacer
             if (!Cnc.Execute_XYA(pullTargetX, pullTargetY, Cnc.CurrentA, xySpeed, "G1"))
             {
                 DisplayText("*** Failed to pull tape", KnownColor.DarkRed);
-                // Try to lift nozzle anyway
-                Cnc.Z(originalZ);
+                // Try to lift nozzle anyway - just 10mm up from engaged position
+                Cnc.Z(engageZ - 10.0);
                 return false;
             }
 
-            // STEP 4: Lift nozzle out of sprocket hole (back to original safe height)
-            DisplayText($"  Lifting nozzle clear to Z={originalZ:F3}", KnownColor.DarkCyan);
-            if (!Cnc.Z(originalZ))
+            // STEP 4: Lift nozzle out of sprocket hole (10mm clearance is enough)
+            const double LIFT_CLEARANCE = 10.0;  // mm - enough to clear tape without wasting time
+            double liftZ = engageZ - LIFT_CLEARANCE;  // Lift 10mm above engaged position
+            
+            DisplayText($"  Lifting nozzle {LIFT_CLEARANCE}mm clear to Z={liftZ:F3}", KnownColor.DarkCyan);
+            if (!Cnc.Z(liftZ))
             {
                 DisplayText("*** Warning: Failed to lift nozzle cleanly", KnownColor.DarkOrange);
                 // Continue anyway - nozzle might still be functional
             }
 
-            // STEP 5: Update tape's next hole position for next component (thread-safe)
-            if (InvokeRequired)
-            {
-                Invoke(new Action(() =>
-                {
-                    Tapes_dataGridView.Rows[tapeRow].Cells["Next_X_Column"].Value = pullTargetX.ToString("0.000", CultureInfo.InvariantCulture);
-                    Tapes_dataGridView.Rows[tapeRow].Cells["Next_Y_Column"].Value = pullTargetY.ToString("0.000", CultureInfo.InvariantCulture);
-                }));
-            }
-            else
-            {
-                Tapes_dataGridView.Rows[tapeRow].Cells["Next_X_Column"].Value = pullTargetX.ToString("0.000", CultureInfo.InvariantCulture);
-                Tapes_dataGridView.Rows[tapeRow].Cells["Next_Y_Column"].Value = pullTargetY.ToString("0.000", CultureInfo.InvariantCulture);
-            }
-
-            DisplayText($"Nozzle pull complete. Next hole: X={pullTargetX:F3}, Y={pullTargetY:F3}", KnownColor.DarkGreen);
+            // STEP 5: DO NOT update Next_X/Y when nozzle pull is enabled!
+            // In "Coordinates For Parts" mode with nozzle pull, the user manages the part position manually
+            // We don't auto-increment because the same fixed position is used every time
+            // (The tape advances physically via the pull, but the pickup position stays the same)
+            
+            DisplayText($"Nozzle pull complete. Tape advanced {pullDistance}mm, pickup position unchanged.", KnownColor.DarkGreen);
 
             return true;
         }
