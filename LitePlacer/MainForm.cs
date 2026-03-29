@@ -8877,6 +8877,69 @@ namespace LitePlacer
                 + ", Y: " + Y.ToString("0.000", CultureInfo.InvariantCulture)
                 + ", A: " + A.ToString("0.000", CultureInfo.InvariantCulture));
 
+            // ========================================================================================
+            // NOZZLE PULL INDEXING (if enabled)
+            // Pull tape BEFORE picking component when using direct coordinates mode
+            // ========================================================================================
+            bool useNozzlePull = false;
+            if (Tapes_dataGridView.Rows[TapeNum].Cells["UseNozzlePull_Column"].Value != null)
+            {
+                bool.TryParse(Tapes_dataGridView.Rows[TapeNum].Cells["UseNozzlePull_Column"].Value.ToString(), out useNozzlePull);
+            }
+
+            if (useNozzlePull)
+            {
+                // Get pull distance
+                double pullDistance = 4.0;
+                if (Tapes_dataGridView.Rows[TapeNum].Cells["PullDistance_Column"].Value != null)
+                {
+                    double.TryParse(Tapes_dataGridView.Rows[TapeNum].Cells["PullDistance_Column"].Value.ToString().Replace(',', '.'), out pullDistance);
+                }
+
+                // Get component position (X, Y from above are the component coordinates)
+                double componentX = X;
+                double componentY = Y;
+
+                DisplayText($"Nozzle pull: Component at X={componentX:F3}, Y={componentY:F3}", KnownColor.DarkCyan);
+
+                // Calculate hole position from component position using tape offsets
+                double holeX = 0;
+                double holeY = 0;
+                
+                if (!Tapes.GetHoleLocationFromPartPosition(TapeNum, componentX, componentY, out holeX, out holeY))
+                {
+                    DisplayText("*** Failed to calculate hole position from component position", KnownColor.DarkRed);
+                    return false;
+                }
+
+                // Temporarily update grid with hole position for nozzle pull
+                string savedNextX = Tapes_dataGridView.Rows[TapeNum].Cells["Next_X_Column"].Value.ToString();
+                string savedNextY = Tapes_dataGridView.Rows[TapeNum].Cells["Next_Y_Column"].Value.ToString();
+                
+                Tapes_dataGridView.Rows[TapeNum].Cells["Next_X_Column"].Value = holeX.ToString("0.000", CultureInfo.InvariantCulture);
+                Tapes_dataGridView.Rows[TapeNum].Cells["Next_Y_Column"].Value = holeY.ToString("0.000", CultureInfo.InvariantCulture);
+
+                // Execute nozzle pull
+                DisplayText($"Pulling tape {pullDistance}mm from hole position...", KnownColor.DarkCyan);
+                
+                if (!NozzlePullTapeIndex_m(TapeNum, pullDistance))
+                {
+                    // Restore component position on failure
+                    Tapes_dataGridView.Rows[TapeNum].Cells["Next_X_Column"].Value = savedNextX;
+                    Tapes_dataGridView.Rows[TapeNum].Cells["Next_Y_Column"].Value = savedNextY;
+                    
+                    DisplayText("*** Nozzle pull failed!", KnownColor.DarkRed);
+                    return false;
+                }
+
+                // CRITICAL: Restore component position in grid
+                Tapes_dataGridView.Rows[TapeNum].Cells["Next_X_Column"].Value = savedNextX;
+                Tapes_dataGridView.Rows[TapeNum].Cells["Next_Y_Column"].Value = savedNextY;
+
+                DisplayText($"Tape advanced, picking from X={componentX:F3}, Y={componentY:F3}", KnownColor.DarkGreen);
+            }
+
+            // Continue with normal pickup from component position (X, Y, A)
             if (UseNozzleCoordinates(TapeNum))
             {
                 if (!CNC_XYA_m(X, Y, A))
