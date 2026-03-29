@@ -171,10 +171,11 @@ namespace LitePlacer
                     WorkingString = WorkingString.Replace("\r", "");
                     
                     // CRITICAL: LineReceived may update UI controls, so marshal to UI thread
+                    // Use BeginInvoke (async) instead of Invoke (blocking) to avoid slowing down serial processing
                     string lineToProcess = WorkingString;  // Capture for lambda
                     if (MainForm.InvokeRequired)
                     {
-                        MainForm.Invoke(new Action(() =>
+                        MainForm.BeginInvoke(new Action(() =>
                         {
                             Cnc.LineReceived(lineToProcess);
                         }));
