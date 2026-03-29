@@ -603,6 +603,7 @@ namespace LitePlacer
             int delay = 0;
             while (delay < 200)
             {
+                Application.DoEvents();  // Process pending UI thread work (including serial data Invoke calls)
                 if (LineAvailable)
                 {
                     break;
@@ -645,6 +646,7 @@ namespace LitePlacer
             int delay = 0;
             while (delay < 100)
             {
+                Application.DoEvents();  // Process pending UI thread work (including serial data Invoke calls)
                 if (LineAvailable)
                 {
                     break;
@@ -694,6 +696,7 @@ namespace LitePlacer
             int delay = 0;
             while (delay < 300)  // Increased timeout to 300ms
             {
+                Application.DoEvents();  // Process pending UI thread work (including serial data Invoke calls)
                 if (LineAvailable)
                 {
                     break;
