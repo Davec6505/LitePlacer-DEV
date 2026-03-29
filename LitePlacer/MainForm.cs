@@ -8887,8 +8887,6 @@ namespace LitePlacer
                 bool.TryParse(Tapes_dataGridView.Rows[TapeNum].Cells["UseNozzlePull_Column"].Value.ToString(), out useNozzlePull);
             }
 
-            // DEBUG: Show nozzle pull status
-            DisplayText($"DEBUG: UseNozzlePull checkbox value: {Tapes_dataGridView.Rows[TapeNum].Cells["UseNozzlePull_Column"].Value}, parsed as: {useNozzlePull}", KnownColor.Blue);
 
             if (useNozzlePull)
             {

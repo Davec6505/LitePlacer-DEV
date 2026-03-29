@@ -317,6 +317,10 @@ public bool GetHoleLocationFromPartPosition(int Tape, double PartX, double PartY
 
 ### File: `LitePlacer/MainForm.cs`
 
+**IMPORTANT:** Changes 13-21 below are ALL contained within the `if (useNozzlePull)` conditional block (lines 8892-9002). This means they ONLY execute when the "Use Nozzle Pull" checkbox is enabled for a tape. Normal (camera-based) tape handling is completely unaffected by these changes.
+
+---
+
 #### Change 13: PickUpPartWithDirectCoordinates_m - Nozzle Pull Check
 **Lines:** 8879-8887  
 **Function:** `PickUpPartWithDirectCoordinates_m(int TapeNum)`  
@@ -352,40 +356,47 @@ if (Tapes_dataGridView.Rows[TapeNum].Cells["PullDistance_Column"].Value != null)
 
 ---
 
-#### Change 15: PickUpPartWithDirectCoordinates_m - Auto-Adjust Offsets
+#### Change 15: PickUpPartWithDirectCoordinates_m - Auto-Adjust Offsets (Within Nozzle Pull Block)
 **Lines:** 8917-8942  
 **Function:** `PickUpPartWithDirectCoordinates_m(int TapeNum)`  
-**Change:** Added automatic offset sign adjustment for EIA-481 standard
+**Change:** Added automatic offset sign adjustment for EIA-481 standard (ONLY when nozzle pull is enabled)
 ```csharp
-// CRITICAL: For nozzle pull mode, adjust offsets based on EIA-481 standard geometry
-// Standard tapes have holes on ONE SIDE, and the offset values from tape width dropdown
-// are typically POSITIVE, but we need to make them NEGATIVE to point toward the hole side
-//
-// EIA-481 Standard:
-// - Vertical tapes (+Y/-Y): Holes are on LEFT side ? OffsetX should be NEGATIVE
-// - Horizontal tapes (+X/-X): Holes are on BOTTOM side ? OffsetY should be NEGATIVE
-//
-// If user entered positive offset (default), make it negative to find holes
-if (orientation == "+Y" || orientation == "-Y")
+if (useNozzlePull)  // ? This entire section is INSIDE the useNozzlePull conditional block
 {
-    // Vertical tape: holes on left, ensure OffsetX is negative
-    if (offsetX > 0)
+    // ... (pull distance and orientation reading code above) ...
+    
+    // CRITICAL: For nozzle pull mode, adjust offsets based on EIA-481 standard geometry
+    // Standard tapes have holes on ONE SIDE, and the offset values from tape width dropdown
+    // are typically POSITIVE, but we need to make them NEGATIVE to point toward the hole side
+    //
+    // EIA-481 Standard:
+    // - Vertical tapes (+Y/-Y): Holes are on LEFT side ? OffsetX should be NEGATIVE
+    // - Horizontal tapes (+X/-X): Holes are on BOTTOM side ? OffsetY should be NEGATIVE
+    //
+    // If user entered positive offset (default), make it negative to find holes
+    if (orientation == "+Y" || orientation == "-Y")
     {
-        offsetX = -offsetX;
-        DisplayText($"  Adjusting OffsetX to negative for hole on left: {offsetX:F3}", KnownColor.DarkCyan);
+        // Vertical tape: holes on left, ensure OffsetX is negative
+        if (offsetX > 0)
+        {
+            offsetX = -offsetX;
+            DisplayText($"  Adjusting OffsetX to negative for hole on left: {offsetX:F3}", KnownColor.DarkCyan);
+        }
     }
-}
-else if (orientation == "+X" || orientation == "-X")
-{
-    // Horizontal tape: holes on bottom, ensure OffsetY is negative  
-    if (offsetY > 0)
+    else if (orientation == "+X" || orientation == "-X")
     {
-        offsetY = -offsetY;
-        DisplayText($"  Adjusting OffsetY to negative for hole on bottom: {offsetY:F3}", KnownColor.DarkCyan);
+        // Horizontal tape: holes on bottom, ensure OffsetY is negative  
+        if (offsetY > 0)
+        {
+            offsetY = -offsetY;
+            DisplayText($"  Adjusting OffsetY to negative for hole on bottom: {offsetY:F3}", KnownColor.DarkCyan);
+        }
     }
+    
+    // ... (rest of nozzle pull logic below) ...
 }
 ```
-**Description:** Automatically adjusts offset signs based on EIA-481 tape standard. Allows users to use default positive values from Width dropdown without manual adjustment. Vertical tapes get negative X offset (holes on left), horizontal tapes get negative Y offset (holes on bottom).
+**Description:** Automatically adjusts offset signs based on EIA-481 tape standard, but ONLY when nozzle pull checkbox is enabled. This entire code block (lines 8892-9002) is conditional on `if (useNozzlePull)`, so normal (non-nozzle-pull) tape handling is completely unaffected. Allows users to use default positive values from Width dropdown without manual adjustment. Vertical tapes get negative X offset (holes on left), horizontal tapes get negative Y offset (holes on bottom).
 
 ---
 
