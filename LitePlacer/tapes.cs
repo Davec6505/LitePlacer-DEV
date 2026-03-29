@@ -553,6 +553,70 @@ namespace LitePlacer
         }
 
         // ========================================================================================
+        // GetHoleLocationFromPartPosition(): Returns the hole location from part position
+        // INVERSE of GetPartLocationFromHolePosition_m()
+        // Used for nozzle pull when "Coordinates For Parts" is enabled
+        // User teaches component position, system calculates hole position using tape offsets
+        // ========================================================================================
+        public bool GetHoleLocationFromPartPosition(int Tape, double PartX, double PartY, out double HoleX, out double HoleY)
+        {
+            HoleX = 0.0;
+            HoleY = 0.0;
+
+            double dW;   // Part center offset from hole, tape width direction (from OffsetX_Column)
+            double dL;   // Part center offset from hole, tape length direction (from OffsetY_Column, typically 2mm)
+            double Pitch;
+
+            if (!GetTapeParameters_m(Tape, out dW, out dL, out Pitch))
+            {
+                return false;
+            }
+
+            // REVERSE the offset calculations from GetPartLocationFromHolePosition_m
+            // Original formulas calculate Part from Hole, we need Hole from Part
+            switch (Grid.Rows[Tape].Cells["Orientation_Column"].Value.ToString())
+            {
+                case "+Y":
+                    // Original: PartX = HoleX - dW, PartY = HoleY - dL
+                    // Reverse:
+                    HoleX = PartX + dW;
+                    HoleY = PartY + dL;
+                    break;
+
+                case "+X":
+                    // Original: PartX = HoleX - dL, PartY = HoleY + dW
+                    // Reverse:
+                    HoleX = PartX + dL;
+                    HoleY = PartY - dW;
+                    break;
+
+                case "-Y":
+                    // Original: PartX = HoleX + dW, PartY = HoleY + dL
+                    // Reverse:
+                    HoleX = PartX - dW;
+                    HoleY = PartY - dL;
+                    break;
+
+                case "-X":
+                    // Original: PartX = HoleX + dL, PartY = HoleY - dW
+                    // Reverse:
+                    HoleX = PartX - dL;
+                    HoleY = PartY + dW;
+                    break;
+
+                default:
+                    MainForm.ShowMessageBox(
+                        "Bad orientation data for tape #" + Tape.ToString(CultureInfo.InvariantCulture),
+                        "Tape configuration error",
+                        MessageBoxButtons.OK);
+                    return false;
+            }
+
+            MainForm.DisplayText($"Calculated hole position from component: Hole X={HoleX:F3}, Y={HoleY:F3} (offsets: dW={dW:F3}, dL={dL:F3})", KnownColor.DarkCyan);
+            return true;
+        }
+
+        // ========================================================================================
         // IncrementTape(): Updates count and next hole locations for a tape
         // The caller knows the current hole location, so we don't need to re-measure them
         public bool IncrementTape(int Tape, double HoleX, double HoleY)
@@ -704,11 +768,11 @@ namespace LitePlacer
             HoleY = 0;
 
             // ========================================================================================
-            // CHECK FOR NOZZLE PULL INDEXING
-            // If enabled, pull tape via sprocket hole instead of relying on manual/dog indexing
+            // NOZZLE PULL INDEXING MODE
+            // REQUIRES: "Coordinates For Parts" checkbox enabled
+            // Workflow: Calculate hole from part position → Pull tape → Pick from part position
             // ========================================================================================
             bool useNozzlePull = false;
-            double pullDistance = 4.0;  // Default to 4mm
 
             // Check if nozzle pull is enabled for this tape
             if (Grid.Rows[TapeNumber].Cells["UseNozzlePull_Column"].Value != null)
@@ -718,54 +782,93 @@ namespace LitePlacer
 
             if (useNozzlePull)
             {
+                // CRITICAL: Nozzle pull REQUIRES "Coordinates For Parts" to be enabled!
+                if (!MainForm.UseCoordinatesDirectly(TapeNumber))
+                {
+                    MainForm.ShowMessageBox(
+                        "Tape " + Grid.Rows[TapeNumber].Cells["Id_Column"].Value.ToString() + " configuration error:\n\n" +
+                        "'Nozzle Pull' requires 'Coordinates For Parts' to be enabled.\n\n" +
+                        "Please check the 'Coordinates For Parts' checkbox first.",
+                        "Invalid Configuration",
+                        MessageBoxButtons.OK);
+                    return false;
+                }
+
                 // Get pull distance from tape configuration
+                double pullDistance = 4.0;  // Default to 4mm
                 if (Grid.Rows[TapeNumber].Cells["PullDistance_Column"].Value != null)
                 {
                     double.TryParse(Grid.Rows[TapeNumber].Cells["PullDistance_Column"].Value.ToString().Replace(',', '.'), out pullDistance);
                 }
 
-                // Execute nozzle pull indexing
-                MainForm.DisplayText($"Using nozzle pull indexing for tape {Grid.Rows[TapeNumber].Cells["Id_Column"].Value}", KnownColor.DarkCyan);
+                // Get COMPONENT position (user-taught position stored in Next_X/Y)
+                double componentX = 0;
+                double componentY = 0;
+                
+                if (!double.TryParse(Grid.Rows[TapeNumber].Cells["Next_X_Column"].Value.ToString().Replace(',', '.'), out componentX))
+                {
+                    MainForm.ShowMessageBox("Bad data at Next_X_Column", "Tape data error", MessageBoxButtons.OK);
+                    return false;
+                }
+
+                if (!double.TryParse(Grid.Rows[TapeNumber].Cells["Next_Y_Column"].Value.ToString().Replace(',', '.'), out componentY))
+                {
+                    MainForm.ShowMessageBox("Bad data at Next_Y_Column", "Tape data error", MessageBoxButtons.OK);
+                    return false;
+                }
+
+                MainForm.DisplayText($"Component position (user-taught): X={componentX:F3}, Y={componentY:F3}", KnownColor.DarkCyan);
+
+                // CALCULATE hole position from component position using tape offsets
+                double holeX = 0;
+                double holeY = 0;
+                
+                if (!GetHoleLocationFromPartPosition(TapeNumber, componentX, componentY, out holeX, out holeY))
+                {
+                    MainForm.DisplayText("*** Failed to calculate hole position from component position", KnownColor.DarkRed);
+                    return false;
+                }
+
+                // Temporarily update grid with HOLE position for nozzle pull
+                Grid.Rows[TapeNumber].Cells["Next_X_Column"].Value = holeX.ToString("0.000", CultureInfo.InvariantCulture);
+                Grid.Rows[TapeNumber].Cells["Next_Y_Column"].Value = holeY.ToString("0.000", CultureInfo.InvariantCulture);
+
+                // Execute nozzle pull indexing (pulls tape from hole position)
+                MainForm.DisplayText($"Pulling tape {pullDistance}mm from hole position...", KnownColor.DarkCyan);
                 
                 if (!MainForm.NozzlePullTapeIndex_m(TapeNumber, pullDistance))
                 {
+                    // RESTORE component position in grid on failure
+                    Grid.Rows[TapeNumber].Cells["Next_X_Column"].Value = componentX.ToString("0.000", CultureInfo.InvariantCulture);
+                    Grid.Rows[TapeNumber].Cells["Next_Y_Column"].Value = componentY.ToString("0.000", CultureInfo.InvariantCulture);
+                    
                     MainForm.DisplayText("*** Nozzle pull indexing failed!", KnownColor.DarkRed);
                     return false;
                 }
 
-                // Get updated hole position (already updated by NozzlePullTapeIndex_m)
-                if (!double.TryParse(Grid.Rows[TapeNumber].Cells["Next_X_Column"].Value.ToString().Replace(',', '.'), out HoleX))
+                // CRITICAL: RESTORE component position in grid (user manages this, not auto-calculated!)
+                Grid.Rows[TapeNumber].Cells["Next_X_Column"].Value = componentX.ToString("0.000", CultureInfo.InvariantCulture);
+                Grid.Rows[TapeNumber].Cells["Next_Y_Column"].Value = componentY.ToString("0.000", CultureInfo.InvariantCulture);
+
+                // Get rotation from tape settings
+                double partA = 0.0;
+                if (Grid.Rows[TapeNumber].Cells["RotationDirect_Column"].Value != null)
                 {
-                    MainForm.ShowMessageBox("Bad data at Next_X_Column after nozzle pull", "Tape data error", MessageBoxButtons.OK);
-                    return false;
+                    double.TryParse(Grid.Rows[TapeNumber].Cells["RotationDirect_Column"].Value.ToString().Replace(',', '.'), out partA);
                 }
 
-                if (!double.TryParse(Grid.Rows[TapeNumber].Cells["Next_Y_Column"].Value.ToString().Replace(',', '.'), out HoleY))
-                {
-                    MainForm.ShowMessageBox("Bad data at Next_Y_Column after nozzle pull", "Tape data error", MessageBoxButtons.OK);
-                    return false;
-                }
-
-                // Skip camera-based hole measurement - we know exact position from nozzle pull!
-                // Calculate part location directly from known hole position
-                double nozzlePullPartX = 0.0;
-                double nozzlePullPartY = 0.0;
-                double nozzlePullPartA = 0.0;
-
-                if (!GetPartLocationFromHolePosition_m(TapeNumber, HoleX, HoleY, out nozzlePullPartX, out nozzlePullPartY, out nozzlePullPartA))
-                {
-                    MainForm.ShowMessageBox("Can't calculate part location from hole position", "Tape error", MessageBoxButtons.OK);
-                    return false;
-                }
-
-                // Move nozzle to part position
-                if (!Nozzle.Move_m(nozzlePullPartX, nozzlePullPartY, nozzlePullPartA))
+                // Move nozzle directly to component position
+                if (!Nozzle.Move_m(componentX, componentY, partA))
                 {
                     return false;
                 }
 
-                MainForm.DisplayText($"Nozzle at part position: X={nozzlePullPartX:F3}, Y={nozzlePullPartY:F3}, A={nozzlePullPartA:F1}", KnownColor.DarkGreen);
-                return true;  // Success - skip normal camera measurement below
+                // Set return values (for tape tracking)
+                HoleX = componentX;
+                HoleY = componentY;
+
+                MainForm.DisplayText($"Tape pulled, picking from fixed position: X={componentX:F3}, Y={componentY:F3}, A={partA:F1}", KnownColor.DarkGreen);
+                return true;  // Success - tape advanced, ready to pick
             }
 
             // ========================================================================================
