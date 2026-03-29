@@ -9029,6 +9029,13 @@ namespace LitePlacer
                 ZGuardOn();
             }
 
+            // CRITICAL: When nozzle pull is enabled, DO NOT increment part counter!
+            // We use the same fixed position for all components (user manages manually)
+            if (useNozzlePull)
+            {
+                increment = false;
+            }
+
             if (increment)
             {
                 int i;
