@@ -8899,6 +8899,22 @@ namespace LitePlacer
                     double.TryParse(Tapes_dataGridView.Rows[TapeNum].Cells["PullDistance_Column"].Value.ToString().Replace(',', '.'), out pullDistance);
                 }
 
+                // Get tape parameters (orientation and offsets) from UI
+                string orientation = Tapes_dataGridView.Rows[TapeNum].Cells["Orientation_Column"].Value.ToString();
+                
+                double offsetX = 0;
+                double offsetY = 0;
+                if (!double.TryParse(Tapes_dataGridView.Rows[TapeNum].Cells["OffsetX_Column"].Value.ToString().Replace(',', '.'), out offsetX))
+                {
+                    DisplayText("*** Bad data at OffsetX_Column", KnownColor.DarkRed);
+                    return false;
+                }
+                if (!double.TryParse(Tapes_dataGridView.Rows[TapeNum].Cells["OffsetY_Column"].Value.ToString().Replace(',', '.'), out offsetY))
+                {
+                    DisplayText("*** Bad data at OffsetY_Column", KnownColor.DarkRed);
+                    return false;
+                }
+
                 // Get component position (X, Y from above are the component coordinates)
                 double componentX = X;
                 double componentY = Y;
@@ -8909,7 +8925,7 @@ namespace LitePlacer
                 double holeX = 0;
                 double holeY = 0;
                 
-                if (!Tapes.GetHoleLocationFromPartPosition(TapeNum, componentX, componentY, out holeX, out holeY))
+                if (!Tapes.GetHoleLocationFromPartPosition(TapeNum, componentX, componentY, orientation, offsetX, offsetY, out holeX, out holeY))
                 {
                     DisplayText("*** Failed to calculate hole position from component position", KnownColor.DarkRed);
                     return false;

@@ -558,23 +558,17 @@ namespace LitePlacer
         // Used for nozzle pull when "Coordinates For Parts" is enabled
         // User teaches component position, system calculates hole position using tape offsets
         // ========================================================================================
-        public bool GetHoleLocationFromPartPosition(int Tape, double PartX, double PartY, out double HoleX, out double HoleY)
+        public bool GetHoleLocationFromPartPosition(int Tape, double PartX, double PartY, string Orientation, double OffsetX, double OffsetY, out double HoleX, out double HoleY)
         {
             HoleX = 0.0;
             HoleY = 0.0;
 
-            double dW;   // Part center offset from hole, tape width direction (from OffsetX_Column)
-            double dL;   // Part center offset from hole, tape length direction (from OffsetY_Column, typically 2mm)
-            double Pitch;
-
-            if (!GetTapeParameters_m(Tape, out dW, out dL, out Pitch))
-            {
-                return false;
-            }
+            double dW = OffsetX;   // Part center offset from hole, tape width direction
+            double dL = OffsetY;   // Part center offset from hole, tape length direction (typically 2mm)
 
             // REVERSE the offset calculations from GetPartLocationFromHolePosition_m
             // Original formulas calculate Part from Hole, we need Hole from Part
-            switch (Grid.Rows[Tape].Cells["Orientation_Column"].Value.ToString())
+            switch (Orientation)
             {
                 case "+Y":
                     // Original: PartX = HoleX - dW, PartY = HoleY - dL
@@ -606,7 +600,7 @@ namespace LitePlacer
 
                 default:
                     MainForm.ShowMessageBox(
-                        "Bad orientation data for tape #" + Tape.ToString(CultureInfo.InvariantCulture),
+                        "Bad orientation data for tape #" + Tape.ToString(CultureInfo.InvariantCulture) + ": " + Orientation,
                         "Tape configuration error",
                         MessageBoxButtons.OK);
                     return false;
