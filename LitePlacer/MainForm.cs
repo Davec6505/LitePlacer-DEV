@@ -8887,6 +8887,9 @@ namespace LitePlacer
                 bool.TryParse(Tapes_dataGridView.Rows[TapeNum].Cells["UseNozzlePull_Column"].Value.ToString(), out useNozzlePull);
             }
 
+            // DEBUG: Show nozzle pull status
+            DisplayText($"DEBUG: UseNozzlePull checkbox value: {Tapes_dataGridView.Rows[TapeNum].Cells["UseNozzlePull_Column"].Value}, parsed as: {useNozzlePull}", KnownColor.Blue);
+
             if (useNozzlePull)
             {
                 // Get pull distance
@@ -12107,96 +12110,99 @@ namespace LitePlacer
             // Get tape orientation to determine pull direction
             string orientation = Tapes_dataGridView.Rows[tapeRow].Cells["Orientation_Column"].Value.ToString();
 
-            // Save current Z position and slow movement states
-            double originalZ = Cnc.CurrentZ;
-            bool originalSlowXY = Cnc.SlowXY;
-            bool originalSlowZ = Cnc.SlowZ;
-
-            try
+            // Get pickup Z height from tape settings (absolute Z position where nozzle picks component)
+            double pickupZ = 0;
+            string pickupZstr = Tapes_dataGridView.Rows[tapeRow].Cells["Z_Pickup_Column"].Value.ToString();
+            if (pickupZstr == "--" || !double.TryParse(pickupZstr.Replace(',', '.'), out pickupZ))
             {
-                // STEP 1: Move nozzle to sprocket hole position (X/Y only, Z stays high/safe)
-                DisplayText($"  Moving to hole: X={holeX:F3}, Y={holeY:F3}", KnownColor.DarkCyan);
-                if (!CNC_XYA_m(holeX, holeY, Cnc.CurrentA))
-                {
-                    DisplayText("*** Failed to move to hole position", KnownColor.DarkRed);
-                    return false;
-                }
+                DisplayText("*** Pickup Z not set for this tape. Please set pickup Z first!", KnownColor.DarkRed);
+                ShowMessageBox(
+                    "Nozzle pull requires Pickup Z to be set.\n\n" +
+                    "Please teach the pickup Z height for this tape first.",
+                    "Pickup Z Not Set",
+                    MessageBoxButtons.OK);
+                return false;
+            }
 
-                // STEP 2: Lower nozzle INTO sprocket hole (slow descent for safety)
-                double engageZ = originalZ + ENGAGEMENT_DEPTH;  // Z+ is down (toward PCB)
-                DisplayText($"  Engaging nozzle into hole: Z={engageZ:F3}", KnownColor.DarkCyan);
+            // Save current Z position for restoration
+            double originalZ = Cnc.CurrentZ;
 
-                // Use slow Z movement for controlled engagement
-                Cnc.SlowZ = true;
-                if (!Cnc.Z(engageZ))
-                {
-                    DisplayText("*** Failed to engage nozzle into hole", KnownColor.DarkRed);
-                    return false;
-                }
+            // STEP 1: Move nozzle to sprocket hole position (X/Y only, Z stays high/safe)
+            DisplayText($"  Moving to hole: X={holeX:F3}, Y={holeY:F3}", KnownColor.DarkCyan);
+            if (!CNC_XYA_m(holeX, holeY, Cnc.CurrentA))
+            {
+                DisplayText("*** Failed to move to hole position", KnownColor.DarkRed);
+                return false;
+            }
 
-                // STEP 3: Pull tape by moving in tape orientation direction
-                double pullTargetX = holeX;
-                double pullTargetY = holeY;
+            // STEP 2: Lower nozzle INTO sprocket hole at pickup Z + engagement depth
+            double engageZ = pickupZ + ENGAGEMENT_DEPTH;  // Go slightly deeper than pickup height
+            DisplayText($"  Engaging nozzle into hole: Z={engageZ:F3} (Pickup Z={pickupZ:F3} + {ENGAGEMENT_DEPTH}mm)", KnownColor.DarkCyan);
 
-                switch (orientation)
-                {
-                    case "+Y":  // Tape feeds upward (toward +Y), pull in +Y direction
-                        pullTargetY += pullDistance;
-                        break;
+            // Use faster speed for Z descent (500 mm/min is reasonable for controlled engagement)
+            double zSpeed = 500.0;  // mm/min - fast enough to be efficient, slow enough to be controlled
+            if (!Cnc.Execute_Z(engageZ, zSpeed, "G1"))
+            {
+                DisplayText("*** Failed to engage nozzle into hole", KnownColor.DarkRed);
+                return false;
+            }
 
-                    case "+X":  // Tape feeds right (toward +X), pull in +X direction
-                        pullTargetX += pullDistance;
-                        break;
+            // STEP 3: Pull tape by moving in tape orientation direction
+            double pullTargetX = holeX;
+            double pullTargetY = holeY;
 
-                    case "-Y":  // Tape feeds downward (toward -Y), pull in -Y direction
-                        pullTargetY -= pullDistance;
-                        break;
+            switch (orientation)
+            {
+                case "+Y":  // Tape feeds upward (toward +Y), pull in +Y direction
+                    pullTargetY += pullDistance;
+                    break;
 
-                    case "-X":  // Tape feeds left (toward -X), pull in -X direction
-                        pullTargetX -= pullDistance;
-                        break;
+                case "+X":  // Tape feeds right (toward +X), pull in +X direction
+                    pullTargetX += pullDistance;
+                    break;
 
-                    default:
-                        ShowMessageBox($"Unknown tape orientation: {orientation}", "Tape error", MessageBoxButtons.OK);
-                        // Lift nozzle before returning
-                        Cnc.Z(originalZ);
-                        return false;
-                }
+                case "-Y":  // Tape feeds downward (toward -Y), pull in -Y direction
+                    pullTargetY -= pullDistance;
+                    break;
 
-                DisplayText($"  Pulling tape {pullDistance}mm in {orientation} direction", KnownColor.DarkCyan);
+                case "-X":  // Tape feeds left (toward -X), pull in -X direction
+                    pullTargetX -= pullDistance;
+                    break;
 
-                // Execute pull with slow, controlled speed (nozzle stays engaged during pull)
-                Cnc.SlowXY = true;
-                if (!Cnc.XYA(pullTargetX, pullTargetY, Cnc.CurrentA))
-                {
-                    DisplayText("*** Failed to pull tape", KnownColor.DarkRed);
-                    // Try to lift nozzle anyway
+                default:
+                    ShowMessageBox($"Unknown tape orientation: {orientation}", "Tape error", MessageBoxButtons.OK);
+                    // Lift nozzle before returning
                     Cnc.Z(originalZ);
                     return false;
-                }
-
-                // STEP 4: Lift nozzle out of sprocket hole
-                DisplayText($"  Lifting nozzle clear", KnownColor.DarkCyan);
-                if (!Cnc.Z(originalZ))
-                {
-                    DisplayText("*** Warning: Failed to lift nozzle cleanly", KnownColor.DarkOrange);
-                    // Continue anyway - nozzle might still be functional
-                }
-
-                // STEP 5: Update tape's next hole position for next component
-                Tapes_dataGridView.Rows[tapeRow].Cells["Next_X_Column"].Value = pullTargetX.ToString("0.000", CultureInfo.InvariantCulture);
-                Tapes_dataGridView.Rows[tapeRow].Cells["Next_Y_Column"].Value = pullTargetY.ToString("0.000", CultureInfo.InvariantCulture);
-
-                DisplayText($"Nozzle pull complete. Next hole: X={pullTargetX:F3}, Y={pullTargetY:F3}", KnownColor.DarkGreen);
-
-                return true;
             }
-            finally
+
+            DisplayText($"  Pulling tape {pullDistance}mm in {orientation} direction", KnownColor.DarkCyan);
+
+            // Execute pull with faster speed (300 mm/min is fast enough for efficiency while maintaining control)
+            double xySpeed = 300.0;  // mm/min - much faster than before
+            if (!Cnc.Execute_XYA(pullTargetX, pullTargetY, Cnc.CurrentA, xySpeed, "G1"))
             {
-                // Always restore original slow movement states
-                Cnc.SlowXY = originalSlowXY;
-                Cnc.SlowZ = originalSlowZ;
+                DisplayText("*** Failed to pull tape", KnownColor.DarkRed);
+                // Try to lift nozzle anyway
+                Cnc.Z(originalZ);
+                return false;
             }
+
+            // STEP 4: Lift nozzle out of sprocket hole (back to original safe height)
+            DisplayText($"  Lifting nozzle clear to Z={originalZ:F3}", KnownColor.DarkCyan);
+            if (!Cnc.Z(originalZ))
+            {
+                DisplayText("*** Warning: Failed to lift nozzle cleanly", KnownColor.DarkOrange);
+                // Continue anyway - nozzle might still be functional
+            }
+
+            // STEP 5: Update tape's next hole position for next component
+            Tapes_dataGridView.Rows[tapeRow].Cells["Next_X_Column"].Value = pullTargetX.ToString("0.000", CultureInfo.InvariantCulture);
+            Tapes_dataGridView.Rows[tapeRow].Cells["Next_Y_Column"].Value = pullTargetY.ToString("0.000", CultureInfo.InvariantCulture);
+
+            DisplayText($"Nozzle pull complete. Next hole: X={pullTargetX:F3}, Y={pullTargetY:F3}", KnownColor.DarkGreen);
+
+            return true;
         }
 
         #endregion  TapeNumber Positions page functions
