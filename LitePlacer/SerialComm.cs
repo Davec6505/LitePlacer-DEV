@@ -169,7 +169,20 @@ namespace LitePlacer
                     //Remove the data and the terminator from tString 
                     RxString = RxString.Substring(RxString.IndexOf("\n", StringComparison.Ordinal) + 1);
                     WorkingString = WorkingString.Replace("\r", "");
-                    Cnc.LineReceived(WorkingString);
+                    
+                    // CRITICAL: LineReceived may update UI controls, so marshal to UI thread
+                    string lineToProcess = WorkingString;  // Capture for lambda
+                    if (MainForm.InvokeRequired)
+                    {
+                        MainForm.Invoke(new Action(() =>
+                        {
+                            Cnc.LineReceived(lineToProcess);
+                        }));
+                    }
+                    else
+                    {
+                        Cnc.LineReceived(lineToProcess);
+                    }
                 }
             }
 #pragma warning disable CA1031 // Do not catch general exception types
