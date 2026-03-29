@@ -9022,6 +9022,13 @@ namespace LitePlacer
                 return false;
             }
 
+            // Re-enable Z-guard after nozzle pull + pickup sequence completes
+            // (It was disabled during nozzle pull to allow 10mm lift optimization)
+            if (useNozzlePull && !ZguardIsOn())
+            {
+                ZGuardOn();
+            }
+
             if (increment)
             {
                 int i;
@@ -12289,15 +12296,34 @@ namespace LitePlacer
             }
 
             // STEP 4: Lift nozzle out of sprocket hole (10mm clearance is enough)
+            // Temporarily disable Z-guard to allow the optimization of lifting only 10mm
+            // instead of returning all the way to home
             const double LIFT_CLEARANCE = 10.0;  // mm - enough to clear tape without wasting time
             double liftZ = engageZ - LIFT_CLEARANCE;  // Lift 10mm above engaged position
             
             DisplayText($"  Lifting nozzle {LIFT_CLEARANCE}mm clear to Z={liftZ:F3}", KnownColor.DarkCyan);
+            
+            // Save Z-guard state and disable it
+            bool wasZGuardOn = ZguardIsOn();
+            if (wasZGuardOn)
+            {
+                ZGuardOff();
+            }
+            
             if (!Cnc.Z(liftZ))
             {
                 DisplayText("*** Warning: Failed to lift nozzle cleanly", KnownColor.DarkOrange);
-                // Continue anyway - nozzle might still be functional
+                // Re-enable Z-guard before returning
+                if (wasZGuardOn)
+                {
+                    ZGuardOn();
+                }
+                return false;
             }
+
+            // Z-guard will be re-enabled by the calling function after component pickup
+            // Note: We leave it OFF here so the subsequent move to component position doesn't trigger warning
+            // The normal pickup flow will re-enable it after the component is picked
 
             // STEP 5: DO NOT update Next_X/Y when nozzle pull is enabled!
             // In "Coordinates For Parts" mode with nozzle pull, the user manages the part position manually
@@ -12305,6 +12331,7 @@ namespace LitePlacer
             // (The tape advances physically via the pull, but the pickup position stays the same)
             
             DisplayText($"Nozzle pull complete. Tape advanced {pullDistance}mm, pickup position unchanged.", KnownColor.DarkGreen);
+            DisplayText($"Z-guard temporarily disabled - will be re-enabled after component pickup", KnownColor.DarkCyan);
 
             return true;
         }
