@@ -702,6 +702,75 @@ namespace LitePlacer
 		{
             HoleX = 0;
             HoleY = 0;
+
+            // ========================================================================================
+            // CHECK FOR NOZZLE PULL INDEXING
+            // If enabled, pull tape via sprocket hole instead of relying on manual/dog indexing
+            // ========================================================================================
+            bool useNozzlePull = false;
+            double pullDistance = 4.0;  // Default to 4mm
+
+            // Check if nozzle pull is enabled for this tape
+            if (Grid.Rows[TapeNumber].Cells["UseNozzlePull_Column"].Value != null)
+            {
+                bool.TryParse(Grid.Rows[TapeNumber].Cells["UseNozzlePull_Column"].Value.ToString(), out useNozzlePull);
+            }
+
+            if (useNozzlePull)
+            {
+                // Get pull distance from tape configuration
+                if (Grid.Rows[TapeNumber].Cells["PullDistance_Column"].Value != null)
+                {
+                    double.TryParse(Grid.Rows[TapeNumber].Cells["PullDistance_Column"].Value.ToString().Replace(',', '.'), out pullDistance);
+                }
+
+                // Execute nozzle pull indexing
+                MainForm.DisplayText($"Using nozzle pull indexing for tape {Grid.Rows[TapeNumber].Cells["Id_Column"].Value}", KnownColor.DarkCyan);
+                
+                if (!MainForm.NozzlePullTapeIndex_m(TapeNumber, pullDistance))
+                {
+                    MainForm.DisplayText("*** Nozzle pull indexing failed!", KnownColor.DarkRed);
+                    return false;
+                }
+
+                // Get updated hole position (already updated by NozzlePullTapeIndex_m)
+                if (!double.TryParse(Grid.Rows[TapeNumber].Cells["Next_X_Column"].Value.ToString().Replace(',', '.'), out HoleX))
+                {
+                    MainForm.ShowMessageBox("Bad data at Next_X_Column after nozzle pull", "Tape data error", MessageBoxButtons.OK);
+                    return false;
+                }
+
+                if (!double.TryParse(Grid.Rows[TapeNumber].Cells["Next_Y_Column"].Value.ToString().Replace(',', '.'), out HoleY))
+                {
+                    MainForm.ShowMessageBox("Bad data at Next_Y_Column after nozzle pull", "Tape data error", MessageBoxButtons.OK);
+                    return false;
+                }
+
+                // Skip camera-based hole measurement - we know exact position from nozzle pull!
+                // Calculate part location directly from known hole position
+                double nozzlePullPartX = 0.0;
+                double nozzlePullPartY = 0.0;
+                double nozzlePullPartA = 0.0;
+
+                if (!GetPartLocationFromHolePosition_m(TapeNumber, HoleX, HoleY, out nozzlePullPartX, out nozzlePullPartY, out nozzlePullPartA))
+                {
+                    MainForm.ShowMessageBox("Can't calculate part location from hole position", "Tape error", MessageBoxButtons.OK);
+                    return false;
+                }
+
+                // Move nozzle to part position
+                if (!Nozzle.Move_m(nozzlePullPartX, nozzlePullPartY, nozzlePullPartA))
+                {
+                    return false;
+                }
+
+                MainForm.DisplayText($"Nozzle at part position: X={nozzlePullPartX:F3}, Y={nozzlePullPartY:F3}, A={nozzlePullPartA:F1}", KnownColor.DarkGreen);
+                return true;  // Success - skip normal camera measurement below
+            }
+
+            // ========================================================================================
+            // NORMAL CAMERA-BASED HOLE MEASUREMENT (Original code)
+            // ========================================================================================
 			// Go to next hole approximate location:
 			if (!SetCurrentTapeMeasurement_m(TapeNumber))  // having the measurement setup here helps with the automatic gain lag
             {

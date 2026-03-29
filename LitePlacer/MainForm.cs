@@ -1086,6 +1086,8 @@ namespace LitePlacer
                     Headers.Add("Z_Place_Column");
                     Headers.Add("Next_X_Column");
                     Headers.Add("Next_Y_Column");
+                    Headers.Add("UseNozzlePull_Column");
+                    Headers.Add("PullDistance_Column");
                     break;
 
                 case DataTableType.VideoProcessing:
@@ -12010,6 +12012,129 @@ namespace LitePlacer
             }
         }
 
+
+        // ========================================================================================
+        // NozzlePullTapeIndex_m(): Uses nozzle to pull tape via sprocket hole
+        // Works with Nozzle #1 (0.5-1.0mm) or Nozzle #2 (0.8-1.5mm) - CP40 compatible
+        // Call this BEFORE measuring/picking component position
+        // ========================================================================================
+        public bool NozzlePullTapeIndex_m(int tapeRow, double pullDistance)
+        {
+            // Fixed parameters optimized for CP40 nozzles and standard EIA-481 tapes
+            const double ENGAGEMENT_DEPTH = 2.5;      // mm - nozzle depth into 1.5mm sprocket hole
+
+            DisplayText($"Nozzle pull indexing: {pullDistance}mm...", KnownColor.DarkCyan);
+
+            // Get current hole position from tape grid
+            double holeX = 0;
+            double holeY = 0;
+
+            if (!double.TryParse(Tapes_dataGridView.Rows[tapeRow].Cells["Next_X_Column"].Value.ToString().Replace(',', '.'), out holeX))
+            {
+                ShowMessageBox("Bad data at Next_X_Column", "Tape data error", MessageBoxButtons.OK);
+                return false;
+            }
+
+            if (!double.TryParse(Tapes_dataGridView.Rows[tapeRow].Cells["Next_Y_Column"].Value.ToString().Replace(',', '.'), out holeY))
+            {
+                ShowMessageBox("Bad data at Next_Y_Column", "Tape data error", MessageBoxButtons.OK);
+                return false;
+            }
+
+            // Get tape orientation to determine pull direction
+            string orientation = Tapes_dataGridView.Rows[tapeRow].Cells["Orientation_Column"].Value.ToString();
+
+            // Save current Z position and slow movement states
+            double originalZ = Cnc.CurrentZ;
+            bool originalSlowXY = Cnc.SlowXY;
+            bool originalSlowZ = Cnc.SlowZ;
+
+            try
+            {
+                // STEP 1: Move nozzle to sprocket hole position (X/Y only, Z stays high/safe)
+                DisplayText($"  Moving to hole: X={holeX:F3}, Y={holeY:F3}", KnownColor.DarkCyan);
+                if (!CNC_XYA_m(holeX, holeY, Cnc.CurrentA))
+                {
+                    DisplayText("*** Failed to move to hole position", KnownColor.DarkRed);
+                    return false;
+                }
+
+                // STEP 2: Lower nozzle INTO sprocket hole (slow descent for safety)
+                double engageZ = originalZ + ENGAGEMENT_DEPTH;  // Z+ is down (toward PCB)
+                DisplayText($"  Engaging nozzle into hole: Z={engageZ:F3}", KnownColor.DarkCyan);
+
+                // Use slow Z movement for controlled engagement
+                Cnc.SlowZ = true;
+                if (!Cnc.Z(engageZ))
+                {
+                    DisplayText("*** Failed to engage nozzle into hole", KnownColor.DarkRed);
+                    return false;
+                }
+
+                // STEP 3: Pull tape by moving in tape orientation direction
+                double pullTargetX = holeX;
+                double pullTargetY = holeY;
+
+                switch (orientation)
+                {
+                    case "+Y":  // Tape feeds upward (toward +Y), pull in +Y direction
+                        pullTargetY += pullDistance;
+                        break;
+
+                    case "+X":  // Tape feeds right (toward +X), pull in +X direction
+                        pullTargetX += pullDistance;
+                        break;
+
+                    case "-Y":  // Tape feeds downward (toward -Y), pull in -Y direction
+                        pullTargetY -= pullDistance;
+                        break;
+
+                    case "-X":  // Tape feeds left (toward -X), pull in -X direction
+                        pullTargetX -= pullDistance;
+                        break;
+
+                    default:
+                        ShowMessageBox($"Unknown tape orientation: {orientation}", "Tape error", MessageBoxButtons.OK);
+                        // Lift nozzle before returning
+                        Cnc.Z(originalZ);
+                        return false;
+                }
+
+                DisplayText($"  Pulling tape {pullDistance}mm in {orientation} direction", KnownColor.DarkCyan);
+
+                // Execute pull with slow, controlled speed (nozzle stays engaged during pull)
+                Cnc.SlowXY = true;
+                if (!Cnc.XYA(pullTargetX, pullTargetY, Cnc.CurrentA))
+                {
+                    DisplayText("*** Failed to pull tape", KnownColor.DarkRed);
+                    // Try to lift nozzle anyway
+                    Cnc.Z(originalZ);
+                    return false;
+                }
+
+                // STEP 4: Lift nozzle out of sprocket hole
+                DisplayText($"  Lifting nozzle clear", KnownColor.DarkCyan);
+                if (!Cnc.Z(originalZ))
+                {
+                    DisplayText("*** Warning: Failed to lift nozzle cleanly", KnownColor.DarkOrange);
+                    // Continue anyway - nozzle might still be functional
+                }
+
+                // STEP 5: Update tape's next hole position for next component
+                Tapes_dataGridView.Rows[tapeRow].Cells["Next_X_Column"].Value = pullTargetX.ToString("0.000", CultureInfo.InvariantCulture);
+                Tapes_dataGridView.Rows[tapeRow].Cells["Next_Y_Column"].Value = pullTargetY.ToString("0.000", CultureInfo.InvariantCulture);
+
+                DisplayText($"Nozzle pull complete. Next hole: X={pullTargetX:F3}, Y={pullTargetY:F3}", KnownColor.DarkGreen);
+
+                return true;
+            }
+            finally
+            {
+                // Always restore original slow movement states
+                Cnc.SlowXY = originalSlowXY;
+                Cnc.SlowZ = originalSlowZ;
+            }
+        }
 
         #endregion  TapeNumber Positions page functions
 

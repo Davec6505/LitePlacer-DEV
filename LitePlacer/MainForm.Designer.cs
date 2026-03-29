@@ -154,6 +154,8 @@ namespace LitePlacer
             this.LastX_Column = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.LastY_column = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.RotationDirect_Column = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.UseNozzlePull_Column = new System.Windows.Forms.DataGridViewCheckBoxColumn();
+            this.PullDistance_Column = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.Tapes_contextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.editToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.tabPageSetupCameras = new System.Windows.Forms.TabPage();
@@ -2139,7 +2141,9 @@ namespace LitePlacer
             this.UseNozzleCoordinates_Column,
             this.LastX_Column,
             this.LastY_column,
-            this.RotationDirect_Column});
+            this.RotationDirect_Column,
+            this.UseNozzlePull_Column,
+            this.PullDistance_Column});
             this.Tapes_dataGridView.ContextMenuStrip = this.Tapes_contextMenuStrip;
             this.Tapes_dataGridView.Location = new System.Drawing.Point(655, 19);
             this.Tapes_dataGridView.Name = "Tapes_dataGridView";
@@ -2370,6 +2374,23 @@ namespace LitePlacer
             this.RotationDirect_Column.MinimumWidth = 6;
             this.RotationDirect_Column.Name = "RotationDirect_Column";
             this.RotationDirect_Column.Width = 86;
+            // 
+            // UseNozzlePull_Column
+            // 
+            this.UseNozzlePull_Column.HeaderText = "Nozzle Pull";
+            this.UseNozzlePull_Column.MinimumWidth = 6;
+            this.UseNozzlePull_Column.Name = "UseNozzlePull_Column";
+            this.UseNozzlePull_Column.Width = 85;
+            this.UseNozzlePull_Column.ToolTipText = "Enable nozzle-based tape indexing (pull via sprocket hole)";
+            // 
+            // PullDistance_Column
+            // 
+            this.PullDistance_Column.HeaderText = "Pull Dist";
+            this.PullDistance_Column.MinimumWidth = 6;
+            this.PullDistance_Column.Name = "PullDistance_Column";
+            this.PullDistance_Column.Width = 80;
+            this.PullDistance_Column.ToolTipText = "Distance to pull tape (mm) - usually same as Pitch";
+            this.PullDistance_Column.DefaultCellStyle.Format = "0.0";
             // 
             // Tapes_contextMenuStrip
             // 
@@ -13532,6 +13553,8 @@ namespace LitePlacer
         private System.Windows.Forms.DataGridViewTextBoxColumn LastX_Column;
         private System.Windows.Forms.DataGridViewTextBoxColumn LastY_column;
         private System.Windows.Forms.DataGridViewTextBoxColumn RotationDirect_Column;
+        private System.Windows.Forms.DataGridViewCheckBoxColumn UseNozzlePull_Column;
+        private System.Windows.Forms.DataGridViewTextBoxColumn PullDistance_Column;
         private System.Windows.Forms.ContextMenuStrip Tapes_contextMenuStrip;
         private System.Windows.Forms.ToolStripMenuItem editToolStripMenuItem;
         private System.Windows.Forms.Label label7;
