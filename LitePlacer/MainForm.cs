@@ -8915,6 +8915,34 @@ namespace LitePlacer
                     return false;
                 }
 
+                // CRITICAL: For nozzle pull mode, adjust offsets based on EIA-481 standard geometry
+                // Standard tapes have holes on ONE SIDE, and the offset values from tape width dropdown
+                // are typically POSITIVE, but we need to make them NEGATIVE to point toward the hole side
+                //
+                // EIA-481 Standard:
+                // - Vertical tapes (+Y/-Y): Holes are on LEFT side → OffsetX should be NEGATIVE
+                // - Horizontal tapes (+X/-X): Holes are on BOTTOM side → OffsetY should be NEGATIVE
+                //
+                // If user entered positive offset (default), make it negative to find holes
+                if (orientation == "+Y" || orientation == "-Y")
+                {
+                    // Vertical tape: holes on left, ensure OffsetX is negative
+                    if (offsetX > 0)
+                    {
+                        offsetX = -offsetX;
+                        DisplayText($"  Adjusting OffsetX to negative for hole on left: {offsetX:F3}", KnownColor.DarkCyan);
+                    }
+                }
+                else if (orientation == "+X" || orientation == "-X")
+                {
+                    // Horizontal tape: holes on bottom, ensure OffsetY is negative  
+                    if (offsetY > 0)
+                    {
+                        offsetY = -offsetY;
+                        DisplayText($"  Adjusting OffsetY to negative for hole on bottom: {offsetY:F3}", KnownColor.DarkCyan);
+                    }
+                }
+
                 // Get component position (X, Y from above are the component coordinates)
                 double componentX = X;
                 double componentY = Y;
@@ -12219,27 +12247,26 @@ namespace LitePlacer
             }
 
             // STEP 3: Pull tape by moving in tape FEED direction
-            // NOTE: Orientation indicates hole side, not feed direction!
-            // Standard EIA-481: Part is always "behind" hole in feed direction
+            // Orientation indicates feed direction in nozzle pull mode
             double pullTargetX = holeX;
             double pullTargetY = holeY;
 
             switch (orientation)
             {
-                case "+Y":  // Holes on RIGHT, tape feeds toward +Y
+                case "+Y":  // Tape feeds toward +Y, pull in +Y direction
                     pullTargetY += pullDistance;
                     break;
 
-                case "+X":  // Holes on BOTTOM, tape feeds toward +X
+                case "+X":  // Tape feeds toward +X, pull in +X direction
                     pullTargetX += pullDistance;
                     break;
 
-                case "-Y":  // Holes on LEFT, tape feeds toward +Y (OPPOSITE of orientation name!)
-                    pullTargetY += pullDistance;  // Still pull +Y direction!
+                case "-Y":  // Tape feeds toward -Y, pull in -Y direction
+                    pullTargetY -= pullDistance;
                     break;
 
-                case "-X":  // Holes on TOP, tape feeds toward +X (OPPOSITE of orientation name!)
-                    pullTargetX += pullDistance;  // Still pull +X direction!
+                case "-X":  // Tape feeds toward -X, pull in -X direction
+                    pullTargetX -= pullDistance;
                     break;
 
                 default:
@@ -12249,7 +12276,7 @@ namespace LitePlacer
                     return false;
             }
 
-            DisplayText($"  Pulling tape {pullDistance}mm (orientation: {orientation})", KnownColor.DarkCyan);
+            DisplayText($"  Pulling tape {pullDistance}mm in {orientation} direction", KnownColor.DarkCyan);
 
             // Execute pull with faster speed (300 mm/min is fast enough for efficiency while maintaining control)
             double xySpeed = 300.0;  // mm/min - much faster than before
