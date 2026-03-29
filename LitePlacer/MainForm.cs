@@ -12086,43 +12086,82 @@ namespace LitePlacer
         // ========================================================================================
         public bool NozzlePullTapeIndex_m(int tapeRow, double pullDistance)
         {
+            // Thread-safe: Read all UI data at the beginning
+            double holeX = 0;
+            double holeY = 0;
+            string orientation = "";
+            double pickupZ = 0;
+            
+            // If called from non-UI thread, invoke on UI thread to read grid data
+            if (InvokeRequired)
+            {
+                bool success = false;
+                Invoke(new Action(() =>
+                {
+                    try
+                    {
+                        holeX = double.Parse(Tapes_dataGridView.Rows[tapeRow].Cells["Next_X_Column"].Value.ToString().Replace(',', '.'));
+                        holeY = double.Parse(Tapes_dataGridView.Rows[tapeRow].Cells["Next_Y_Column"].Value.ToString().Replace(',', '.'));
+                        orientation = Tapes_dataGridView.Rows[tapeRow].Cells["Orientation_Column"].Value.ToString();
+                        
+                        string pickupZstr = Tapes_dataGridView.Rows[tapeRow].Cells["Z_Pickup_Column"].Value.ToString();
+                        if (pickupZstr != "--")
+                        {
+                            pickupZ = double.Parse(pickupZstr.Replace(',', '.'));
+                            success = true;
+                        }
+                    }
+                    catch
+                    {
+                        success = false;
+                    }
+                }));
+                
+                if (!success)
+                {
+                    DisplayText("*** Pickup Z not set for this tape. Please set pickup Z first!", KnownColor.DarkRed);
+                    ShowMessageBox(
+                        "Nozzle pull requires Pickup Z to be set.\n\n" +
+                        "Please teach the pickup Z height for this tape first.",
+                        "Pickup Z Not Set",
+                        MessageBoxButtons.OK);
+                    return false;
+                }
+            }
+            else
+            {
+                // Called from UI thread - read directly
+                if (!double.TryParse(Tapes_dataGridView.Rows[tapeRow].Cells["Next_X_Column"].Value.ToString().Replace(',', '.'), out holeX))
+                {
+                    ShowMessageBox("Bad data at Next_X_Column", "Tape data error", MessageBoxButtons.OK);
+                    return false;
+                }
+
+                if (!double.TryParse(Tapes_dataGridView.Rows[tapeRow].Cells["Next_Y_Column"].Value.ToString().Replace(',', '.'), out holeY))
+                {
+                    ShowMessageBox("Bad data at Next_Y_Column", "Tape data error", MessageBoxButtons.OK);
+                    return false;
+                }
+
+                orientation = Tapes_dataGridView.Rows[tapeRow].Cells["Orientation_Column"].Value.ToString();
+
+                string pickupZstr = Tapes_dataGridView.Rows[tapeRow].Cells["Z_Pickup_Column"].Value.ToString();
+                if (pickupZstr == "--" || !double.TryParse(pickupZstr.Replace(',', '.'), out pickupZ))
+                {
+                    DisplayText("*** Pickup Z not set for this tape. Please set pickup Z first!", KnownColor.DarkRed);
+                    ShowMessageBox(
+                        "Nozzle pull requires Pickup Z to be set.\n\n" +
+                        "Please teach the pickup Z height for this tape first.",
+                        "Pickup Z Not Set",
+                        MessageBoxButtons.OK);
+                    return false;
+                }
+            }
+
             // Fixed parameters optimized for CP40 nozzles and standard EIA-481 tapes
             const double ENGAGEMENT_DEPTH = 2.5;      // mm - nozzle depth into 1.5mm sprocket hole
 
             DisplayText($"Nozzle pull indexing: {pullDistance}mm...", KnownColor.DarkCyan);
-
-            // Get current hole position from tape grid
-            double holeX = 0;
-            double holeY = 0;
-
-            if (!double.TryParse(Tapes_dataGridView.Rows[tapeRow].Cells["Next_X_Column"].Value.ToString().Replace(',', '.'), out holeX))
-            {
-                ShowMessageBox("Bad data at Next_X_Column", "Tape data error", MessageBoxButtons.OK);
-                return false;
-            }
-
-            if (!double.TryParse(Tapes_dataGridView.Rows[tapeRow].Cells["Next_Y_Column"].Value.ToString().Replace(',', '.'), out holeY))
-            {
-                ShowMessageBox("Bad data at Next_Y_Column", "Tape data error", MessageBoxButtons.OK);
-                return false;
-            }
-
-            // Get tape orientation to determine pull direction
-            string orientation = Tapes_dataGridView.Rows[tapeRow].Cells["Orientation_Column"].Value.ToString();
-
-            // Get pickup Z height from tape settings (absolute Z position where nozzle picks component)
-            double pickupZ = 0;
-            string pickupZstr = Tapes_dataGridView.Rows[tapeRow].Cells["Z_Pickup_Column"].Value.ToString();
-            if (pickupZstr == "--" || !double.TryParse(pickupZstr.Replace(',', '.'), out pickupZ))
-            {
-                DisplayText("*** Pickup Z not set for this tape. Please set pickup Z first!", KnownColor.DarkRed);
-                ShowMessageBox(
-                    "Nozzle pull requires Pickup Z to be set.\n\n" +
-                    "Please teach the pickup Z height for this tape first.",
-                    "Pickup Z Not Set",
-                    MessageBoxButtons.OK);
-                return false;
-            }
 
             // Save current Z position for restoration
             double originalZ = Cnc.CurrentZ;
@@ -12196,9 +12235,20 @@ namespace LitePlacer
                 // Continue anyway - nozzle might still be functional
             }
 
-            // STEP 5: Update tape's next hole position for next component
-            Tapes_dataGridView.Rows[tapeRow].Cells["Next_X_Column"].Value = pullTargetX.ToString("0.000", CultureInfo.InvariantCulture);
-            Tapes_dataGridView.Rows[tapeRow].Cells["Next_Y_Column"].Value = pullTargetY.ToString("0.000", CultureInfo.InvariantCulture);
+            // STEP 5: Update tape's next hole position for next component (thread-safe)
+            if (InvokeRequired)
+            {
+                Invoke(new Action(() =>
+                {
+                    Tapes_dataGridView.Rows[tapeRow].Cells["Next_X_Column"].Value = pullTargetX.ToString("0.000", CultureInfo.InvariantCulture);
+                    Tapes_dataGridView.Rows[tapeRow].Cells["Next_Y_Column"].Value = pullTargetY.ToString("0.000", CultureInfo.InvariantCulture);
+                }));
+            }
+            else
+            {
+                Tapes_dataGridView.Rows[tapeRow].Cells["Next_X_Column"].Value = pullTargetX.ToString("0.000", CultureInfo.InvariantCulture);
+                Tapes_dataGridView.Rows[tapeRow].Cells["Next_Y_Column"].Value = pullTargetY.ToString("0.000", CultureInfo.InvariantCulture);
+            }
 
             DisplayText($"Nozzle pull complete. Next hole: X={pullTargetX:F3}, Y={pullTargetY:F3}", KnownColor.DarkGreen);
 
