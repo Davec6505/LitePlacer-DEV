@@ -8919,6 +8919,22 @@ namespace LitePlacer
                 double componentX = X;
                 double componentY = Y;
 
+                // Validate component position
+                if (double.IsNaN(componentX) || double.IsNaN(componentY))
+                {
+                    DisplayText("*** Component position not set (NaN)!", KnownColor.DarkRed);
+                    ShowMessageBox(
+                        "Component position is not valid for tape: " + Tapes_dataGridView.Rows[TapeNum].Cells["Id_Column"].Value.ToString() + "\n\n" +
+                        "Please:\n" +
+                        "1. Jog to the component position\n" +
+                        "2. Set the 'Next X' and 'Next Y' coordinates\n" +
+                        "3. Make sure 'Coordinates For Parts' is enabled\n\n" +
+                        "Then try again.",
+                        "Invalid Component Position",
+                        MessageBoxButtons.OK);
+                    return false;
+                }
+
                 DisplayText($"Nozzle pull: Component at X={componentX:F3}, Y={componentY:F3}", KnownColor.DarkCyan);
 
                 // Calculate hole position from component position using tape offsets
