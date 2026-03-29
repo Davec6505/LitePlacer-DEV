@@ -12218,26 +12218,28 @@ namespace LitePlacer
                 return false;
             }
 
-            // STEP 3: Pull tape by moving in tape orientation direction
+            // STEP 3: Pull tape by moving in tape FEED direction
+            // NOTE: Orientation indicates hole side, not feed direction!
+            // Standard EIA-481: Part is always "behind" hole in feed direction
             double pullTargetX = holeX;
             double pullTargetY = holeY;
 
             switch (orientation)
             {
-                case "+Y":  // Tape feeds upward (toward +Y), pull in +Y direction
+                case "+Y":  // Holes on RIGHT, tape feeds toward +Y
                     pullTargetY += pullDistance;
                     break;
 
-                case "+X":  // Tape feeds right (toward +X), pull in +X direction
+                case "+X":  // Holes on BOTTOM, tape feeds toward +X
                     pullTargetX += pullDistance;
                     break;
 
-                case "-Y":  // Tape feeds downward (toward -Y), pull in -Y direction
-                    pullTargetY -= pullDistance;
+                case "-Y":  // Holes on LEFT, tape feeds toward +Y (OPPOSITE of orientation name!)
+                    pullTargetY += pullDistance;  // Still pull +Y direction!
                     break;
 
-                case "-X":  // Tape feeds left (toward -X), pull in -X direction
-                    pullTargetX -= pullDistance;
+                case "-X":  // Holes on TOP, tape feeds toward +X (OPPOSITE of orientation name!)
+                    pullTargetX += pullDistance;  // Still pull +X direction!
                     break;
 
                 default:
@@ -12247,7 +12249,7 @@ namespace LitePlacer
                     return false;
             }
 
-            DisplayText($"  Pulling tape {pullDistance}mm in {orientation} direction", KnownColor.DarkCyan);
+            DisplayText($"  Pulling tape {pullDistance}mm (orientation: {orientation})", KnownColor.DarkCyan);
 
             // Execute pull with faster speed (300 mm/min is fast enough for efficiency while maintaining control)
             double xySpeed = 300.0;  // mm/min - much faster than before
