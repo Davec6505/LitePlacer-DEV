@@ -18,6 +18,10 @@ namespace LitePlacer
 		private Camera DownCamera;
 		private CNC Cnc;
 
+        // Storage for verified hole positions (tape row index -> (HoleX, HoleY))
+        // Used when VerifyHoleWithCamera is unchecked - stores hole position for reuse
+        private Dictionary<int, (double X, double Y)> VerifiedHolePositions = new Dictionary<int, (double X, double Y)>();
+
         public TapesClass(DataGridView grd, NozzleCalibrationClass ndl, Camera cam, CNC c, FormMain MainF)
 		{
             Grid = grd;
@@ -42,6 +46,8 @@ namespace LitePlacer
                     Grid.Rows[tape].Cells["Next_X_Column"].Value = Grid.Rows[tape].Cells["FirstX_Column"].Value;
                     Grid.Rows[tape].Cells["Next_Y_Column"].Value = Grid.Rows[tape].Cells["FirstY_Column"].Value;
                 }
+                // Clear verified hole positions when resetting
+                VerifiedHolePositions.Clear();
             }
 
         }
@@ -54,6 +60,11 @@ namespace LitePlacer
             // fix #22 reset next coordinates
             Grid.Rows[tape].Cells["Next_X_Column"].Value = Grid.Rows[tape].Cells["FirstX_Column"].Value;
 			Grid.Rows[tape].Cells["Next_Y_Column"].Value = Grid.Rows[tape].Cells["FirstY_Column"].Value;
+            // Clear verified hole position for this tape when resetting
+            if (VerifiedHolePositions.ContainsKey(tape))
+            {
+                VerifiedHolePositions.Remove(tape);
+            }
 		}
 
 		// ========================================================================================
@@ -756,83 +767,119 @@ namespace LitePlacer
         // The hole position is measured on each call using tape holes and knowledge about tape width and pitch (see EIA-481 standard).
         // Id tells the tape name. 
         // The caller needs the hole coordinates and tape number later in the process, but they are measured and returned here.
+        // 
+        // VERIFY HOLE WITH CAMERA OPTIMIZATION:
+        // - If VerifyHoleWithCamera checkbox is CHECKED: measures hole with camera every time (slow, accurate)
+        // - If VerifyHoleWithCamera checkbox is UNCHECKED: measures hole once, stores position, reuses it (fast)
         public bool GotoNextPartByMeasurement_m(int TapeNumber, out double HoleX, out double HoleY)
 		{
             HoleX = 0;
             HoleY = 0;
+            double A = 0.0; // Part rotation angle
 
             // ========================================================================================
             // CAMERA-BASED HOLE MEASUREMENT
             // This path is used when "Coordinates For Parts" is NOT enabled
             // (When "Coordinates For Parts" IS enabled, PickUpPartWithDirectCoordinates_m is called instead)
             // ========================================================================================
-			// Go to next hole approximate location:
-			if (!SetCurrentTapeMeasurement_m(TapeNumber))  // having the measurement setup here helps with the automatic gain lag
+
+            // Check VerifyHoleWithCamera checkbox setting
+            bool verifyHoleWithCamera = true; // Default to verify every time
+            if (Grid.Rows[TapeNumber].Cells["VerifyHoleWithCamera_Column"].Value != null)
             {
-                return false;
+                bool.TryParse(Grid.Rows[TapeNumber].Cells["VerifyHoleWithCamera_Column"].Value.ToString(), out verifyHoleWithCamera);
             }
 
-            double NextX = 0;
-            double NextY = 0;
-            if (!double.TryParse(Grid.Rows[TapeNumber].Cells["Next_X_Column"].Value.ToString().Replace(',', '.'), out NextX))
-			{
-				MainForm.ShowMessageBox(
-                    "Bad data at Tape " + Grid.Rows[TapeNumber].Cells["Id_Column"].Value.ToString() + ", Next X",
-					"Tape data error",
-					MessageBoxButtons.OK
-				);
-				return false;
-			}
-
-            if (!double.TryParse(Grid.Rows[TapeNumber].Cells["Next_Y_Column"].Value.ToString().Replace(',', '.'), out NextY))
-			{
-				MainForm.ShowMessageBox(
-                    "Bad data at Tape " + Grid.Rows[TapeNumber].Cells["Id_Column"].Value.ToString() + ", Next Y",
-					"Tape data error",
-					MessageBoxButtons.OK
-				);
-				return false;
-			}
-			// Go there:
-            if (!MainForm.CNC_XYA_m(NextX, NextY, Cnc.CurrentA))
-			{
-				return false;
-			};
-
-            // Get hole exact location:
-            // We want to find the hole less than 2mm from where we think it should be. (Otherwise there is a risk
-            // of picking a wrong hole.)
-            double A = 0.0;
-            bool ok = true;
-            do
+            // If verify is disabled AND we have a stored position, reuse it
+            if (!verifyHoleWithCamera && VerifiedHolePositions.ContainsKey(TapeNumber))
             {
-                ok = true;
-                if (!MainForm.GoToFeatureLocation_m(0.5, out HoleX, out HoleY, out A))
+                // FAST PATH: Reuse previously verified hole position
+                HoleX = VerifiedHolePositions[TapeNumber].X;
+                HoleY = VerifiedHolePositions[TapeNumber].Y;
+                MainForm.DisplayText($"Reusing verified hole position: X={HoleX:F3}, Y={HoleY:F3} (verify disabled)", KnownColor.DarkGreen);
+            }
+            else
+            {
+                // SLOW PATH: Measure hole position with camera
+                if (!verifyHoleWithCamera)
                 {
-                    ok = false;
-                    string nl = Environment.NewLine;
-                    string answer = MainForm.NonModalMessageBox(
-                        "Tape hole recognition failed." + nl +
-                        "Jog machine to position and/or tune the algorithm." + nl +
-                        "Click \"Retry\" to try again," + nl +
-                        "click \"Cancel\" to continue without success", "Tape hole not found",
-                        "Retry", "", "Cancel");
-                    if (answer == "Cancel")
+                    MainForm.DisplayText($"First pickup - measuring hole position with camera (verify disabled)", KnownColor.DarkCyan);
+                }
+
+                // Go to next hole approximate location:
+                if (!SetCurrentTapeMeasurement_m(TapeNumber))  // having the measurement setup here helps with the automatic gain lag
+                {
+                    return false;
+                }
+
+                double NextX = 0;
+                double NextY = 0;
+                if (!double.TryParse(Grid.Rows[TapeNumber].Cells["Next_X_Column"].Value.ToString().Replace(',', '.'), out NextX))
+                {
+                    MainForm.ShowMessageBox(
+                        "Bad data at Tape " + Grid.Rows[TapeNumber].Cells["Id_Column"].Value.ToString() + ", Next X",
+                        "Tape data error",
+                        MessageBoxButtons.OK
+                    );
+                    return false;
+                }
+
+                if (!double.TryParse(Grid.Rows[TapeNumber].Cells["Next_Y_Column"].Value.ToString().Replace(',', '.'), out NextY))
+                {
+                    MainForm.ShowMessageBox(
+                        "Bad data at Tape " + Grid.Rows[TapeNumber].Cells["Id_Column"].Value.ToString() + ", Next Y",
+                        "Tape data error",
+                        MessageBoxButtons.OK
+                    );
+                    return false;
+                }
+                // Go there:
+                if (!MainForm.CNC_XYA_m(NextX, NextY, Cnc.CurrentA))
+                {
+                    return false;
+                };
+
+                // Get hole exact location:
+                // We want to find the hole less than 2mm from where we think it should be. (Otherwise there is a risk
+                // of picking a wrong hole.)
+                bool ok = true;
+                do
+                {
+                    ok = true;
+                    if (!MainForm.GoToFeatureLocation_m(0.5, out HoleX, out HoleY, out A))
                     {
-                        return false;
+                        ok = false;
+                        string nl = Environment.NewLine;
+                        string answer = MainForm.NonModalMessageBox(
+                            "Tape hole recognition failed." + nl +
+                            "Jog machine to position and/or tune the algorithm." + nl +
+                            "Click \"Retry\" to try again," + nl +
+                            "click \"Cancel\" to continue without success", "Tape hole not found",
+                            "Retry", "", "Cancel");
+                        if (answer == "Cancel")
+                        {
+                            return false;
+                        }
+                        if (!SetCurrentTapeMeasurement_m(TapeNumber)) 
+                        {
+                            return false;
+                        }
+                        Thread.Sleep(100);
                     }
-                    if (!SetCurrentTapeMeasurement_m(TapeNumber)) 
-                    {
-                        return false;
-                    }
-                    Thread.Sleep(100);
+                }
+                while (!ok);
+
+                // The hole locations are:
+                HoleX = Cnc.CurrentX + HoleX;
+                HoleY = Cnc.CurrentY + HoleY;
+
+                // Store this position if verify is disabled (for future reuse)
+                if (!verifyHoleWithCamera)
+                {
+                    VerifiedHolePositions[TapeNumber] = (HoleX, HoleY);
+                    MainForm.DisplayText($"Stored verified hole position for tape {TapeNumber}: X={HoleX:F3}, Y={HoleY:F3}", KnownColor.DarkGreen);
                 }
             }
-            while (!ok);
-
-			// The hole locations are:
-            HoleX = Cnc.CurrentX + HoleX;
-            HoleY = Cnc.CurrentY + HoleY;
 
 			// ==================================================
 			// find the part location and go there:
