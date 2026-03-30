@@ -1,5 +1,165 @@
 # GitHub Copilot Instructions for LitePlacer-DEV
 
+## PENDING TASK - HIGH PRIORITY
+
+### Thread-Safety Fix for GotoNextPartByMeasurement_m()
+
+**Status:** Identified but not yet implemented  
+**Priority:** HIGH - Prevents potential cross-thread UI access crashes  
+**File:** `LitePlacer/tapes.cs`  
+**Function:** `GotoNextPartByMeasurement_m(int TapeNumber, out double HoleX, out double HoleY)`  
+**Lines:** 773-904
+
+#### Problem Description:
+
+The `GotoNextPartByMeasurement_m()` function directly accesses UI controls (DataGridView) without thread marshaling:
+
+1. **Line 787-789:** Reads `VerifyHoleWithCamera_Column` checkbox value
+2. **Line 816-826:** Reads `Next_X_Column` and `Next_Y_Column` values
+3. **Line 819, 829:** Reads `Id_Column` for error messages
+
+**Issue:** If placement operations run on background threads, these direct Grid accesses will cause cross-thread exceptions: `"Control accessed from thread other than the thread it was created on"`
+
+#### Current Implementation Pattern:
+
+The function currently follows this unsafe pattern:
+```csharp
+// UNSAFE: Direct UI access
+bool verifyHoleWithCamera = true;
+if (Grid.Rows[TapeNumber].Cells["VerifyHoleWithCamera_Column"].Value != null)
+{
+    bool.TryParse(Grid.Rows[TapeNumber].Cells["VerifyHoleWithCamera_Column"].Value.ToString(), out verifyHoleWithCamera);
+}
+
+// More unsafe Grid accesses at lines 816-826...
+double NextX = 0;
+if (!double.TryParse(Grid.Rows[TapeNumber].Cells["Next_X_Column"].Value.ToString().Replace(',', '.'), out NextX))
+{
+    // Error handling with more Grid access
+}
+```
+
+#### Required Solution (Option 3 - Proper Thread-Safe Implementation):
+
+Follow the pattern established in `MainForm.NozzlePullTapeIndex_m()` (lines 12230-12264):
+
+**Step 1:** Add thread detection check at function start
+**Step 2:** If on background thread, use `MainForm.Invoke()` to marshal ALL Grid reads to UI thread
+**Step 3:** Read all necessary UI data into local variables at the beginning
+**Step 4:** Use local variables for remainder of function (no Grid access after marshaling)
+
+#### Implementation Template:
+
+```csharp
+public bool GotoNextPartByMeasurement_m(int TapeNumber, out double HoleX, out double HoleY)
+{
+    HoleX = 0;
+    HoleY = 0;
+    double A = 0.0;
+
+    // STEP 1: Declare variables for UI data
+    bool verifyHoleWithCamera = true;
+    double NextX = 0;
+    double NextY = 0;
+    string tapeId = "";
+    
+    // STEP 2: Check if we need thread marshaling
+    if (MainForm.InvokeRequired)
+    {
+        // STEP 3: Marshal to UI thread to read all Grid data
+        bool success = false;
+        MainForm.Invoke(new Action(() =>
+        {
+            try
+            {
+                // Read VerifyHoleWithCamera checkbox
+                if (Grid.Rows[TapeNumber].Cells["VerifyHoleWithCamera_Column"].Value != null)
+                {
+                    bool.TryParse(Grid.Rows[TapeNumber].Cells["VerifyHoleWithCamera_Column"].Value.ToString(), 
+                        out verifyHoleWithCamera);
+                }
+                
+                // Read Next_X and Next_Y
+                NextX = double.Parse(Grid.Rows[TapeNumber].Cells["Next_X_Column"].Value.ToString().Replace(',', '.'));
+                NextY = double.Parse(Grid.Rows[TapeNumber].Cells["Next_Y_Column"].Value.ToString().Replace(',', '.'));
+                
+                // Read tape ID for error messages
+                tapeId = Grid.Rows[TapeNumber].Cells["Id_Column"].Value.ToString();
+                
+                success = true;
+            }
+            catch
+            {
+                success = false;
+            }
+        }));
+        
+        if (!success)
+        {
+            MainForm.DisplayText("*** Failed to read tape data", KnownColor.DarkRed);
+            return false;
+        }
+    }
+    else
+    {
+        // STEP 4: Called from UI thread - read directly (keep existing code)
+        if (Grid.Rows[TapeNumber].Cells["VerifyHoleWithCamera_Column"].Value != null)
+        {
+            bool.TryParse(Grid.Rows[TapeNumber].Cells["VerifyHoleWithCamera_Column"].Value.ToString(), 
+                out verifyHoleWithCamera);
+        }
+        
+        if (!double.TryParse(Grid.Rows[TapeNumber].Cells["Next_X_Column"].Value.ToString().Replace(',', '.'), out NextX))
+        {
+            tapeId = Grid.Rows[TapeNumber].Cells["Id_Column"].Value.ToString();
+            MainForm.ShowMessageBox("Bad data at Tape " + tapeId + ", Next X", "Tape data error", MessageBoxButtons.OK);
+            return false;
+        }
+        
+        if (!double.TryParse(Grid.Rows[TapeNumber].Cells["Next_Y_Column"].Value.ToString().Replace(',', '.'), out NextY))
+        {
+            tapeId = Grid.Rows[TapeNumber].Cells["Id_Column"].Value.ToString();
+            MainForm.ShowMessageBox("Bad data at Tape " + tapeId + ", Next Y", "Tape data error", MessageBoxButtons.OK);
+            return false;
+        }
+    }
+    
+    // STEP 5: Rest of function uses LOCAL VARIABLES only (verifyHoleWithCamera, NextX, NextY, tapeId)
+    // No more direct Grid access from this point forward
+    
+    // ... (existing logic continues with local variables) ...
+}
+```
+
+#### Files to Modify:
+
+1. **`LitePlacer/tapes.cs`** - Add thread marshaling to `GotoNextPartByMeasurement_m()`
+2. **`PULL_INDEXING.md`** - Document the thread-safety fix as a new change
+
+#### Testing Required After Implementation:
+
+1. ? Build succeeds with no compilation errors
+2. ? Test placement operation from UI thread (should work as before)
+3. ? Test placement operation that might use background thread
+4. ? Verify no cross-thread exceptions in debug output
+5. ? Test with VerifyHoleWithCamera checked and unchecked
+
+#### Benefits of This Fix:
+
+- ? **Prevents crashes** from cross-thread UI access
+- ? **Consistent with NozzlePullTapeIndex_m()** pattern already in codebase
+- ? **Backwards compatible** - works from both UI and background threads
+- ? **Defensive programming** - safe even if threading model changes in future
+
+#### Notes:
+
+- The TapesClass doesn't have direct access to `InvokeRequired`, so we use `MainForm.InvokeRequired`
+- Must read ALL Grid data in the Invoke block (no partial reads)
+- Error messages should use the stored `tapeId` string, not read from Grid again
+- The Dictionary `VerifiedHolePositions` is thread-safe for reads (it's only written from synchronized code paths)
+
+---
+
 ## Project Documentation
 
 ### Required Reading

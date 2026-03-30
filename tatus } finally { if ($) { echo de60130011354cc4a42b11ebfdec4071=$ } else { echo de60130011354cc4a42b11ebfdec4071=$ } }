@@ -1,0 +1,20 @@
+[33md624f46[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeature/nozzle-pull-tape-indexing[m[33m)[m Add nozzle pull support to camera-based pickup mode
+[33m1f91c9d[m[33m ([m[1;31morigin/feature/nozzle-pull-tape-indexing[m[33m)[m Clarify documentation: offset adjustment is conditional on nozzle pull
+[33m7a86ae2[m Add comprehensive documentation for nozzle pull tape indexing feature
+[33m7a42d95[m CRITICAL FIX: Disable part counter increment when nozzle pull enabled
+[33mf08c8a4[m Complete Z-guard optimization: disable during pull, re-enable after pickup
+[33m9ea8677[m Optimize nozzle pull: Don't update Next_X/Y and reduce Z travel
+[33m9a1c8b1[m Add auto-adjustment of offsets for nozzle pull mode
+[33m82cf654[m FIX: Correct pull direction for -Y and -X orientations
+[33m9c70451[m Add validation for NaN component positions in nozzle pull
+[33m0951e04[m FIX: Add DoEvents to board detection loops
+[33m48624b6[m FIX: Use BeginInvoke instead of Invoke for serial data
+[33mc6c0d68[m FIX: Marshal serial port data to UI thread
+[33md9188c6[m FIX: Remove UI access from GetHoleLocationFromPartPosition
+[33mdad21d5[m FIX: Add thread-safe UI access to nozzle pull function
+[33m5191d1f[m FIX: Use pickup Z height and increase speeds for nozzle pull
+[33mf08e07f[m Remove duplicate nozzle pull code from GotoNextPartByMeasurement_m
+[33m8a506a8[m CRITICAL FIX: Add nozzle pull to direct coordinates pickup
+[33m9f9b71c[m Fix nozzle pull to work with Coordinates For Parts mode
+[33mf60ea35[m Add nozzle pull tape indexing feature for CP40 nozzles
+[33m1a305c7[m[33m ([m[1;32mconcurrency-fix[m[33m)[m CRITICAL FIX: Correct GRBL homing settings - Use dollar27 not dollar30
