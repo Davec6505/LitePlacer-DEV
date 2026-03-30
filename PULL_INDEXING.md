@@ -11,7 +11,8 @@ This document details every code change made to implement the nozzle pull tape i
 3. [Helper Functions](#helper-functions)
 4. [Integration Changes](#integration-changes)
 5. [Threading & Safety Fixes](#threading--safety-fixes)
-6. [Bug Fixes](#bug-fixes)
+6. [Optimization Features](#optimization-features)
+7. [Bug Fixes](#bug-fixes)
 
 ---
 
@@ -626,6 +627,218 @@ while (delay < 300)  // Increased timeout to 300ms
 }
 ```
 **Description:** Same as Change 23, but for MZ_CNC (GRBL) board detection with 300ms timeout.
+
+---
+
+## Optimization Features
+
+### File: `LitePlacer/MainForm.Designer.cs`
+
+#### Change 26: Added VerifyHoleWithCamera Column
+**Lines:** 2147 (DataGridView columns initialization)  
+**Function:** `InitializeComponent()`  
+**Change:** Added `VerifyHoleWithCamera_Column` to `Tapes_dataGridView.Columns`
+```csharp
+this.UseNozzlePull_Column,
+this.PullDistance_Column,
+this.VerifyHoleWithCamera_Column});
+```
+**Description:** Checkbox column that controls camera verification behavior for nozzle pull operations. Allows user to trade accuracy for speed.
+
+---
+
+#### Change 27: VerifyHoleWithCamera Column Definition
+**Lines:** ~2394-2403 (Column definition section)  
+**Function:** `InitializeComponent()`  
+**Change:** Added complete column definition
+```csharp
+// VerifyHoleWithCamera_Column
+this.VerifyHoleWithCamera_Column.HeaderText = "Verify Hole";
+this.VerifyHoleWithCamera_Column.MinimumWidth = 6;
+this.VerifyHoleWithCamera_Column.Name = "VerifyHoleWithCamera_Column";
+this.VerifyHoleWithCamera_Column.Width = 85;
+this.VerifyHoleWithCamera_Column.ToolTipText = "Use camera to verify hole position before each pull (slower but more accurate)";
+```
+**Description:** Defines checkbox column properties. Default is checked (verify every time). Unchecked enables fast mode (measure once, reuse position).
+
+---
+
+#### Change 28: VerifyHoleWithCamera Field Declaration
+**Lines:** ~13567 (Field declarations section)  
+**Function:** Class field declarations  
+**Change:** Added field declaration for checkbox column
+```csharp
+private System.Windows.Forms.DataGridViewCheckBoxColumn VerifyHoleWithCamera_Column;
+```
+**Description:** Declares the checkbox column field for the Designer-generated code.
+
+---
+
+### File: `LitePlacer/tapes.cs`
+
+#### Change 29: Added Verified Hole Position Storage
+**Lines:** 21-22  
+**Function:** TapesClass field declarations  
+**Change:** Added Dictionary to store verified hole positions per tape
+```csharp
+// Storage for verified hole positions (tape row index -> (HoleX, HoleY))
+// Used when VerifyHoleWithCamera is unchecked - stores hole position for reuse
+private Dictionary<int, (double X, double Y)> VerifiedHolePositions = new Dictionary<int, (double X, double Y)>();
+```
+**Description:** Dictionary maps tape row index to last verified hole position. Enables fast mode by storing camera-measured hole positions for reuse. Only populated when VerifyHoleWithCamera is unchecked.
+
+---
+
+#### Change 30: GotoNextPartByMeasurement_m - Check Verify Setting
+**Lines:** 773-790  
+**Function:** `GotoNextPartByMeasurement_m(int TapeNumber, out double HoleX, out double HoleY)`  
+**Change:** Added variable declaration and checkbox reading logic
+```csharp
+public bool GotoNextPartByMeasurement_m(int TapeNumber, out double HoleX, out double HoleY)
+{
+    HoleX = 0;
+    HoleY = 0;
+    double A = 0.0; // Part rotation angle
+
+    // ========================================================================================
+    // CAMERA-BASED HOLE MEASUREMENT
+    // This path is used when "Coordinates For Parts" is NOT enabled
+    // (When "Coordinates For Parts" IS enabled, PickUpPartWithDirectCoordinates_m is called instead)
+    // ========================================================================================
+
+    // Check VerifyHoleWithCamera checkbox setting
+    bool verifyHoleWithCamera = true; // Default to verify every time
+    if (Grid.Rows[TapeNumber].Cells["VerifyHoleWithCamera_Column"].Value != null)
+    {
+        bool.TryParse(Grid.Rows[TapeNumber].Cells["VerifyHoleWithCamera_Column"].Value.ToString(), out verifyHoleWithCamera);
+    }
+```
+**Description:** Reads VerifyHoleWithCamera checkbox state. Defaults to TRUE (verify every time) for backwards compatibility. If column doesn't exist or is null, original behavior is preserved.
+
+---
+
+#### Change 31: GotoNextPartByMeasurement_m - Fast Path (Reuse Position)
+**Lines:** 792-799  
+**Function:** `GotoNextPartByMeasurement_m(int TapeNumber, out double HoleX, out double HoleY)`  
+**Change:** Added fast path to reuse stored hole position
+```csharp
+// If verify is disabled AND we have a stored position, reuse it
+if (!verifyHoleWithCamera && VerifiedHolePositions.ContainsKey(TapeNumber))
+{
+    // FAST PATH: Reuse previously verified hole position
+    HoleX = VerifiedHolePositions[TapeNumber].X;
+    HoleY = VerifiedHolePositions[TapeNumber].Y;
+    MainForm.DisplayText($"Reusing verified hole position: X={HoleX:F3}, Y={HoleY:F3} (verify disabled)", KnownColor.DarkGreen);
+}
+```
+**Description:** When verify is disabled and a position was previously measured, skip camera measurement entirely and reuse stored coordinates. Significantly faster operation. Only executes when user explicitly unchecks VerifyHoleWithCamera checkbox.
+
+---
+
+#### Change 32: GotoNextPartByMeasurement_m - Slow Path (Measure with Camera)
+**Lines:** 800-881  
+**Function:** `GotoNextPartByMeasurement_m(int TapeNumber, out double HoleX, out double HoleY)`  
+**Change:** Wrapped original camera measurement code in else block, added storage logic
+```csharp
+else
+{
+    // SLOW PATH: Measure hole position with camera
+    if (!verifyHoleWithCamera)
+    {
+        MainForm.DisplayText($"First pickup - measuring hole position with camera (verify disabled)", KnownColor.DarkCyan);
+    }
+
+    // Go to next hole approximate location:
+    if (!SetCurrentTapeMeasurement_m(TapeNumber))  // having the measurement setup here helps with the automatic gain lag
+    {
+        return false;
+    }
+
+    // ... (all original camera measurement code 806-870) ...
+
+    // The hole locations are:
+    HoleX = Cnc.CurrentX + HoleX;
+    HoleY = Cnc.CurrentY + HoleY;
+
+    // Store this position if verify is disabled (for future reuse)
+    if (!verifyHoleWithCamera)
+    {
+        VerifiedHolePositions[TapeNumber] = (HoleX, HoleY);
+        MainForm.DisplayText($"Stored verified hole position for tape {TapeNumber}: X={HoleX:F3}, Y={HoleY:F3}", KnownColor.DarkGreen);
+    }
+}
+```
+**Description:** Original camera measurement code runs when verify is enabled OR when no stored position exists. After successful measurement, if verify is disabled, stores position for future reuse. All original logic (move to approximate position, camera measurement with retry, coordinate calculation) is preserved. Only adds storage at the end when verify is disabled.
+
+---
+
+#### Change 33: ClearAll - Clear Stored Positions
+**Lines:** 32-48  
+**Function:** `ClearAll()`  
+**Change:** Added cleanup of stored verified positions
+```csharp
+public void ClearAll()
+{
+    DialogResult dialogResult = MainForm.ShowMessageBox(
+        "All tape locations will be reset to 1. Are you sure?",
+        "Reset counts?", MessageBoxButtons.YesNo);
+    if (dialogResult == DialogResult.Yes)
+    {
+        for (int tape = 0; tape < Grid.Rows.Count; tape++)
+        {
+            Grid.Rows[tape].Cells["NextPart_Column"].Value = "1";
+            Grid.Rows[tape].Cells["Next_X_Column"].Value = Grid.Rows[tape].Cells["FirstX_Column"].Value;
+            Grid.Rows[tape].Cells["Next_Y_Column"].Value = Grid.Rows[tape].Cells["FirstY_Column"].Value;
+        }
+        // Clear verified hole positions when resetting
+        VerifiedHolePositions.Clear();
+    }
+}
+```
+**Description:** When user resets all tapes, clears the Dictionary of stored verified hole positions. Ensures fresh camera measurement on next pickup after reset. Prevents stale cached positions from being used.
+
+---
+
+#### Change 34: Reset - Clear Single Tape Position
+**Lines:** 50-61  
+**Function:** `Reset(int tape)`  
+**Change:** Added cleanup of stored verified position for single tape
+```csharp
+public void Reset(int tape)
+{
+    Grid.Rows[tape].Cells["NextPart_Column"].Value = "1";
+    // fix #22 reset next coordinates
+    Grid.Rows[tape].Cells["Next_X_Column"].Value = Grid.Rows[tape].Cells["FirstX_Column"].Value;
+    Grid.Rows[tape].Cells["Next_Y_Column"].Value = Grid.Rows[tape].Cells["FirstY_Column"].Value;
+    // Clear verified hole position for this tape when resetting
+    if (VerifiedHolePositions.ContainsKey(tape))
+    {
+        VerifiedHolePositions.Remove(tape);
+    }
+}
+```
+**Description:** When user resets a single tape, removes its stored verified hole position from Dictionary. Ensures fresh camera measurement on next pickup for that tape. Prevents stale cached position from being used after tape adjustment.
+
+---
+
+### Feature Summary: VerifyHoleWithCamera Optimization
+
+**Purpose:**  
+Provides user control over speed vs accuracy tradeoff in camera-based nozzle pull operations.
+
+**Behavior:**
+- **Checkbox CHECKED (default):** Camera measures hole position before EVERY pickup (slow, accurate, compensates for tape slip)
+- **Checkbox UNCHECKED (fast mode):** Camera measures hole position ONCE (first pickup only), then reuses stored position for all subsequent pickups (fast, assumes tape advances consistently)
+
+**Benefits:**
+1. **Performance:** Significantly faster operation when verify is disabled (skips camera measurement)
+2. **Flexibility:** Per-tape configuration - can use fast mode for reliable tapes, verify mode for problematic tapes
+3. **Backwards Compatible:** Defaults to TRUE (verify every time), preserves original behavior
+4. **Memory Safety:** Stored positions automatically cleared on tape reset
+
+**Use Cases:**
+- **Fast Mode (unchecked):** High-quality tapes with consistent feed, production runs with proven tape setup
+- **Verify Mode (checked):** Low-quality tapes that may slip, initial setup/testing, critical placements requiring maximum accuracy
 
 ---
 
