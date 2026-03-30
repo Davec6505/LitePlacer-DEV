@@ -8696,25 +8696,75 @@ namespace LitePlacer
                 return (PickUpPartWithDirectCoordinates_m(TapeNumber));
             }
 
+            // Check if nozzle pull is enabled for this tape
+            bool useNozzlePull = false;
+            if (Tapes_dataGridView.Rows[TapeNumber].Cells["UseNozzlePull_Column"].Value != null)
+            {
+                bool.TryParse(Tapes_dataGridView.Rows[TapeNumber].Cells["UseNozzlePull_Column"].Value.ToString(), out useNozzlePull);
+            }
+
             // If this succeeds, we update next hole location at the end, but these values are measured at start
             double HoleX = 0;
             double HoleY = 0;
             DisplayText("PickUpPart_m(), tape no: " + TapeNumber.ToString(CultureInfo.InvariantCulture));
-            // Go to part location:
+            
+            // NOZZLE PULL: If enabled, pull tape BEFORE going to part location
+            if (useNozzlePull)
+            {
+                // Get pull distance
+                double pullDistance = 4.0;
+                if (Tapes_dataGridView.Rows[TapeNumber].Cells["PullDistance_Column"].Value != null)
+                {
+                    double.TryParse(Tapes_dataGridView.Rows[TapeNumber].Cells["PullDistance_Column"].Value.ToString().Replace(',', '.'), out pullDistance);
+                }
+
+                DisplayText($"Nozzle pull enabled, pulling {pullDistance}mm before pickup...", KnownColor.DarkCyan);
+                
+                // Execute nozzle pull (this will measure hole, engage, pull, and lift)
+                if (!NozzlePullTapeIndex_m(TapeNumber, pullDistance))
+                {
+                    DisplayText("*** Nozzle pull failed!", KnownColor.DarkRed);
+                    return false;
+                }
+                
+                // After pull, hole position is already in Next_X/Next_Y (updated by camera measurement)
+                // Read it for IncrementTape call later
+                if (!double.TryParse(Tapes_dataGridView.Rows[TapeNumber].Cells["Next_X_Column"].Value.ToString().Replace(',', '.'), out HoleX))
+                {
+                    HoleX = 0;
+                }
+                if (!double.TryParse(Tapes_dataGridView.Rows[TapeNumber].Cells["Next_Y_Column"].Value.ToString().Replace(',', '.'), out HoleY))
+                {
+                    HoleY = 0;
+                }
+            }
+            
+            // Go to part location (with or without nozzle pull, this uses hole position to calculate part position):
             VacuumOff();
             if (!Tapes.GotoNextPartByMeasurement_m(TapeNumber, out HoleX, out HoleY))
             {
                 return false;
             }
+            
             // Pick it up:
             if (!PickUpThis_m(TapeNumber))
             {
                 return false;
             }
 
-            if (!Tapes.IncrementTape(TapeNumber, HoleX, HoleY))
+            // Re-enable Z-guard after nozzle pull + pickup sequence completes
+            if (useNozzlePull && !ZguardIsOn())
             {
-                return false;
+                ZGuardOn();
+            }
+
+            // CRITICAL: DON'T increment if nozzle pull is enabled (stay at same hole position)
+            if (!useNozzlePull)
+            {
+                if (!Tapes.IncrementTape(TapeNumber, HoleX, HoleY))
+                {
+                    return false;
+                }
             }
 
             if (AbortPlacement)
@@ -12051,6 +12101,19 @@ namespace LitePlacer
                 ClipBoard_dgw.Columns.Add(col.Clone() as DataGridViewColumn);
             }
             LoadTapesFromFile(FileName, ClipBoard_dgw);
+            
+            // BUGFIX: Get the TrayID from the first row of the loaded data
+            // and delete any existing rows with that TrayID before adding new ones
+            if (ClipBoard_dgw.Rows.Count > 0 && ClipBoard_dgw.Rows[0].Cells["TrayID_Column"].Value != null)
+            {
+                string TrayID = ClipBoard_dgw.Rows[0].Cells["TrayID_Column"].Value.ToString();
+                DisplayText($"Loading tray {TrayID}, removing existing rows with same ID...", KnownColor.DarkCyan);
+                
+                // Delete existing rows with this TrayID to prevent duplicates
+                DeleteTray(TrayID, Tapes_dataGridView.Columns["TrayID_Column"].Index);
+            }
+            
+            // Now add the new rows
             DataGridViewRow NewRow = new DataGridViewRow();
             foreach (DataGridViewRow row in ClipBoard_dgw.Rows)
             {
