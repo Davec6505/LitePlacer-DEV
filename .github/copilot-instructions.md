@@ -71,6 +71,137 @@ else
 
 ---
 
+## NEXT INVESTIGATION - CAMERA VISION IMPROVEMENTS
+
+### AForge.NET Camera Algorithms - Robustness & Accuracy Enhancement
+
+**Status:** ?? Investigation Phase  
+**Priority:** MEDIUM - Improve vision system reliability  
+**Scope:** Nozzle calibration and hole detection algorithms  
+**Libraries:** AForge.NET, AForge.Imaging, AForge.Vision
+
+#### Investigation Goals:
+
+**Primary Objectives:**
+1. **Improve nozzle calibration accuracy** - More precise nozzle position detection across rotation angles
+2. **Enhance hole detection robustness** - Better tape hole recognition under varying lighting/conditions
+3. **Reduce false positives/negatives** - More reliable feature detection with fewer errors
+4. **Optimize algorithm parameters** - Better default values and auto-tuning capabilities
+
+#### Current Implementation Analysis Needed:
+
+**Files to Review:**
+1. **`LitePlacer/Camera.cs`** - Core camera measurement and algorithm execution
+2. **`LitePlacer/VideoAlgorithms*.cs`** - Algorithm implementations (Circle, Rectangle, Component detection)
+3. **`LitePlacer/Shapes.cs`** - Shape detection algorithms
+4. **`LitePlacer/ImagesForCameras.cs`** - Image processing pipeline
+
+**Key Functions to Analyze:**
+- `Camera.Measure()` - Main measurement function
+- Circle detection algorithms (nozzle calibration)
+- Hole detection algorithms (tape sprocket holes)
+- Component outline detection
+- Edge detection and filtering
+
+#### Areas for Investigation:
+
+**1. Nozzle Calibration (Circle Detection):**
+- Current AForge circle detection parameters and thresholds
+- Lighting compensation techniques
+- Multi-scale detection approaches
+- Circle fitting accuracy improvements
+- Rotation angle correlation accuracy
+
+**2. Hole Detection (Tape Sprocket Holes):**
+- Current hole finding algorithm robustness
+- Edge detection sensitivity
+- Size filtering effectiveness
+- Position accuracy under different tape conditions
+- Handling of partial/damaged holes
+
+**3. Algorithm Enhancements to Research:**
+- **Adaptive thresholding** - Better handling of varying lighting conditions
+- **Multi-pass detection** - Coarse-to-fine approach for better accuracy
+- **Template matching** - Pre-trained patterns for common features
+- **Machine learning integration** - Neural network-based detection (future consideration)
+- **Noise filtering** - Better pre-processing to reduce false detections
+- **Sub-pixel accuracy** - Interpolation for finer position resolution
+
+**4. Performance Considerations:**
+- Algorithm execution time vs accuracy tradeoff
+- Real-time processing requirements
+- Memory usage optimization
+- GPU acceleration possibilities (AForge.NET limitations)
+
+#### Investigation Tasks:
+
+**Phase 1: Current State Analysis**
+1. ? Document current AForge.NET algorithms in use
+2. ? Identify current pain points (false detections, missed features, inaccurate measurements)
+3. ? Benchmark current accuracy and performance metrics
+4. ? Review user-reported vision issues in GitHub issues/discussions
+
+**Phase 2: Algorithm Research**
+1. ? Research AForge.NET best practices and advanced features
+2. ? Investigate alternative algorithms available in AForge.NET
+3. ? Review academic papers on industrial vision systems for pick-and-place
+4. ? Analyze similar open-source projects (OpenPnP, etc.) for inspiration
+
+**Phase 3: Prototyping**
+1. ? Implement test harness for comparing algorithm variations
+2. ? Prototype improved circle detection for nozzle calibration
+3. ? Prototype enhanced hole detection for tape indexing
+4. ? Collect test images from various machine setups for validation
+
+**Phase 4: Integration**
+1. ? Integrate best-performing algorithms into codebase
+2. ? Add user-configurable parameters for fine-tuning
+3. ? Update UI with new algorithm options
+4. ? Document changes and create migration guide
+
+#### Resources:
+
+**AForge.NET Documentation:**
+- Main Site: http://www.aforgenet.com/
+- Framework Docs: http://www.aforgenet.com/framework/docs/
+- Vision Library: http://www.aforgenet.com/framework/docs/html/d087503e-77da-dc47-0e33-788275035a90.htm
+- Imaging Library: http://www.aforgenet.com/framework/docs/html/d7196718-6d1f-a0e8-d26a-7ab13e4d8c85.htm
+
+**Related Projects:**
+- OpenPnP: https://github.com/openpnp/openpnp (Java-based, but good algorithm ideas)
+- OpenCV: https://opencv.org/ (C++/Python, reference for advanced techniques)
+
+**Academic Resources:**
+- Circle Detection: Hough Transform variants, RANSAC circle fitting
+- Edge Detection: Canny, Sobel, Laplacian of Gaussian
+- Sub-pixel accuracy: Moment-based, interpolation methods
+
+#### Expected Outcomes:
+
+**Success Metrics:**
+- ? 20% reduction in nozzle calibration errors
+- ? 30% reduction in hole detection failures
+- ? Faster convergence in iterative detection (fewer retries)
+- ? Consistent performance across different lighting conditions
+- ? Improved user confidence in vision system
+
+**Deliverables:**
+- ?? Technical report on current vs improved algorithms
+- ?? Updated vision processing code with enhanced algorithms
+- ?? User documentation for new parameters and settings
+- ?? Test suite with reference images for validation
+- ?? Performance benchmarks (before/after comparison)
+
+#### Notes:
+
+- AForge.NET is mature but no longer actively developed (last update ~2013)
+- Consider eventual migration to OpenCV-based solution (future roadmap)
+- Maintain backwards compatibility with existing tape/nozzle calibrations
+- Allow users to switch between "classic" and "enhanced" algorithms
+- Collect telemetry/feedback from users during beta testing
+
+---
+
 ## PENDING TASK - HIGH PRIORITY
 
 ### Thread-Safety Fix for GotoNextPartByMeasurement_m()
