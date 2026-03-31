@@ -43,6 +43,7 @@ namespace LitePlacer
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormMain));
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
             System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
             this.Park_button = new System.Windows.Forms.Button();
             this.TestNozzleRecognition_button = new System.Windows.Forms.Button();
             this.DownCamZoomFactor_textBox = new System.Windows.Forms.TextBox();
@@ -785,6 +786,8 @@ namespace LitePlacer
             this.CAD_label = new System.Windows.Forms.Label();
             this.tabControlPages = new System.Windows.Forms.TabControl();
             this.Algorithms_tabPage = new System.Windows.Forms.TabPage();
+            this.groupBoxCameraEngin = new System.Windows.Forms.GroupBox();
+            this.listBoxCameraEngin = new System.Windows.Forms.ListBox();
             this.IntParameterDown10_button = new System.Windows.Forms.Button();
             this.IntParameterUp10_button = new System.Windows.Forms.Button();
             this.Measure10x_button = new System.Windows.Forms.Button();
@@ -1060,6 +1063,7 @@ namespace LitePlacer
             this.RunJob_contextMenuStrip.SuspendLayout();
             this.tabControlPages.SuspendLayout();
             this.Algorithms_tabPage.SuspendLayout();
+            this.groupBoxCameraEngin.SuspendLayout();
             this.panel1.SuspendLayout();
             this.AdvancedProcessing_tabControl.SuspendLayout();
             this.NozzleCalibration_tabPage.SuspendLayout();
@@ -2382,25 +2386,26 @@ namespace LitePlacer
             this.UseNozzlePull_Column.HeaderText = "Nozzle Pull";
             this.UseNozzlePull_Column.MinimumWidth = 6;
             this.UseNozzlePull_Column.Name = "UseNozzlePull_Column";
-            this.UseNozzlePull_Column.Width = 85;
             this.UseNozzlePull_Column.ToolTipText = "Enable nozzle-based tape indexing (pull via sprocket hole)";
+            this.UseNozzlePull_Column.Width = 71;
             // 
             // PullDistance_Column
             // 
+            dataGridViewCellStyle1.Format = "0.0";
+            this.PullDistance_Column.DefaultCellStyle = dataGridViewCellStyle1;
             this.PullDistance_Column.HeaderText = "Pull Dist";
             this.PullDistance_Column.MinimumWidth = 6;
             this.PullDistance_Column.Name = "PullDistance_Column";
-            this.PullDistance_Column.Width = 80;
             this.PullDistance_Column.ToolTipText = "Distance to pull tape (mm) - usually same as Pitch";
-            this.PullDistance_Column.DefaultCellStyle.Format = "0.0";
+            this.PullDistance_Column.Width = 78;
             // 
             // VerifyHoleWithCamera_Column
             // 
             this.VerifyHoleWithCamera_Column.HeaderText = "Verify Hole";
             this.VerifyHoleWithCamera_Column.MinimumWidth = 6;
             this.VerifyHoleWithCamera_Column.Name = "VerifyHoleWithCamera_Column";
-            this.VerifyHoleWithCamera_Column.Width = 85;
             this.VerifyHoleWithCamera_Column.ToolTipText = "Use camera to verify hole position before each pull (slower but more accurate)";
+            this.VerifyHoleWithCamera_Column.Width = 71;
             // 
             // Tapes_contextMenuStrip
             // 
@@ -9600,14 +9605,14 @@ namespace LitePlacer
             | System.Windows.Forms.AnchorStyles.Right)));
             this.JobData_GridView.CellBorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.Raised;
             this.JobData_GridView.ClipboardCopyMode = System.Windows.Forms.DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
-            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle1.BackColor = System.Drawing.SystemColors.Control;
-            dataGridViewCellStyle1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            dataGridViewCellStyle1.ForeColor = System.Drawing.SystemColors.WindowText;
-            dataGridViewCellStyle1.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle1.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.JobData_GridView.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle1;
+            dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle2.BackColor = System.Drawing.SystemColors.Control;
+            dataGridViewCellStyle2.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            dataGridViewCellStyle2.ForeColor = System.Drawing.SystemColors.WindowText;
+            dataGridViewCellStyle2.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle2.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle2.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.JobData_GridView.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle2;
             this.JobData_GridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.JobData_GridView.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.JobDataValueColumn,
@@ -9723,14 +9728,14 @@ namespace LitePlacer
             | System.Windows.Forms.AnchorStyles.Right)));
             this.CadData_GridView.CellBorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.Raised;
             this.CadData_GridView.ClipboardCopyMode = System.Windows.Forms.DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
-            dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle2.BackColor = System.Drawing.SystemColors.Control;
-            dataGridViewCellStyle2.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            dataGridViewCellStyle2.ForeColor = System.Drawing.SystemColors.WindowText;
-            dataGridViewCellStyle2.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle2.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle2.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.CadData_GridView.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle2;
+            dataGridViewCellStyle3.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle3.BackColor = System.Drawing.SystemColors.Control;
+            dataGridViewCellStyle3.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            dataGridViewCellStyle3.ForeColor = System.Drawing.SystemColors.WindowText;
+            dataGridViewCellStyle3.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle3.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle3.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.CadData_GridView.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle3;
             this.CadData_GridView.ColumnHeadersHeight = 29;
             this.CadData_GridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
             this.CadData_GridView.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
@@ -9911,6 +9916,7 @@ namespace LitePlacer
             // 
             // Algorithms_tabPage
             // 
+            this.Algorithms_tabPage.Controls.Add(this.groupBoxCameraEngin);
             this.Algorithms_tabPage.Controls.Add(this.IntParameterDown10_button);
             this.Algorithms_tabPage.Controls.Add(this.IntParameterUp10_button);
             this.Algorithms_tabPage.Controls.Add(this.Measure10x_button);
@@ -9984,6 +9990,29 @@ namespace LitePlacer
             this.Algorithms_tabPage.Tag = "https://liteplacer.com/setup-video-processing-page/";
             this.Algorithms_tabPage.Text = "Setup Video Processing";
             this.Algorithms_tabPage.UseVisualStyleBackColor = true;
+            // 
+            // groupBoxCameraEngin
+            // 
+            this.groupBoxCameraEngin.Controls.Add(this.listBoxCameraEngin);
+            this.groupBoxCameraEngin.Location = new System.Drawing.Point(662, 88);
+            this.groupBoxCameraEngin.Name = "groupBoxCameraEngin";
+            this.groupBoxCameraEngin.Size = new System.Drawing.Size(149, 56);
+            this.groupBoxCameraEngin.TabIndex = 319;
+            this.groupBoxCameraEngin.TabStop = false;
+            this.groupBoxCameraEngin.Text = "Camera Engin";
+            // 
+            // listBoxCameraEngin
+            // 
+            this.listBoxCameraEngin.FormattingEnabled = true;
+            this.listBoxCameraEngin.ItemHeight = 16;
+            this.listBoxCameraEngin.Items.AddRange(new object[] {
+            "AForge",
+            "EmguCV"});
+            this.listBoxCameraEngin.Location = new System.Drawing.Point(13, 25);
+            this.listBoxCameraEngin.Name = "listBoxCameraEngin";
+            this.listBoxCameraEngin.Size = new System.Drawing.Size(130, 20);
+            this.listBoxCameraEngin.TabIndex = 0;
+            this.listBoxCameraEngin.SelectedIndexChanged += new System.EventHandler(this.listBoxCameraEngin_SelectedIndexChanged);
             // 
             // IntParameterDown10_button
             // 
@@ -12858,6 +12887,7 @@ namespace LitePlacer
             this.tabControlPages.ResumeLayout(false);
             this.Algorithms_tabPage.ResumeLayout(false);
             this.Algorithms_tabPage.PerformLayout();
+            this.groupBoxCameraEngin.ResumeLayout(false);
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
             this.AdvancedProcessing_tabControl.ResumeLayout(false);
@@ -13868,6 +13898,8 @@ namespace LitePlacer
         private MaskedTextBox MZCNCAmicrosteps_maskedTextBox;
         private Label label321;
         private Label label322;
+        private GroupBox groupBoxCameraEngin;
+        private ListBox listBoxCameraEngin;
     }
 }
     

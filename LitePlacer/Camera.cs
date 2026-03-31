@@ -30,8 +30,49 @@ namespace LitePlacer
         {
             MainForm = MainF;
             Name = _name;
+            
+            // Initialize with AForge engine by default (preserves existing behavior)
+            _currentEngine = new CameraEngines.AForgeEngine(this);
         }
 
+
+        // ==================================================================
+        // Camera Engine Support
+        // ==================================================================
+        
+        private CameraEngines.ICameraEngine _currentEngine;
+        
+        /// <summary>
+        /// Gets the currently active camera engine (AForge, EmguCV, etc.)
+        /// </summary>
+        public CameraEngines.ICameraEngine CurrentEngine
+        {
+            get => _currentEngine;
+        }
+        
+        /// <summary>
+        /// Switches the camera engine to a different implementation
+        /// Allows switching between AForge.NET and EmguCV at runtime
+        /// </summary>
+        /// <param name="engine">New engine to use for image processing</param>
+        public void SetEngine(CameraEngines.ICameraEngine engine)
+        {
+            if (engine == null)
+            {
+                throw new ArgumentNullException(nameof(engine));
+            }
+            
+            if (!engine.IsAvailable)
+            {
+                MainForm.DisplayText($"Cannot switch to {engine.EngineName} - library not available", 
+                    System.Drawing.KnownColor.DarkRed);
+                return;
+            }
+            
+            _currentEngine = engine;
+            MainForm.DisplayText($"Camera engine switched to: {engine.EngineName} v{engine.Version}", 
+                System.Drawing.KnownColor.DarkGreen);
+        }
 
         // ==================================================================
         // Parameters:

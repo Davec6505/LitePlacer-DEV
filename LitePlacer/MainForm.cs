@@ -15035,7 +15035,78 @@ namespace LitePlacer
 
         }
 
+        private void listBoxCameraEngin_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (StartingUp)
+            {
+                return;
+            }
 
+            ListBox listBox = sender as ListBox;
+            if (listBox == null || listBox.SelectedItem == null)
+            {
+                return;
+            }
+
+            string selectedEngine = listBox.SelectedItem.ToString();
+            
+            CameraEngines.ICameraEngine engine = null;
+            
+            switch (selectedEngine)
+            {
+                case "AForge":
+                case "AForge.NET":
+                    // Switch to AForge engine
+                    engine = new CameraEngines.AForgeEngine(DownCamera);
+                    DisplayText("Switched to AForge.NET engine", KnownColor.DarkCyan);
+                    DisplayText("Using standard image processing functions", KnownColor.DarkCyan);
+                    break;
+                    
+                case "EmguCV":
+                case "EmguCV (OpenCV)":
+                    // Check if EmguCV is available
+                    var testEngine = new CameraEngines.EmguCVEngine(this);
+                    if (!testEngine.IsAvailable)
+                    {
+                        ShowMessageBox(
+                            "EmguCV library not found or not functional.\n\n" +
+                            "Please ensure Emgu.CV NuGet packages are installed:\n" +
+                            "- Emgu.CV\n" +
+                            "- Emgu.CV.runtime.windows\n\n" +
+                            "The packages should already be installed. Try rebuilding the solution.",
+                            "EmguCV Not Available",
+                            MessageBoxButtons.OK);
+                        
+                        // Revert selection to AForge
+                        listBox.SelectedIndex = 0;
+                        return;
+                    }
+                    
+                    engine = testEngine;
+                    DisplayText("Switched to EmguCV (OpenCV) engine", KnownColor.DarkGreen);
+                    DisplayText($"Version: {engine.Version}", KnownColor.DarkGreen);
+                    DisplayText("Advanced features enabled: Canny, Sobel, Adaptive threshold, etc.", KnownColor.DarkGreen);
+                    break;
+                    
+                default:
+                    DisplayText($"Unknown engine: {selectedEngine}", KnownColor.DarkRed);
+                    return;
+            }
+            
+            if (engine == null)
+            {
+                return;
+            }
+            
+            // Apply engine to both cameras
+            DownCamera.SetEngine(engine);
+            UpCamera.SetEngine(engine);
+            
+            // Save selection to settings
+            Setting.CameraEngine = selectedEngine;
+            
+            DisplayText($"Both cameras now using {engine.EngineName}", KnownColor.DarkGreen);
+        }
     }	// end of: 	public partial class FormMain : Form
 
 

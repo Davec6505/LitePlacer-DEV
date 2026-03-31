@@ -256,6 +256,9 @@ namespace LitePlacer
         public bool Placement_SkipMeasurements { get; set; } = false;
         public bool Placement_UpdateJobGridAtRuntime { get; set; } = false;
 
+        // Camera Engine Selection (AForge.NET or EmguCV)
+        public string CameraEngine { get; set; } = "AForge";
+
         public bool DownCam_DrawBox { get; set; } = true;
         public bool DownCam_DrawCross { get; set; } = true;
         public bool DownCam_DrawSidemarks { get; set; } = true;

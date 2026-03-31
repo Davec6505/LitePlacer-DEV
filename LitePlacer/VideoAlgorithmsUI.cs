@@ -1683,6 +1683,121 @@ namespace LitePlacer
         }
         #endregion search, size and distance
         // =====================================================================================
+
+        #region Camera Engine Selection
+        // =====================================================================================
+        
+        /// <summary>
+        /// Event handler for camera engine selection (AForge vs EmguCV)
+        /// Wire this up to your listBoxCameraEngine.SelectedIndexChanged event in Designer
+        /// </summary>
+        private void listBoxCameraEngine_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (StartingUp)
+            {
+                return;
+            }
+
+            ListBox listBox = sender as ListBox;
+            if (listBox == null || listBox.SelectedItem == null)
+            {
+                return;
+            }
+
+            string selectedEngine = listBox.SelectedItem.ToString();
+            
+            CameraEngines.ICameraEngine engine = null;
+            
+            switch (selectedEngine)
+            {
+                case "AForge":
+                case "AForge.NET":
+                    // Switch to AForge engine
+                    engine = new CameraEngines.AForgeEngine(DownCamera);
+                    DisplayText("Switched to AForge.NET engine", KnownColor.DarkCyan);
+                    DisplayText("Using standard image processing functions", KnownColor.DarkCyan);
+                    break;
+                    
+                case "EmguCV":
+                case "EmguCV (OpenCV)":
+                    // Check if EmguCV is available
+                    var testEngine = new CameraEngines.EmguCVEngine(this);
+                    if (!testEngine.IsAvailable)
+                    {
+                        ShowMessageBox(
+                            "EmguCV library not found or not functional.\n\n" +
+                            "Please ensure Emgu.CV NuGet packages are installed:\n" +
+                            "- Emgu.CV\n" +
+                            "- Emgu.CV.runtime.windows\n\n" +
+                            "The packages should already be installed. Try rebuilding the solution.",
+                            "EmguCV Not Available",
+                            MessageBoxButtons.OK);
+                        
+                        // Revert selection to AForge
+                        listBox.SelectedIndex = 0;
+                        return;
+                    }
+                    
+                    engine = testEngine;
+                    DisplayText("Switched to EmguCV (OpenCV) engine", KnownColor.DarkGreen);
+                    DisplayText($"Version: {engine.Version}", KnownColor.DarkGreen);
+                    DisplayText("Advanced features enabled: Canny, Sobel, Adaptive threshold, etc.", KnownColor.DarkGreen);
+                    break;
+                    
+                default:
+                    DisplayText($"Unknown engine: {selectedEngine}", KnownColor.DarkRed);
+                    return;
+            }
+            
+            if (engine == null)
+            {
+                return;
+            }
+            
+            // Apply engine to both cameras
+            DownCamera.SetEngine(engine);
+            UpCamera.SetEngine(engine);
+            
+            // Save selection to settings
+            Setting.CameraEngine = selectedEngine;
+            
+            // Refresh available functions list if the video algorithms UI is visible
+            // This will update the Functions_dataGridView with engine-specific functions
+            RefreshAvailableFunctions();
+            
+            DisplayText($"Both cameras now using {engine.EngineName}", KnownColor.DarkGreen);
+        }
+        
+        /// <summary>
+        /// Refreshes the available functions list based on current camera engine
+        /// </summary>
+        private void RefreshAvailableFunctions()
+        {
+            // Get current camera engine
+            CameraEngines.ICameraEngine engine = DownCamera.CurrentEngine;
+            if (engine == null)
+            {
+                return;
+            }
+            
+            // Get available functions from engine
+            var functions = engine.GetAvailableFunctions();
+            
+            // Update the Functions ComboBox column
+            DataGridViewComboBoxColumn comboboxColumn =
+                (DataGridViewComboBoxColumn)Functions_dataGridView.Columns[(int)Functions_dataGridViewColumns.FunctionColumn];
+            
+            comboboxColumn.Items.Clear();
+            foreach (string function in functions)
+            {
+                comboboxColumn.Items.Add(function);
+            }
+            
+            DisplayText($"Loaded {functions.Count} functions from {engine.EngineName}", KnownColor.DarkCyan);
+        }
+        
+        #endregion Camera Engine Selection
+        // =====================================================================================
     }
 
 }
