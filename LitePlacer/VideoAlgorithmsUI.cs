@@ -32,9 +32,20 @@ namespace LitePlacer
     public partial class FormMain : Form
     {
         enum Functions_dataGridViewColumns : int { FunctionColumn, ActiveColumn };
-        public List<string> KnownFunctions = new List<string> {"Threshold", "Invert", "Meas. zoom", "Histogram",
-            "Grayscale", "Edge detect", "Noise reduction", "Erosion", "Kill color", "Keep color", "Blur",
-            "Gaussian blur", "Hough circles", "Filter Features by Size", "Jog before measurement"};
+        
+        // Dynamic function list - populated based on active camera engine (AForge vs EmguCV)
+        private List<string> _knownFunctions;
+        public List<string> KnownFunctions 
+        { 
+            get 
+            {
+                if (_knownFunctions == null)
+                {
+                    UpdateKnownFunctions();
+                }
+                return _knownFunctions;
+            }
+        }
 
 
         public VideoAlgorithmsCollection VideoAlgorithms;
@@ -42,6 +53,54 @@ namespace LitePlacer
         // =====================================================================================
         // interface to main form:
         Camera cam;
+
+        /// <summary>
+        /// Updates the available functions list based on current camera engine
+        /// </summary>
+        private void UpdateKnownFunctions()
+        {
+            _knownFunctions = new List<string>();
+            
+            // Get functions from current camera engine
+            if (cam?.CurrentEngine != null && cam.CurrentEngine.IsAvailable)
+            {
+                _knownFunctions.AddRange(cam.CurrentEngine.GetAvailableFunctions());
+                DisplayText($"Loaded {_knownFunctions.Count} functions from {cam.CurrentEngine.EngineName}", 
+                    System.Drawing.KnownColor.DarkGreen);
+            }
+            else
+            {
+                // Fallback to default AForge functions
+                _knownFunctions.AddRange(new[] 
+                {
+                    "Threshold", "Invert", "Meas. zoom", "Histogram",
+                    "Grayscale", "Edge detect", "Noise reduction", "Erosion", 
+                    "Kill color", "Keep color", "Blur", "Gaussian blur", 
+                    "Hough circles", "Filter Features by Size", "Jog before measurement"
+                });
+                DisplayText("Using default AForge function set", System.Drawing.KnownColor.DarkOrange);
+            }
+        }
+
+        /// <summary>
+        /// Refreshes the function dropdown when camera engine changes
+        /// </summary>
+        public void RefreshFunctionList()
+        {
+            _knownFunctions = null; // Force refresh
+            
+            // Update the DataGridView combobox column
+            DataGridViewComboBoxColumn comboboxColumn =
+                (DataGridViewComboBoxColumn)Functions_dataGridView.Columns[(int)Functions_dataGridViewColumns.FunctionColumn];
+            comboboxColumn.DataSource = null; // Clear existing DataSource first
+            comboboxColumn.DataSource = KnownFunctions;
+            
+            // Force refresh of all cells to pick up new function list
+            Functions_dataGridView.Refresh();
+            
+            DisplayText($"Function list refreshed: {KnownFunctions.Count} functions available", 
+                System.Drawing.KnownColor.DarkGreen);
+        }
 
         private void Algorithms_tabPage_Begin()
         {
@@ -80,10 +139,31 @@ namespace LitePlacer
         {
             DownCam_radioButton.Checked = true; // default to Downcamera
             Functions_dataGridView.Rows.Clear();
-            DataGridViewComboBoxColumn comboboxColumn =
-                 (DataGridViewComboBoxColumn)Functions_dataGridView.Columns[(int)Functions_dataGridViewColumns.FunctionColumn];
-            comboboxColumn.Items.Clear();
-            comboboxColumn.DataSource = KnownFunctions;
+            
+            // Initialize camera engine selection listbox
+            if (listBoxCameraEngin != null)
+            {
+                listBoxCameraEngin.Items.Clear();
+                listBoxCameraEngin.Items.Add("AForge.NET");
+                listBoxCameraEngin.Items.Add("EmguCV (OpenCV)");
+                
+                // Select engine based on saved setting
+                string savedEngine = Setting.CameraEngine ?? "AForge";
+                if (savedEngine.Contains("EmguCV") || savedEngine.Contains("OpenCV"))
+                {
+                    listBoxCameraEngin.SelectedIndex = 1; // EmguCV
+                }
+                else
+                {
+                    listBoxCameraEngin.SelectedIndex = 0; // AForge
+                }
+                
+                DisplayText($"Camera engine selector initialized: {listBoxCameraEngin.SelectedItem}", 
+                    System.Drawing.KnownColor.DarkCyan);
+            }
+            
+            // Initialize function list from camera engine (EmguCV or AForge)
+            RefreshFunctionList();
 
             VideoAlgorithms = new VideoAlgorithmsCollection();
             LoadVideoAlgorithms(VideoAlgorithms); // causes updating of Functions_dataGridView and Function parameters
@@ -94,6 +174,7 @@ namespace LitePlacer
         {
             cam = NewCam;
             SelectCamera(NewCam);
+            RefreshFunctionList(); // Update available functions based on camera engine
             AlgorithmsTab_RestoreBehaviour();
         }
 
@@ -1006,6 +1087,99 @@ namespace LitePlacer
                 case "Jog before measurement":
                     break;		// no parameters
 
+                // ===== EmguCV Advanced Functions =====
+                
+                case "Canny edge detection":
+                    funct.parameterDoubleA = 100;   // Lower threshold
+                    funct.parameterDoubleB = 200;   // Upper threshold
+                    funct.parameterInt = 3;         // Aperture size
+                    break;
+
+                case "Sobel edge detection":
+                    funct.parameterInt = 0;         // Direction (0=Both)
+                    funct.parameterDouble = 1.0;    // Scale
+                    funct.parameterDoubleA = 0;     // Delta
+                    break;
+
+                case "Laplacian edge detection":
+                    funct.parameterInt = 3;         // Aperture size
+                    funct.parameterDouble = 1.0;    // Scale
+                    funct.parameterDoubleA = 0;     // Delta
+                    break;
+
+                case "Adaptive threshold":
+                    funct.parameterInt = 0;         // Method (0=Mean)
+                    funct.parameterDouble = 11;     // Block size (must be odd)
+                    funct.parameterDoubleA = 2;     // C constant
+                    funct.parameterDoubleB = 255;   // Max value
+                    break;
+
+                case "Bilateral filter":
+                    funct.parameterInt = 9;         // Diameter
+                    funct.parameterDouble = 75;     // Sigma color
+                    funct.parameterDoubleA = 75;    // Sigma space
+                    break;
+
+                case "CLAHE":
+                    funct.parameterDouble = 40.0;   // Clip limit
+                    funct.parameterInt = 8;         // Tile grid size
+                    break;
+
+                case "Morphological gradient":
+                    funct.parameterInt = 3;         // Kernel size
+                    funct.parameterDouble = 1;      // Iterations
+                    break;
+
+                case "Morphological top hat":
+                    funct.parameterInt = 5;         // Kernel size
+                    break;
+
+                case "Morphological black hat":
+                    funct.parameterInt = 5;         // Kernel size
+                    break;
+
+                case "Hough circles (sub-pixel)":
+                    funct.parameterInt = 0;         // Method
+                    funct.parameterDouble = 1.0;    // DP
+                    funct.parameterDoubleA = 20;    // Min distance
+                    funct.parameterDoubleB = 100;   // Param1
+                    funct.parameterDoubleC = 30;    // Param2
+                    funct.R = 10;                   // Min radius
+                    funct.G = 100;                  // Max radius
+                    break;
+
+                case "Harris corners":
+                    funct.parameterInt = 2;         // Block size
+                    funct.parameterDouble = 3;      // Aperture
+                    funct.parameterDoubleA = 0.04;  // K parameter
+                    break;
+
+                case "Shi-Tomasi corners":
+                    funct.parameterInt = 100;       // Max corners
+                    funct.parameterDouble = 0.01;   // Quality level
+                    funct.parameterDoubleA = 10;    // Min distance
+                    break;
+
+                case "FAST feature detection":
+                    funct.parameterInt = 40;        // Threshold
+                    funct.parameterDouble = 1;      // Non-max suppression (1=on)
+                    break;
+
+                case "Template matching":
+                    funct.parameterInt = 5;         // Method (CCOEFF_NORMED)
+                    funct.parameterDouble = 0.8;    // Match threshold
+                    break;
+
+                case "Contour detection":
+                    funct.parameterInt = 1;         // Retrieval mode (LIST)
+                    funct.parameterDouble = 100;    // Min area
+                    funct.parameterDoubleA = 10000; // Max area
+                    break;
+
+                case "Watershed segmentation":
+                    funct.parameterInt = 10;        // Min distance
+                    funct.parameterDouble = 0.5;    // Threshold factor
+                    break;
 
                 default:
                     break;
@@ -1129,6 +1303,192 @@ namespace LitePlacer
                     // no parameters
                     FunctionExplanation_textBox.Text = "Jog machine to position before continuing.\r\n"
                         + "(useful to target fiducials on a very tight board, for example)";
+                    FunctionExplanation_textBox.Visible = true;
+                    break;
+
+                // ===== EmguCV Advanced Functions UI =====
+
+                case "Canny edge detection":
+                    EnableDoubleA("Lower threshold:");
+                    EnableDoubleB("Upper threshold:");
+                    EnableInt(3, 7, "Aperture size:");
+                    FunctionExplanation_textBox.Text =
+                        "Detects edges using Canny algorithm with hysteresis.\r\n" +
+                        "Lower threshold: Weak edges below this are discarded.\r\n" +
+                        "Upper threshold: Strong edges above this are kept.\r\n" +
+                        "Aperture: Sobel kernel size (3, 5, or 7)";
+                    FunctionExplanation_textBox.Visible = true;
+                    break;
+
+                case "Sobel edge detection":
+                    EnableInt(0, 3, "Direction:");
+                    EnableDouble("Scale:");
+                    EnableDoubleA("Delta:");
+                    FunctionExplanation_textBox.Text =
+                        "Detects edges using Sobel operator.\r\n" +
+                        "Direction: 0=Both XY, 1=X only, 2=Y only, 3=Magnitude\r\n" +
+                        "Scale: Multiplier for gradient values\r\n" +
+                        "Delta: Value added to results";
+                    FunctionExplanation_textBox.Visible = true;
+                    break;
+
+                case "Laplacian edge detection":
+                    EnableInt(1, 7, "Aperture:");
+                    EnableDouble("Scale:");
+                    EnableDoubleA("Delta:");
+                    FunctionExplanation_textBox.Text =
+                        "Detects edges using second derivative (Laplacian).\r\n" +
+                        "Good for finding zero-crossings and fine details.\r\n" +
+                        "Aperture: Kernel size (1, 3, 5, or 7)";
+                    FunctionExplanation_textBox.Visible = true;
+                    break;
+
+                case "Adaptive threshold":
+                    EnableInt(0, 1, "Method:");
+                    EnableDouble("Block size:");
+                    EnableDoubleA("C constant:");
+                    EnableDoubleB("Max value:");
+                    FunctionExplanation_textBox.Text =
+                        "Threshold that adapts to local illumination.\r\n" +
+                        "Method: 0=Mean, 1=Gaussian weighted\r\n" +
+                        "Block size: Neighborhood size (must be odd)\r\n" +
+                        "C: Constant subtracted from mean/weighted mean";
+                    FunctionExplanation_textBox.Visible = true;
+                    break;
+
+                case "Bilateral filter":
+                    EnableInt(1, 50, "Diameter:");
+                    EnableDouble("Sigma color:");
+                    EnableDoubleA("Sigma space:");
+                    FunctionExplanation_textBox.Text =
+                        "Edge-preserving noise reduction.\r\n" +
+                        "Diameter: Filter size (larger = slower but smoother)\r\n" +
+                        "Sigma color: Color difference sensitivity\r\n" +
+                        "Sigma space: Spatial distance sensitivity";
+                    FunctionExplanation_textBox.Visible = true;
+                    break;
+
+                case "CLAHE":
+                    EnableDouble("Clip limit:");
+                    EnableInt(2, 32, "Tile size:");
+                    FunctionExplanation_textBox.Text =
+                        "Contrast enhancement with clipping to prevent over-amplification.\r\n" +
+                        "Clip limit: Controls contrast amplification (higher = more contrast)\r\n" +
+                        "Tile size: Grid size for local histogram equalization";
+                    FunctionExplanation_textBox.Visible = true;
+                    break;
+
+                case "Morphological gradient":
+                    EnableInt(1, 21, "Kernel size:");
+                    EnableDouble("Iterations:");
+                    FunctionExplanation_textBox.Text =
+                        "Edge detection via morphology (dilation - erosion).\r\n" +
+                        "Highlights object boundaries.\r\n" +
+                        "Kernel size: Structuring element size (odd numbers)";
+                    FunctionExplanation_textBox.Visible = true;
+                    break;
+
+                case "Morphological top hat":
+                    EnableInt(1, 21, "Kernel size:");
+                    FunctionExplanation_textBox.Text =
+                        "Extracts bright features smaller than structuring element.\r\n" +
+                        "Useful for finding small bright objects on dark background.";
+                    FunctionExplanation_textBox.Visible = true;
+                    break;
+
+                case "Morphological black hat":
+                    EnableInt(1, 21, "Kernel size:");
+                    FunctionExplanation_textBox.Text =
+                        "Extracts dark features smaller than structuring element.\r\n" +
+                        "Useful for finding small dark objects on bright background.";
+                    FunctionExplanation_textBox.Visible = true;
+                    break;
+
+                case "Hough circles (sub-pixel)":
+                    EnableInt(0, 1, "Method:");
+                    EnableDouble("DP:");
+                    EnableDoubleA("Min distance:");
+                    EnableDoubleB("Edge threshold:");
+                    EnableDoubleC("Center threshold:");
+                    R_label.Text = "Min radius:";
+                    R_label.Visible = true;
+                    DoubleParA_textBox.Text = VideoAlgorithms.CurrentAlgorithm.FunctionList[VideoAlgorithms.CurrentFunctionIndex].R.ToString();
+                    DoubleParA_textBox.Visible = true;
+                    G_label.Text = "Max radius:";
+                    G_label.Visible = true;
+                    DoubleParB_textBox.Text = VideoAlgorithms.CurrentAlgorithm.FunctionList[VideoAlgorithms.CurrentFunctionIndex].G.ToString();
+                    DoubleParB_textBox.Visible = true;
+                    FunctionExplanation_textBox.Text =
+                        "Circle detection with sub-pixel accuracy.\r\n" +
+                        "DP: Inverse accumulator resolution\r\n" +
+                        "Min distance: Minimum distance between circle centers\r\n" +
+                        "Edge threshold: Canny edge detector threshold\r\n" +
+                        "Center threshold: Accumulator threshold for centers";
+                    FunctionExplanation_textBox.Visible = true;
+                    break;
+
+                case "Harris corners":
+                    EnableInt(1, 10, "Block size:");
+                    EnableDouble("Aperture:");
+                    EnableDoubleA("K parameter:");
+                    FunctionExplanation_textBox.Text =
+                        "Detects corner points (Harris detector).\r\n" +
+                        "Block size: Neighborhood size\r\n" +
+                        "Aperture: Sobel derivative aperture\r\n" +
+                        "K: Harris detector free parameter (0.04-0.06 typical)";
+                    FunctionExplanation_textBox.Visible = true;
+                    break;
+
+                case "Shi-Tomasi corners":
+                    EnableInt(1, 500, "Max corners:");
+                    EnableDouble("Quality level:");
+                    EnableDoubleA("Min distance:");
+                    FunctionExplanation_textBox.Text =
+                        "Detects good features to track (Shi-Tomasi).\r\n" +
+                        "Max corners: Maximum number of corners to return\r\n" +
+                        "Quality level: Minimal accepted quality (0.01 typical)\r\n" +
+                        "Min distance: Minimum distance between corners";
+                    FunctionExplanation_textBox.Visible = true;
+                    break;
+
+                case "FAST feature detection":
+                    EnableInt(1, 100, "Threshold:");
+                    EnableDouble("Non-max suppress:");
+                    FunctionExplanation_textBox.Text =
+                        "Fast corner detection (FAST algorithm).\r\n" +
+                        "Threshold: Detection sensitivity (lower = more corners)\r\n" +
+                        "Non-max suppress: 1=Remove adjacent weak corners, 0=Keep all";
+                    FunctionExplanation_textBox.Visible = true;
+                    break;
+
+                case "Template matching":
+                    EnableInt(0, 5, "Method:");
+                    EnableDouble("Threshold:");
+                    FunctionExplanation_textBox.Text =
+                        "Find template pattern in image.\r\n" +
+                        "Method: 0-1=SQDIFF, 2-3=CCORR, 4-5=CCOEFF (5 recommended)\r\n" +
+                        "Threshold: Match quality threshold (0-1, higher = stricter)";
+                    FunctionExplanation_textBox.Visible = true;
+                    break;
+
+                case "Contour detection":
+                    EnableInt(0, 3, "Mode:");
+                    EnableDouble("Min area:");
+                    EnableDoubleA("Max area:");
+                    FunctionExplanation_textBox.Text =
+                        "Finds and filters contours by area.\r\n" +
+                        "Mode: 0=External only, 1=All contours, 2=Two-level, 3=Tree\r\n" +
+                        "Min/Max area: Filter contours by pixel area";
+                    FunctionExplanation_textBox.Visible = true;
+                    break;
+
+                case "Watershed segmentation":
+                    EnableInt(1, 50, "Min distance:");
+                    EnableDouble("Threshold:");
+                    FunctionExplanation_textBox.Text =
+                        "Separates touching objects using watershed algorithm.\r\n" +
+                        "Min distance: Minimum distance between object seeds\r\n" +
+                        "Threshold: Controls segmentation sensitivity";
                     FunctionExplanation_textBox.Visible = true;
                     break;
 

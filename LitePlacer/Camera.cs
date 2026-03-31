@@ -32,6 +32,7 @@ namespace LitePlacer
             Name = _name;
             
             // Initialize with AForge engine by default (preserves existing behavior)
+            // User can switch to EmguCV via UI if desired
             _currentEngine = new CameraEngines.AForgeEngine(this);
         }
 

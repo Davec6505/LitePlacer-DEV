@@ -15035,6 +15035,68 @@ namespace LitePlacer
 
         }
 
+        /// <summary>
+        /// Switches both cameras to use the specified engine
+        /// Call with "EmguCV" or "AForge" to switch vision engine
+        /// </summary>
+        public void SwitchCameraEngine(string engineName)
+        {
+            CameraEngines.ICameraEngine engine = null;
+            
+            if (engineName.ToUpperInvariant().Contains("EMGUCV") || 
+                engineName.ToUpperInvariant().Contains("OPENCV"))
+            {
+                // Switch to EmguCV
+                var testEngine = new CameraEngines.EmguCVEngine(this);
+                if (!testEngine.IsAvailable)
+                {
+                    DisplayText("EmguCV library not available - check NuGet packages and DLL files", 
+                        KnownColor.DarkRed);
+                    DisplayText("Staying with AForge engine", KnownColor.DarkOrange);
+                    return;
+                }
+                
+                engine = testEngine;
+                DisplayText("=== Switching to EmguCV (OpenCV) engine ===", KnownColor.DarkGreen);
+                DisplayText($"Version: {engine.Version}", KnownColor.DarkGreen);
+                DisplayText("Advanced features enabled: Canny, Sobel, Adaptive threshold, etc.", KnownColor.DarkGreen);
+            }
+            else
+            {
+                // Switch to AForge
+                engine = new CameraEngines.AForgeEngine(DownCamera);
+                DisplayText("=== Switching to AForge.NET engine ===", KnownColor.DarkCyan);
+                DisplayText("Using standard image processing functions", KnownColor.DarkCyan);
+            }
+            
+            if (engine == null)
+            {
+                DisplayText("Engine creation failed", KnownColor.DarkRed);
+                return;
+            }
+            
+            // Apply engine to both cameras
+            DownCamera.SetEngine(engine);
+            UpCamera.SetEngine(engine);
+            
+            // Save selection to settings
+            Setting.CameraEngine = engineName;
+            
+            // Refresh the function list in the VideoAlgorithms UI
+            // We need to refresh for whichever camera is currently active
+            if (DownCam_radioButton.Checked)
+            {
+                ChangeCamera(DownCamera);
+            }
+            else
+            {
+                ChangeCamera(UpCamera);
+            }
+            
+            DisplayText($"Both cameras now using {engine.EngineName}", KnownColor.DarkGreen);
+            DisplayText("Function list updated - new functions available in Video Processing tab", KnownColor.DarkCyan);
+        }
+
         private void listBoxCameraEngin_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (StartingUp)
@@ -15105,7 +15167,19 @@ namespace LitePlacer
             // Save selection to settings
             Setting.CameraEngine = selectedEngine;
             
+            // Refresh the function list in the VideoAlgorithms UI
+            // Update for whichever camera is currently active on the Video Processing tab
+            if (DownCam_radioButton.Checked)
+            {
+                ChangeCamera(DownCamera);
+            }
+            else
+            {
+                ChangeCamera(UpCamera);
+            }
+            
             DisplayText($"Both cameras now using {engine.EngineName}", KnownColor.DarkGreen);
+            DisplayText("Function list updated in Video Processing tab", KnownColor.DarkCyan);
         }
     }	// end of: 	public partial class FormMain : Form
 

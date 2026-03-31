@@ -48,14 +48,31 @@ namespace LitePlacer.CameraEngines
             {
                 try
                 {
-                    // Test if EmguCV DLLs are present and functional by calling a simple function
-                    using (Mat testMat = new Mat())
+                    // Test if EmguCV DLLs are present and functional
+                    // Try a very simple operation that requires the native DLL
+                    using (Mat testMat = new Mat(1, 1, DepthType.Cv8U, 1))
                     {
-                        return true;
+                        // If we can create a Mat, EmguCV is working
+                        return testMat.IsEmpty == false;
                     }
                 }
-                catch
+                catch (System.DllNotFoundException ex)
                 {
+                    System.Diagnostics.Debug.WriteLine($"EmguCV DLL not found: {ex.Message}");
+                    return false;
+                }
+                catch (System.TypeInitializationException ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"EmguCV initialization failed: {ex.Message}");
+                    if (ex.InnerException != null)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                    }
+                    return false;
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"EmguCV not available: {ex.GetType().Name}: {ex.Message}");
                     return false;
                 }
             }
