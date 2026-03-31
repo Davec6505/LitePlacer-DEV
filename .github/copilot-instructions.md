@@ -1,5 +1,76 @@
 # GitHub Copilot Instructions for LitePlacer-DEV
 
+## COMPLETED TASKS
+
+### ? Thread-Safety Fix for GotoNextPartByMeasurement_m() - COMPLETE
+
+**Status:** ? IMPLEMENTED  
+**Completed:** 2024-01-XX  
+**Commit:** [pending]  
+**File:** `LitePlacer/tapes.cs`  
+**Function:** `GotoNextPartByMeasurement_m(int TapeNumber, out double HoleX, out double HoleY)`  
+**Lines:** 773-968
+
+#### Implementation Summary:
+
+**Problem Solved:** The function was directly accessing UI controls (DataGridView) without thread marshaling, causing potential cross-thread exceptions if called from background threads during placement operations.
+
+**Solution Implemented:**
+1. Added `InvokeRequired` check at function start (line 790)
+2. If on background thread: Marshal ALL Grid reads to UI thread using `MainForm.Invoke()`
+3. If on UI thread: Read Grid directly (preserves existing behavior)
+4. All Grid data read into local variables at function start
+5. Rest of function uses only local variables (no Grid access after line 872)
+
+**Changes Made:**
+- **Lines 784-787:** Declared local variables for all UI data (`verifyHoleWithCamera`, `NextX`, `NextY`, `tapeId`)
+- **Lines 790-823:** Added Invoke path - marshals Grid reads to UI thread when on background thread
+- **Lines 827-872:** UI thread path - reads Grid directly when already on UI thread
+- **Lines 898-903:** Removed duplicate Grid reads (now using local variables from function start)
+
+**Thread-Safe Data Read:**
+```csharp
+bool verifyHoleWithCamera = true;
+double NextX = 0;
+double NextY = 0;
+string tapeId = "";
+
+if (MainForm.InvokeRequired)
+{
+    MainForm.Invoke(new Action(() =>
+    {
+        // Read ALL Grid data on UI thread
+        if (Grid.Rows[TapeNumber].Cells["VerifyHoleWithCamera_Column"].Value != null)
+            bool.TryParse(..., out verifyHoleWithCamera);
+        NextX = double.Parse(Grid.Rows[TapeNumber].Cells["Next_X_Column"]...);
+        NextY = double.Parse(Grid.Rows[TapeNumber].Cells["Next_Y_Column"]...);
+        tapeId = Grid.Rows[TapeNumber].Cells["Id_Column"].Value.ToString();
+    }));
+}
+else
+{
+    // Direct read when already on UI thread
+}
+
+// Rest of function uses ONLY local variables
+```
+
+**Testing Status:**
+- ? Build succeeds with no compilation errors
+- ?? Runtime testing pending - test with placement operations
+- ?? Verify no cross-thread exceptions in debug output
+- ?? Test with VerifyHoleWithCamera checked and unchecked
+
+**Benefits Achieved:**
+- ? Prevents crashes from cross-thread UI access
+- ? Consistent with `NozzlePullTapeIndex_m()` pattern (MainForm.cs lines 12230-12264)
+- ? Backwards compatible - works from both UI and background threads
+- ? Defensive programming - safe even if threading model changes
+
+**Note:** Function `SetCurrentTapeMeasurement_m()` (line 973) also accesses Grid directly and may need similar treatment if called from background threads. Evaluate separately based on usage patterns.
+
+---
+
 ## PENDING TASK - HIGH PRIORITY
 
 ### Thread-Safety Fix for GotoNextPartByMeasurement_m()

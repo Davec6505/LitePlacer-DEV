@@ -778,17 +778,100 @@ namespace LitePlacer
             double A = 0.0; // Part rotation angle
 
             // ========================================================================================
+            // THREAD-SAFE UI DATA READING
+            // Read all DataGridView data at the start, with thread marshaling if needed
+            // ========================================================================================
+            
+            bool verifyHoleWithCamera = true; // Default to verify every time
+            double NextX = 0;
+            double NextY = 0;
+            string tapeId = "";
+            
+            // If called from non-UI thread, invoke on UI thread to read grid data
+            if (MainForm.InvokeRequired)
+            {
+                bool success = false;
+                MainForm.Invoke(new Action(() =>
+                {
+                    try
+                    {
+                        // Read VerifyHoleWithCamera checkbox
+                        if (Grid.Rows[TapeNumber].Cells["VerifyHoleWithCamera_Column"].Value != null)
+                        {
+                            bool.TryParse(Grid.Rows[TapeNumber].Cells["VerifyHoleWithCamera_Column"].Value.ToString(), 
+                                out verifyHoleWithCamera);
+                        }
+                        
+                        // Read Next_X and Next_Y
+                        if (!double.TryParse(Grid.Rows[TapeNumber].Cells["Next_X_Column"].Value.ToString().Replace(',', '.'), out NextX))
+                        {
+                            success = false;
+                            return;
+                        }
+                        
+                        if (!double.TryParse(Grid.Rows[TapeNumber].Cells["Next_Y_Column"].Value.ToString().Replace(',', '.'), out NextY))
+                        {
+                            success = false;
+                            return;
+                        }
+                        
+                        // Read tape ID for error messages
+                        tapeId = Grid.Rows[TapeNumber].Cells["Id_Column"].Value.ToString();
+                        
+                        success = true;
+                    }
+                    catch
+                    {
+                        success = false;
+                    }
+                }));
+                
+                if (!success)
+                {
+                    MainForm.DisplayText("*** Failed to read tape data for GotoNextPartByMeasurement", KnownColor.DarkRed);
+                    return false;
+                }
+            }
+            else
+            {
+                // Called from UI thread - read directly
+                if (Grid.Rows[TapeNumber].Cells["VerifyHoleWithCamera_Column"].Value != null)
+                {
+                    bool.TryParse(Grid.Rows[TapeNumber].Cells["VerifyHoleWithCamera_Column"].Value.ToString(), 
+                        out verifyHoleWithCamera);
+                }
+                
+                if (!double.TryParse(Grid.Rows[TapeNumber].Cells["Next_X_Column"].Value.ToString().Replace(',', '.'), out NextX))
+                {
+                    tapeId = Grid.Rows[TapeNumber].Cells["Id_Column"].Value.ToString();
+                    MainForm.ShowMessageBox(
+                        "Bad data at Tape " + tapeId + ", Next X",
+                        "Tape data error",
+                        MessageBoxButtons.OK
+                    );
+                    return false;
+                }
+                
+                if (!double.TryParse(Grid.Rows[TapeNumber].Cells["Next_Y_Column"].Value.ToString().Replace(',', '.'), out NextY))
+                {
+                    tapeId = Grid.Rows[TapeNumber].Cells["Id_Column"].Value.ToString();
+                    MainForm.ShowMessageBox(
+                        "Bad data at Tape " + tapeId + ", Next Y",
+                        "Tape data error",
+                        MessageBoxButtons.OK
+                    );
+                    return false;
+                }
+                
+                tapeId = Grid.Rows[TapeNumber].Cells["Id_Column"].Value.ToString();
+            }
+
+            // ========================================================================================
             // CAMERA-BASED HOLE MEASUREMENT
             // This path is used when "Coordinates For Parts" is NOT enabled
             // (When "Coordinates For Parts" IS enabled, PickUpPartWithDirectCoordinates_m is called instead)
+            // All UI data has been read above - now using local variables only
             // ========================================================================================
-
-            // Check VerifyHoleWithCamera checkbox setting
-            bool verifyHoleWithCamera = true; // Default to verify every time
-            if (Grid.Rows[TapeNumber].Cells["VerifyHoleWithCamera_Column"].Value != null)
-            {
-                bool.TryParse(Grid.Rows[TapeNumber].Cells["VerifyHoleWithCamera_Column"].Value.ToString(), out verifyHoleWithCamera);
-            }
 
             // If verify is disabled AND we have a stored position, reuse it
             if (!verifyHoleWithCamera && VerifiedHolePositions.ContainsKey(TapeNumber))
@@ -806,33 +889,14 @@ namespace LitePlacer
                     MainForm.DisplayText($"First pickup - measuring hole position with camera (verify disabled)", KnownColor.DarkCyan);
                 }
 
+
                 // Go to next hole approximate location:
                 if (!SetCurrentTapeMeasurement_m(TapeNumber))  // having the measurement setup here helps with the automatic gain lag
                 {
                     return false;
                 }
 
-                double NextX = 0;
-                double NextY = 0;
-                if (!double.TryParse(Grid.Rows[TapeNumber].Cells["Next_X_Column"].Value.ToString().Replace(',', '.'), out NextX))
-                {
-                    MainForm.ShowMessageBox(
-                        "Bad data at Tape " + Grid.Rows[TapeNumber].Cells["Id_Column"].Value.ToString() + ", Next X",
-                        "Tape data error",
-                        MessageBoxButtons.OK
-                    );
-                    return false;
-                }
-
-                if (!double.TryParse(Grid.Rows[TapeNumber].Cells["Next_Y_Column"].Value.ToString().Replace(',', '.'), out NextY))
-                {
-                    MainForm.ShowMessageBox(
-                        "Bad data at Tape " + Grid.Rows[TapeNumber].Cells["Id_Column"].Value.ToString() + ", Next Y",
-                        "Tape data error",
-                        MessageBoxButtons.OK
-                    );
-                    return false;
-                }
+                // NextX and NextY already read at function start (thread-safe)
                 // Go there:
                 if (!MainForm.CNC_XYA_m(NextX, NextY, Cnc.CurrentA))
                 {
