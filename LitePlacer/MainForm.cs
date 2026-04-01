@@ -8742,23 +8742,19 @@ namespace LitePlacer
 
                 DisplayText($"Nozzle pull enabled, pulling {pullDistance}mm before pickup...", KnownColor.DarkCyan);
                 
-                // Execute nozzle pull (this will measure hole, engage, pull, and lift)
+                // Execute nozzle pull (engage hole, pull tape, lift nozzle)
                 if (!NozzlePullTapeIndex_m(TapeNumber, pullDistance))
                 {
                     DisplayText("*** Nozzle pull failed!", KnownColor.DarkRed);
                     return false;
                 }
-                
-                // After pull, hole position is already in Next_X/Next_Y (updated by camera measurement)
-                // Read it for IncrementTape call later
-                if (!double.TryParse(Tapes_dataGridView.Rows[TapeNumber].Cells["Next_X_Column"].Value.ToString().Replace(',', '.'), out HoleX))
-                {
-                    HoleX = 0;
-                }
-                if (!double.TryParse(Tapes_dataGridView.Rows[TapeNumber].Cells["Next_Y_Column"].Value.ToString().Replace(',', '.'), out HoleY))
-                {
-                    HoleY = 0;
-                }
+
+                // After pull the tape has advanced. Reset Next_X/Y to FirstX/Y so the camera
+                // measurement in GotoNextPartByMeasurement_m looks for hole #1 (always same place).
+                Tapes_dataGridView.Rows[TapeNumber].Cells["Next_X_Column"].Value =
+                    Tapes_dataGridView.Rows[TapeNumber].Cells["FirstX_Column"].Value;
+                Tapes_dataGridView.Rows[TapeNumber].Cells["Next_Y_Column"].Value =
+                    Tapes_dataGridView.Rows[TapeNumber].Cells["FirstY_Column"].Value;
             }
             
             // Go to part location (with or without nozzle pull, this uses hole position to calculate part position):
@@ -8780,13 +8776,10 @@ namespace LitePlacer
                 ZGuardOn();
             }
 
-            // CRITICAL: DON'T increment if nozzle pull is enabled (stay at same hole position)
-            if (!useNozzlePull)
+            // IncrementTape skips the increment internally when nozzle pull is enabled
+            if (!Tapes.IncrementTape(TapeNumber, HoleX, HoleY))
             {
-                if (!Tapes.IncrementTape(TapeNumber, HoleX, HoleY))
-                {
-                    return false;
-                }
+                return false;
             }
 
             if (AbortPlacement)

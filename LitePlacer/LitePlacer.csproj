@@ -221,20 +221,20 @@
     <Compile Include="AlgorithmName.Designer.cs">
       <DependentUpon>AlgorithmName.cs</DependentUpon>
     </Compile>
-    <Compile Include="AppSettings.cs" />
-    <Compile Include="Camera.cs" />
-    <Compile Include="CameraEngines\AForgeEngine.cs" />
-    <Compile Include="CameraEngines\EmguCVEngine.cs" />
-    <Compile Include="CameraEngines\EmguCVFunctions.cs" />
-    <Compile Include="CameraEngines\ICameraEngine.cs" />
-    <Compile Include="CameraEngines\IProcessingFunction.cs" />
+    <Compile Include="Classes\AppSettings.cs" />
+    <Compile Include="Classes\Camera.cs" />
+    <Compile Include="Classes\CameraEngines\AForgeEngine.cs" />
+    <Compile Include="Classes\CameraEngines\EmguCVEngine.cs" />
+    <Compile Include="Classes\CameraEngines\EmguCVFunctions.cs" />
+    <Compile Include="Interfaces\ICameraEngine.cs" />
+    <Compile Include="Interfaces\IProcessingFunction.cs" />
     <Compile Include="CameraProperties.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="CameraProperties.Designer.cs">
       <DependentUpon>CameraProperties.cs</DependentUpon>
     </Compile>
-    <Compile Include="CNC.cs" />
+    <Compile Include="Classes\CNC.cs" />
     <Compile Include="AskToCreate.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -262,8 +262,8 @@
     <Compile Include="MZCNCSettingsFile.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="MZ_CNCControl.cs" />
-    <Compile Include="SKR3Control.cs" />
+    <Compile Include="Classes\MZ_CNCControl.cs" />
+    <Compile Include="Classes\SKR3Control.cs" />
     <Compile Include="SKR3Settings.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -273,7 +273,7 @@
     <Compile Include="NonModalDialog.Designer.cs">
       <DependentUpon>NonModalDialog.cs</DependentUpon>
     </Compile>
-    <Compile Include="Nozzle.cs" />
+    <Compile Include="Classes\Nozzle.cs" />
     <Compile Include="PlacementMethodSelectionForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -306,28 +306,28 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SerialComm.cs" />
-    <Compile Include="Settings.cs" />
-    <Compile Include="Shapes.cs" />
+    <Compile Include="Classes\SerialComm.cs" />
+    <Compile Include="Classes\Settings.cs" />
+    <Compile Include="Classes\Shapes.cs" />
     <Compile Include="TapeEdit.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="TapeEdit.Designer.cs">
       <DependentUpon>TapeEdit.cs</DependentUpon>
     </Compile>
-    <Compile Include="tapes.cs" />
+    <Compile Include="Classes\Tapes.cs" />
     <Compile Include="TapeSelectionForm.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="TapeSelectionForm.Designer.cs">
       <DependentUpon>TapeSelectionForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="TinyGControl.cs" />
+    <Compile Include="Classes\TinyGControl.cs" />
     <Compile Include="TinyGSettings.cs">
       <DependentUpon>MainForm.cs</DependentUpon>
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="VideoAlgorithmsCollection.cs" />
+    <Compile Include="Classes\VideoAlgorithmsCollection.cs" />
     <Compile Include="VideoAlgorithmsUI.cs">
       <DependentUpon>MainForm.cs</DependentUpon>
       <SubType>Form</SubType>
@@ -382,6 +382,8 @@
       <DependentUpon>TapeSelectionForm.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="app.config" />
+    <None Include="Docs\copilot-instructions.md" />
+    <None Include="Docs\STATUS.md" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -422,6 +424,10 @@
     <Content Include="opencv_videoio_ffmpeg453.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Classes\" />
+    <Folder Include="Interfaces\" />
   </ItemGroup>
   <PropertyGroup>
     <PostBuildEvent>

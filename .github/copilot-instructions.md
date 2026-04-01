@@ -102,13 +102,21 @@ Known limitations:
   - No hole engagement verification
   - CP40 nozzles only (0.5-1.5mm diameter)
 
-Next on pull feature: runtime testing, configurable engagement depth, verify no
-cross-thread exceptions during placement operations.
+Pull feature bugs fixed (2025-07-14):
+  1. Camera + pull path: after NozzlePullTapeIndex_m, Next_X/Y is now reset to
+     FirstX/Y so GotoNextPartByMeasurement_m always looks for hole #1 (which is
+     always in the same place after the physical pull).
+  2. IncrementTape() now owns the no-increment rule itself: reads UseNozzlePull_Column
+     via InvokeRequired/Invoke pattern and returns early if pull is enabled.
+     Callers no longer need to guard the call.
+
+Next on pull feature: runtime testing on hardware.
 
 ## Status
-  Plan/STATUS.md       full project history (TinyG, MZ_CNC, SKR3, concurrency, EmguCV) — 1393+ lines
-  Plan/PULL_INDEXING.md nozzle pull feature complete changelog — 1114 lines
-  STATUS.md            EmguCV session fix summary (root, 2025-07-14)
-  Last updated: 2025-07-14
-  Current state: EmguCV fully wired — startup restore, display, measurement working
-  Next: runtime testing of EmguCV measurement accuracy on real hardware
+Plan/STATUS.md        full project history (TinyG, MZ_CNC, SKR3, concurrency, EmguCV) — 1393+ lines
+Plan/PULL_INDEXING.md nozzle pull feature complete changelog — 1114 lines
+LitePlacer/Docs/STATUS.md        session fix log (editable by tools)
+LitePlacer/Docs/copilot-instructions.md  mirror of this file (editable by tools)
+Last updated: 2025-07-14
+Current state: EmguCV fully wired. Pull feature camera-path bugs fixed.
+Next: runtime testing on hardware
