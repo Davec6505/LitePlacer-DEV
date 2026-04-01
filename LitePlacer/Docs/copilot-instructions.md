@@ -81,33 +81,42 @@ Startup engine restore (intentional design):
 ## Nozzle Pull Tape Indexing Feature
 Branch feature/nozzle-pull-tape-indexing. Full detail in Plan/PULL_INDEXING.md.
 The feature uses the nozzle to physically pull tape by engaging sprocket holes.
-
-Key method: NozzlePullTapeIndex_m(int tapeRow, double pullDistance) in MainForm.cs
-  - Thread-safe UI access via InvokeRequired pattern
-  - Works with BOTH camera hole detection AND Coordinates For Parts mode
-  - Engagement depth: pickup Z + 2.5mm (fixed)
-  - Does NOT increment part counter
+Mode: UseNozzlePull_Column checked, CoordinatesForParts DISABLED (camera hole measurement active).
 
 UI columns added to Tapes_dataGridView:
-  UseNozzlePull_Column  (checkbox, enables per-tape)
-  PullDistance_Column   (mm, pull distance)
+  UseNozzlePull_Column  (checkbox, enables per-tape nozzle pull)
+  PullDistance_Column   (mm, how far to pull per cycle, default 4.0mm)
 
-GotoNextPartByMeasurement_m() in tapes.cs (lines 773-968):
-  Thread-safety fix applied — InvokeRequired check marshals all Grid reads to UI thread.
-  All Grid data read into locals at function start; rest of function uses only locals.
+Pull sequence per component cycle (verified from code 2025-07-14):
+  1. PickUpPartWithHoleMeasurement_m() called — CoordinatesForParts is false so stays in this path
+  2. useNozzlePull read from UseNozzlePull_Column (on UI thread, direct read — called from UI)
+  3. NozzlePullTapeIndex_m() called with pullDistance from PullDistance_Column:
+       a. Reads Next_X/Y (current known hole position) and PickupZ from grid (InvokeRequired safe)
+       b. CNC_XYA_m: nozzle moves XY to hole position (Z stays high)
+       c. Cnc.Execute_Z: nozzle descends to pickupZ + 2.5mm (engage into 1.5mm sprocket hole)
+       d. Cnc.Execute_XYA: nozzle pulls tape pullDistance mm in tape orientation direction (300mm/min)
+       e. ZGuardOff(), Cnc.Z: nozzle lifts 10mm above engaged position (Z-guard stays off)
+       f. Returns true — Z-guard left off for subsequent pickup move
+  4. Next_X/Y reset to FirstX/Y (hole always returns to same position after physical pull)
+  5. GotoNextPartByMeasurement_m(): camera moves to FirstX/Y, measures exact hole #1 position
+  6. Part position calculated from measured hole position + tape offsets
+  7. PickUpThis_m(): nozzle moves to part XY, descends to pickupZ, picks up
+  8. ZGuardOn() re-enabled after pickup completes
+  9. IncrementTape(): detects UseNozzlePull via InvokeRequired, returns early — no counter change
+
+Key method details: NozzlePullTapeIndex_m(int tapeRow, double pullDistance)
+  - Engagement depth: pickupZ + 2.5mm (fixed, into 1.5mm EIA-481 sprocket hole)
+  - Pull speed: 300mm/min XY
+  - Lift clearance: 10mm above engaged Z
+  - Z-guard disabled during pull, re-enabled by caller after pickup
+  - Thread-safe: InvokeRequired pattern for all grid reads
+  - Pull direction from Orientation_Column: +X, -X, +Y, -Y
 
 Known limitations:
-  - Single engagement depth (fixed 2.5mm below pickup Z)
-  - No hole engagement verification
-  - CP40 nozzles only (0.5-1.5mm diameter)
-
-Pull feature bugs fixed (2025-07-14):
-  1. Camera + pull path: after NozzlePullTapeIndex_m, Next_X/Y is now reset to
-     FirstX/Y so GotoNextPartByMeasurement_m always looks for hole #1 (which is
-     always in the same place after the physical pull).
-  2. IncrementTape() now owns the no-increment rule itself: reads UseNozzlePull_Column
-     via InvokeRequired/Invoke pattern and returns early if pull is enabled.
-     Callers no longer need to guard the call.
+  - Fixed 2.5mm engagement depth (no adjustment for tape thickness variation)
+  - No hole engagement verification (no sensor confirmation)
+  - CP40 nozzles only (0.5-1.5mm tip diameter to fit 1.5mm sprocket hole)
+  - Requires PickupZ to be taught before pull will work
 
 Next on pull feature: runtime testing on hardware.
 

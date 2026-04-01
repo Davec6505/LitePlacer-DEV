@@ -12408,10 +12408,10 @@ namespace LitePlacer
             // Note: We leave it OFF here so the subsequent move to component position doesn't trigger warning
             // The normal pickup flow will re-enable it after the component is picked
 
-            // STEP 5: DO NOT update Next_X/Y when nozzle pull is enabled!
-            // In "Coordinates For Parts" mode with nozzle pull, the user manages the part position manually
-            // We don't auto-increment because the same fixed position is used every time
-            // (The tape advances physically via the pull, but the pickup position stays the same)
+            // STEP 5: DO NOT update Next_X/Y here.
+            // The caller (PickUpPartWithHoleMeasurement_m) resets Next_X/Y to FirstX/Y after this
+            // returns, so GotoNextPartByMeasurement_m always re-measures hole #1 (which is always
+            // in the same physical position after the tape has been pulled).
             
             DisplayText($"Nozzle pull complete. Tape advanced {pullDistance}mm, pickup position unchanged.", KnownColor.DarkGreen);
             DisplayText($"Z-guard temporarily disabled - will be re-enabled after component pickup", KnownColor.DarkCyan);
