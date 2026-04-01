@@ -225,8 +225,7 @@
     <Compile Include="Camera.cs" />
     <Compile Include="CameraEngines\AForgeEngine.cs" />
     <Compile Include="CameraEngines\EmguCVEngine.cs" />
-    <Compile Include="CameraEngines\EmguCV_CannyEdge.cs" />
-    <Compile Include="CameraEngines\EmguCV_Grayscale.cs" />
+    <Compile Include="CameraEngines\EmguCVFunctions.cs" />
     <Compile Include="CameraEngines\ICameraEngine.cs" />
     <Compile Include="CameraEngines\IProcessingFunction.cs" />
     <Compile Include="CameraProperties.cs">

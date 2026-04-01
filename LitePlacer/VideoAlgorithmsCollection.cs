@@ -17,6 +17,7 @@ namespace LitePlacer
         public class FullAlgorithmDescription
         {
             public string Name = "unitialized!";
+            public string EngineName = "AForge.NET";  // Which camera engine this algorithm uses (AForge.NET, EmguCV, etc.)
             public List<AForgeFunctionDefinition> FunctionList = new List<AForgeFunctionDefinition>();
             public MeasurementParametersClass MeasurementParameters = new MeasurementParametersClass();
         }

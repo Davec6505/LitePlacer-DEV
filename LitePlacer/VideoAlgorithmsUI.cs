@@ -233,7 +233,27 @@ namespace LitePlacer
         {
             AlgorithmChange = true;
             string path = GetPath();
-            string FileName = path + VIDEOALGORITHMS_DATAFILE;
+            
+            // Determine which file to load based on current camera engine
+            string engineSuffix = "";
+            string engineName = "AForge.NET"; // Default to AForge if camera not initialized
+            
+            if (cam?.CurrentEngine != null)
+            {
+                engineName = cam.CurrentEngine.EngineName;
+                // Use engine name as suffix (e.g., "AForge.NET" becomes ".AForge")
+                engineSuffix = "." + engineName.Replace(" ", "").Replace("(", "").Replace(")", "").Replace(".NET", "");
+                DisplayText($"Loading algorithms for engine: {engineName}", KnownColor.DarkCyan);
+            }
+            else
+            {
+                // Camera not initialized yet, default to AForge
+                engineSuffix = ".AForge";
+                DisplayText("Loading algorithms for engine: AForge.NET (default)", KnownColor.DarkCyan);
+            }
+            
+            string FileName = path + VIDEOALGORITHMS_DATAFILE + engineSuffix;
+            
             if (File.Exists(FileName))
             {
                 DisplayText("LoadVideoAlgorithms from " + FileName);
@@ -248,7 +268,49 @@ namespace LitePlacer
             }
             else
             {
-                LoadOldVideoAlgorithms(path, Collection);
+                // Try loading from old non-engine-specific file for backward compatibility
+                string oldFileName = path + VIDEOALGORITHMS_DATAFILE;
+                if (File.Exists(oldFileName))
+                {
+                    try
+                    {
+                        DisplayText($"Migrating algorithms from {oldFileName} to {FileName}", KnownColor.DarkOrange);
+                        List<VideoAlgorithmsCollection.FullAlgorithmDescription> NewList = new List<VideoAlgorithmsCollection.FullAlgorithmDescription>();
+                        NewList = JsonConvert.DeserializeObject<List<VideoAlgorithmsCollection.FullAlgorithmDescription>>(File.ReadAllText(oldFileName));
+                        
+                        // Set engine name for all algorithms
+                        foreach (var algorithm in NewList)
+                        {
+                            if (string.IsNullOrEmpty(algorithm.EngineName))
+                            {
+                                algorithm.EngineName = engineName; // Use the engineName we determined earlier
+                            }
+                        }
+                        
+                        Collection.AllAlgorithms = NewList;
+                        
+                        // Try to save to engine-specific file (don't fail startup if this fails)
+                        try
+                        {
+                            SaveVideoAlgorithms(FileName, Collection);
+                            DisplayText($"Migration complete: Saved to {FileName}", KnownColor.DarkGreen);
+                        }
+                        catch (Exception saveEx)
+                        {
+                            DisplayText($"Warning: Could not save migrated algorithms: {saveEx.Message}", KnownColor.DarkOrange);
+                            // Continue anyway - we have the data loaded
+                        }
+                    }
+                    catch (Exception migrateEx)
+                    {
+                        DisplayText($"Error migrating algorithms: {migrateEx.Message}", KnownColor.DarkRed);
+                        LoadOldVideoAlgorithms(path, Collection);
+                    }
+                }
+                else
+                {
+                    LoadOldVideoAlgorithms(path, Collection);
+                }
             }
             // fill Algorithm_comboBox
             Algorithm_comboBox.Items.Clear();
@@ -282,14 +344,16 @@ namespace LitePlacer
         private void LoadOldVideoAlgorithms(string path, VideoAlgorithmsCollection Collection)
         {
             // For now (maybe for good?), build an placeholder list
+            string currentEngineName = cam?.CurrentEngine?.EngineName ?? "AForge.NET";
+            
             List<VideoAlgorithmsCollection.FullAlgorithmDescription> NewList = new List<VideoAlgorithmsCollection.FullAlgorithmDescription>();
-            NewList.Add(new VideoAlgorithmsCollection.FullAlgorithmDescription { Name = "Homing" });
-            NewList.Add(new VideoAlgorithmsCollection.FullAlgorithmDescription { Name = "Fiducials" });
-            NewList.Add(new VideoAlgorithmsCollection.FullAlgorithmDescription { Name = "Paper tape" });
-            NewList.Add(new VideoAlgorithmsCollection.FullAlgorithmDescription { Name = "Black tape" });
-            NewList.Add(new VideoAlgorithmsCollection.FullAlgorithmDescription { Name = "Clear tape" });
-            NewList.Add(new VideoAlgorithmsCollection.FullAlgorithmDescription { Name = "Components" });
-            NewList.Add(new VideoAlgorithmsCollection.FullAlgorithmDescription { Name = "Nozzle tip" });
+            NewList.Add(new VideoAlgorithmsCollection.FullAlgorithmDescription { Name = "Homing", EngineName = currentEngineName });
+            NewList.Add(new VideoAlgorithmsCollection.FullAlgorithmDescription { Name = "Fiducials", EngineName = currentEngineName });
+            NewList.Add(new VideoAlgorithmsCollection.FullAlgorithmDescription { Name = "Paper tape", EngineName = currentEngineName });
+            NewList.Add(new VideoAlgorithmsCollection.FullAlgorithmDescription { Name = "Black tape", EngineName = currentEngineName });
+            NewList.Add(new VideoAlgorithmsCollection.FullAlgorithmDescription { Name = "Clear tape", EngineName = currentEngineName });
+            NewList.Add(new VideoAlgorithmsCollection.FullAlgorithmDescription { Name = "Components", EngineName = currentEngineName });
+            NewList.Add(new VideoAlgorithmsCollection.FullAlgorithmDescription { Name = "Nozzle tip", EngineName = currentEngineName });
             Collection.AllAlgorithms = NewList;
         }
 
@@ -313,7 +377,23 @@ namespace LitePlacer
         private void AlgorithmsSave_button_Click(object sender, EventArgs e)
         {
             string path = GetPath();
-            SaveVideoAlgorithms(path + VIDEOALGORITHMS_DATAFILE, VideoAlgorithms);
+            
+            // Determine which file to save based on current camera engine
+            string engineSuffix = "";
+            if (cam?.CurrentEngine != null)
+            {
+                engineSuffix = "." + cam.CurrentEngine.EngineName.Replace(" ", "").Replace("(", "").Replace(")", "").Replace(".NET", "");
+                
+                // Update engine name for all algorithms before saving
+                foreach (var algorithm in VideoAlgorithms.AllAlgorithms)
+                {
+                    algorithm.EngineName = cam.CurrentEngine.EngineName;
+                }
+                
+                DisplayText($"Saving algorithms for engine: {cam.CurrentEngine.EngineName}", KnownColor.DarkCyan);
+            }
+            
+            SaveVideoAlgorithms(path + VIDEOALGORITHMS_DATAFILE + engineSuffix, VideoAlgorithms);
         }
 
         #endregion Algorithms Load and Save
@@ -2120,6 +2200,9 @@ namespace LitePlacer
             
             // Save selection to settings
             Setting.CameraEngine = selectedEngine;
+            
+            // Reload algorithms for new engine (engine-specific algorithm files)
+            LoadVideoAlgorithms(VideoAlgorithms);
             
             // Refresh available functions list if the video algorithms UI is visible
             // This will update the Functions_dataGridView with engine-specific functions

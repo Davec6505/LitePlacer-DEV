@@ -476,6 +476,10 @@ namespace LitePlacer
         // The list of functions processing the image shown to user:
         List<AForgeFunction> DisplayFunctions = new List<AForgeFunction>();
         public static readonly object DisplayFunctionsLock = new object();
+        
+        // Engine-based display pipeline (used when CurrentEngine is not AForge)
+        private List<CameraEngines.IProcessingFunction> _displayEnginePipeline = new List<CameraEngines.IProcessingFunction>();
+        private static readonly object _displayEnginePipelineLock = new object();
 
         enum DataGridViewColumns { Function, Active, Int, Double, R, G, B };
 
@@ -615,7 +619,6 @@ namespace LitePlacer
 
         public void BuildDisplayFunctionsList(List<AForgeFunctionDefinition> UiList)
         {
-            List<AForgeFunction> NewList = BuildFunctionsList(UiList, 2);    // Get the list
             int tries = 0;
             // Stop video
             bool pause = PauseProcessing;
@@ -637,12 +640,29 @@ namespace LitePlacer
                     };
                 }
             }
-            // copy new list
-            lock (DisplayFunctionsLock)
+            
+            // Check if we need to build engine pipeline or AForge pipeline
+            if (_currentEngine != null && _currentEngine.EngineName != "AForge.NET")
             {
-                DisplayFunctions.Clear();
-                DisplayFunctions = NewList;
+                // Build engine pipeline (EmguCV, etc.)
+                lock (_displayEnginePipelineLock)
+                {
+                    _displayEnginePipeline = _currentEngine.BuildProcessingPipeline(UiList);
+                    MainForm.DisplayText($"Built {_currentEngine.EngineName} display pipeline with {_displayEnginePipeline.Count} functions", 
+                        System.Drawing.KnownColor.DarkCyan);
+                }
             }
+            else
+            {
+                // Build AForge pipeline (legacy path)
+                List<AForgeFunction> NewList = BuildFunctionsList(UiList, 2);
+                lock (DisplayFunctionsLock)
+                {
+                    DisplayFunctions.Clear();
+                    DisplayFunctions = NewList;
+                }
+            }
+            
             PauseProcessing = pause;  // restart video is it was running
         }
 
@@ -947,16 +967,41 @@ namespace LitePlacer
                 try
                 {
                     AnalyzedFrame = GetSourceFrame(eventArgs);   // use a copy of camera frame for processing
-                                                                 // Process it
-                    lock (DisplayFunctionsLock)
+                    
+                    // Process using engine pipeline or AForge pipeline
+                    if (_currentEngine != null && _currentEngine.EngineName != "AForge.NET")
                     {
-                        foreach (AForgeFunction f in DisplayFunctions)
+                        // Use engine pipeline (EmguCV, etc.) for display
+                        lock (_displayEnginePipelineLock)
                         {
-                            f.func(ref AnalyzedFrame, f.parameter_int, f.parameter_double, f.R, f.G, f.B,
-                                f.parameter_doubleA, f.parameter_doubleB, f.parameter_doubleC);
+                            foreach (var function in _displayEnginePipeline)
+                            {
+                                if (function != null)
+                                {
+                                    Bitmap processed = function.Process(AnalyzedFrame);
+                                    if (AnalyzedFrame != processed)
+                                    {
+                                        AnalyzedFrame.Dispose();
+                                        AnalyzedFrame = processed;
+                                    }
+                                }
+                            }
                         }
                     }
-                    // Find features
+                    else
+                    {
+                        // Use AForge pipeline (legacy path)
+                        lock (DisplayFunctionsLock)
+                        {
+                            foreach (AForgeFunction f in DisplayFunctions)
+                            {
+                                f.func(ref AnalyzedFrame, f.parameter_int, f.parameter_double, f.R, f.G, f.B,
+                                    f.parameter_doubleA, f.parameter_doubleB, f.parameter_doubleC);
+                            }
+                        }
+                    }
+                    
+                    // Find features (still uses AForge for display - TODO: make engine-aware)
                     if (FindCircles)
                     {
                         Circles = FindCirclesFunct(AnalyzedFrame);
@@ -2500,6 +2545,10 @@ namespace LitePlacer
         // The list of functions processing the image used in measurements, set by caller:
         public List<AForgeFunction> MeasurementFunctions = new List<AForgeFunction>();
         public static readonly object MeasurementFunctionsLock = new object();
+        
+        // Engine-based processing pipeline (used when CurrentEngine is not AForge)
+        private List<CameraEngines.IProcessingFunction> _enginePipeline = new List<CameraEngines.IProcessingFunction>();
+        private static readonly object _enginePipelineLock = new object();
 
         // Measurement parameters: min and max size, max distance from initial location, set by caller:
         public MeasurementParametersClass MeasurementParameters = new MeasurementParametersClass();
@@ -2513,9 +2562,25 @@ namespace LitePlacer
         public void BuildMeasurementFunctionsList(List<AForgeFunctionDefinition> UiList)
         {
             JoggingRequested = false;     // BuildFunctionsList() sets this to true, if manual jog is needed
-            lock (MeasurementFunctionsLock)
+            
+            // Check if we need to build engine pipeline or AForge pipeline
+            if (_currentEngine != null && _currentEngine.EngineName != "AForge.NET")
             {
-                MeasurementFunctions = BuildFunctionsList(UiList, 1);
+                // Build engine pipeline (EmguCV, etc.)
+                lock (_enginePipelineLock)
+                {
+                    _enginePipeline = _currentEngine.BuildProcessingPipeline(UiList);
+                    MainForm.DisplayText($"Built {_currentEngine.EngineName} pipeline with {_enginePipeline.Count} functions", 
+                        System.Drawing.KnownColor.DarkGreen);
+                }
+            }
+            else
+            {
+                // Build AForge pipeline (legacy path)
+                lock (MeasurementFunctionsLock)
+                {
+                    MeasurementFunctions = BuildFunctionsList(UiList, 1);
+                }
             }
         }
 
@@ -2566,16 +2631,40 @@ namespace LitePlacer
                     return null;
                 }
 
-                if (MeasurementFunctions != null)
+                // Process frame using engine pipeline or AForge pipeline
+                if (_currentEngine != null && _currentEngine.EngineName != "AForge.NET")
                 {
-                    lock (MeasurementFunctionsLock)
+                    // Use engine pipeline (EmguCV, etc.)
+                    lock (_enginePipelineLock)
                     {
-                        foreach (AForgeFunction f in MeasurementFunctions)
+                        foreach (var function in _enginePipeline)
                         {
-                            if (f != null && f.func != null)
+                            if (function != null)
                             {
-                                f.func(ref MeasurementFrame, f.parameter_int, f.parameter_double, f.R, f.G, f.B,
-                                    f.parameter_doubleA, f.parameter_doubleB, f.parameter_doubleC);
+                                Bitmap processed = function.Process(MeasurementFrame);
+                                if (MeasurementFrame != processed)
+                                {
+                                    MeasurementFrame.Dispose();
+                                    MeasurementFrame = processed;
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    // Use AForge pipeline (legacy path)
+                    if (MeasurementFunctions != null)
+                    {
+                        lock (MeasurementFunctionsLock)
+                        {
+                            foreach (AForgeFunction f in MeasurementFunctions)
+                            {
+                                if (f != null && f.func != null)
+                                {
+                                    f.func(ref MeasurementFrame, f.parameter_int, f.parameter_double, f.R, f.G, f.B,
+                                        f.parameter_doubleA, f.parameter_doubleB, f.parameter_doubleC);
+                                }
                             }
                         }
                     }
@@ -2758,6 +2847,21 @@ namespace LitePlacer
                 Paused = PauseSave;
                 PauseProcessing = false;
                 return false;
+            }
+            
+            // Delegate to engine if not using AForge
+            if (_currentEngine != null && _currentEngine.EngineName != "AForge.NET")
+            {
+                MainForm.DisplayText($"Using {_currentEngine.EngineName} for measurement", KnownColor.DarkCyan);
+                bool result;
+                lock (_enginePipelineLock)
+                {
+                    result = _currentEngine.Measure(image, _enginePipeline, MeasurementParameters, 
+                        out Xresult, out Yresult, out Aresult, DisplayResults);
+                }
+                Paused = PauseSave;
+                PauseProcessing = false;
+                return result;
             }
 
             // Find candidates:

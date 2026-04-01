@@ -580,7 +580,19 @@ namespace LitePlacer
                 res = Nozzle.SaveNozzlesCalibration(path + NOZZLES_CALIBRATION_DATAFILE);
                 OK = OK && res;
 
-                res = SaveVideoAlgorithms(path + VIDEOALGORITHMS_DATAFILE, VideoAlgorithms);
+                // Save algorithms with engine-specific filename
+                string engineSuffix = "";
+                if (DownCamera?.CurrentEngine != null)
+                {
+                    engineSuffix = "." + DownCamera.CurrentEngine.EngineName.Replace(" ", "").Replace("(", "").Replace(")", "").Replace(".NET", "");
+                    
+                    // Update engine name for all algorithms before saving
+                    foreach (var algorithm in VideoAlgorithms.AllAlgorithms)
+                    {
+                        algorithm.EngineName = DownCamera.CurrentEngine.EngineName;
+                    }
+                }
+                res = SaveVideoAlgorithms(path + VIDEOALGORITHMS_DATAFILE + engineSuffix, VideoAlgorithms);
                 OK = OK && res;
 
                 if (!OK)
@@ -916,12 +928,16 @@ namespace LitePlacer
 
                     int cols = br.ReadInt32();
                     int rows = br.ReadInt32();
+                    
+                    // DEBUG: Log what we read from file
+                    DisplayText($"LoadDataGrid: File has {cols} columns, {rows} rows (before AllowUserToAddRows adjustment)", KnownColor.DarkCyan);
 
                     if (dgv.AllowUserToAddRows)
                     {
                         // There is an empty row in the bottom that is visible for manual add.
                         // It is saved in the file. It is automatically added, so we don't want to add it again.
                         rows = rows - 1;
+                        DisplayText($"LoadDataGrid: AllowUserToAddRows=true, adjusted rows to {rows}", KnownColor.DarkCyan);
                     }
                     // read headers;
                     List<string> Headers = new List<string>();
@@ -932,10 +948,12 @@ namespace LitePlacer
                         {
                             Headers.Add(br.ReadString());
                         }
+                        DisplayText($"LoadDataGrid: Read {Headers.Count} v2 headers: {string.Join(", ", Headers)}", KnownColor.DarkCyan);
                     }
                     else
                     {
                         Headers = Addv1Headers(TableType);
+                        DisplayText($"LoadDataGrid: Using {Headers.Count} v1 headers for {TableType}", KnownColor.DarkCyan);
                     }
 
                     // read data
@@ -969,6 +987,10 @@ namespace LitePlacer
                     }
                     br.Close();
                 }
+                
+                // DEBUG: Log how many rows were actually loaded
+                DisplayText($"LoadDataGrid: Loaded {dgv.Rows.Count} rows into {dgv.Name}", KnownColor.DarkCyan);
+                
                 LoadingDataGrid = false;
             }
             catch (System.Exception excep)
