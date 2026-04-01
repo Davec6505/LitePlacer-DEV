@@ -96,6 +96,8 @@ namespace LitePlacer.CameraEngines
         public bool Measure(Bitmap image, 
                            List<IProcessingFunction> pipeline,
                            MeasurementParametersClass parameters,
+                           double XmmPerPixel,
+                           double YmmPerPixel,
                            out double X, 
                            out double Y, 
                            out double A,
@@ -104,8 +106,9 @@ namespace LitePlacer.CameraEngines
             // Delegate directly to existing Camera.Measure() method
             // This ensures zero breaking changes to current functionality
             
-            // Note: pipeline parameter is ignored for AForge engine
+            // Note: pipeline, XmmPerPixel, YmmPerPixel parameters are ignored for AForge engine
             // The Camera class maintains its own internal processing pipeline
+            // and calculates mm/pixel internally
             
             return _camera.Measure(out X, out Y, out A, DisplayResults);
         }

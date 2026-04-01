@@ -162,30 +162,34 @@ namespace LitePlacer.CameraEngines
 
         private IProcessingFunction CreateEmguCVFunction(AForgeFunctionDefinition def)
         {
-            // Create a generic processor that wraps EmguCV static functions
             switch (def.Name)
             {
-                case "Grayscale":
-                    return new EmguCVProcessor(def, EmguCVFunctions.Grayscale);
-                case "Threshold":
-                    return new EmguCVProcessor(def, EmguCVFunctions.Threshold);
-                case "Invert":
-                    return new EmguCVProcessor(def, EmguCVFunctions.Invert);
-                case "Edge detect":
-                    return new EmguCVProcessor(def, EmguCVFunctions.EdgeDetect);
-                case "Blur":
-                    return new EmguCVProcessor(def, EmguCVFunctions.Blur);
-                case "Gaussian blur":
-                    return new EmguCVProcessor(def, EmguCVFunctions.GaussianBlur);
-                case "Erosion":
-                    return new EmguCVProcessor(def, EmguCVFunctions.Erosion);
-                case "Dilation":
-                    return new EmguCVProcessor(def, EmguCVFunctions.Dilation);
-                case "Noise reduction":
-                    return new EmguCVProcessor(def, EmguCVFunctions.NoiseReduction);
-                case "Canny edge detection":
-                    return new EmguCVProcessor(def, EmguCVFunctions.CannyEdge);
-                    
+                // Standard functions
+                case "Grayscale":               return new EmguCVProcessor(def, EmguCVFunctions.Grayscale);
+                case "Threshold":               return new EmguCVProcessor(def, EmguCVFunctions.Threshold);
+                case "Invert":                  return new EmguCVProcessor(def, EmguCVFunctions.Invert);
+                case "Edge detect":             return new EmguCVProcessor(def, EmguCVFunctions.EdgeDetect);
+                case "Blur":                    return new EmguCVProcessor(def, EmguCVFunctions.Blur);
+                case "Gaussian blur":           return new EmguCVProcessor(def, EmguCVFunctions.GaussianBlur);
+                case "Erosion":                 return new EmguCVProcessor(def, EmguCVFunctions.Erosion);
+                case "Dilation":                return new EmguCVProcessor(def, EmguCVFunctions.Dilation);
+                case "Noise reduction":         return new EmguCVProcessor(def, EmguCVFunctions.NoiseReduction);
+                // EmguCV advanced functions
+                case "Canny edge detection":    return new EmguCVProcessor(def, EmguCVFunctions.CannyEdge);
+                case "Sobel edge detection":    return new EmguCVProcessor(def, EmguCVFunctions.SobelEdge);
+                case "Laplacian edge detection":return new EmguCVProcessor(def, EmguCVFunctions.LaplacianEdge);
+                case "Adaptive threshold":      return new EmguCVProcessor(def, EmguCVFunctions.AdaptiveThreshold);
+                case "Bilateral filter":        return new EmguCVProcessor(def, EmguCVFunctions.BilateralFilter);
+                case "CLAHE":                   return new EmguCVProcessor(def, EmguCVFunctions.CLAHE);
+                case "Morphological gradient":  return new EmguCVProcessor(def, EmguCVFunctions.MorphologicalGradient);
+                case "Morphological top hat":   return new EmguCVProcessor(def, EmguCVFunctions.MorphologicalTopHat);
+                case "Morphological black hat":  return new EmguCVProcessor(def, EmguCVFunctions.MorphologicalBlackHat);
+                case "Hough circles (sub-pixel)":return new EmguCVProcessor(def, EmguCVFunctions.HoughCirclesVis);
+                case "Harris corners":          return new EmguCVProcessor(def, EmguCVFunctions.HarrisCorners);
+                case "Shi-Tomasi corners":      return new EmguCVProcessor(def, EmguCVFunctions.ShiTomasiCorners);
+                case "FAST feature detection":  return new EmguCVProcessor(def, EmguCVFunctions.FastFeatureDetection);
+                case "Contour detection":       return new EmguCVProcessor(def, EmguCVFunctions.ContourDetection);
+                case "Watershed segmentation":  return new EmguCVProcessor(def, EmguCVFunctions.WatershedSegmentation);
                 default:
                     return null;
             }
@@ -272,6 +276,8 @@ namespace LitePlacer.CameraEngines
         public bool Measure(Bitmap image, 
                            List<IProcessingFunction> pipeline,
                            MeasurementParametersClass parameters,
+                           double XmmPerPixel,
+                           double YmmPerPixel,
                            out double X, 
                            out double Y, 
                            out double A,
@@ -294,22 +300,30 @@ namespace LitePlacer.CameraEngines
                     // Process image through pipeline (already done in GetMeasurementFrame, but pipeline is empty here)
                     // The processed frame comes in as 'image' parameter
                     
-                    // Perform measurement based on parameters
+                    // Try all checked search types - matches AForge behaviour which builds
+                    // a combined candidates list from all enabled types.
                     if (parameters.SearchRounds)
                     {
-                        return DetectCircles_SubPixel(matImage, parameters, out X, out Y, out A, DisplayResults);
+                        if (DetectCircles_SubPixel(matImage, parameters, XmmPerPixel, YmmPerPixel, out X, out Y, out A, DisplayResults))
+                            return true;
                     }
-                    else if (parameters.SearchRectangles)
+                    if (parameters.SearchRectangles)
                     {
-                        return DetectRectangles_Precise(matImage, parameters, out X, out Y, out A, DisplayResults);
+                        if (DetectRectangles_Precise(matImage, parameters, XmmPerPixel, YmmPerPixel, out X, out Y, out A, DisplayResults))
+                            return true;
                     }
-                    else if (parameters.SearchComponentOutlines)
+                    if (parameters.SearchComponentOutlines || parameters.SearchComponentPads)
                     {
-                        return DetectComponent_Contours(matImage, parameters, out X, out Y, out A, DisplayResults);
+                        if (DetectComponent_Contours(matImage, parameters, XmmPerPixel, YmmPerPixel, out X, out Y, out A, DisplayResults))
+                            return true;
                     }
-                    
-                    _mainForm.DisplayText("EmguCV: No search type selected", 
-                        System.Drawing.KnownColor.DarkOrange);
+
+                    if (!parameters.SearchRounds && !parameters.SearchRectangles &&
+                        !parameters.SearchComponentOutlines && !parameters.SearchComponentPads)
+                    {
+                        _mainForm.DisplayText("EmguCV: No search type selected",
+                            System.Drawing.KnownColor.DarkOrange);
+                    }
                     return false;
                 }
             }
@@ -332,108 +346,109 @@ namespace LitePlacer.CameraEngines
         }
         
         /// <summary>
-        /// Detect circles using HoughCircles with sub-pixel accuracy
-        /// Much more accurate than AForge implementation
+        /// Detect circles using contour analysis - matches AForge FindCirclesFunct() behaviour.
+        /// AForge uses BlobCounter + SimpleShapeChecker.IsCircle() on the pipeline-processed image.
+        /// We do the same with FindContours + circularity check (4*pi*area/perimeter^2).
         /// </summary>
         private bool DetectCircles_SubPixel(Mat image, MeasurementParametersClass parameters,
+                                            double XmmPerPixel, double YmmPerPixel,
                                             out double X, out double Y, out double A, bool DisplayResults)
         {
             X = Y = A = 0;
-            
+
             try
             {
-                // Convert to grayscale if needed
+                // The image has already been processed by the user's pipeline (Threshold, Invert, etc.).
+                // Ensure single-channel for FindContours - matches AForge BlobCounter behaviour.
                 Mat gray = new Mat();
                 if (image.NumberOfChannels > 1)
-                {
                     CvInvoke.CvtColor(image, gray, ColorConversion.Bgr2Gray);
-                }
                 else
-                {
                     gray = image.Clone();
-                }
-                
-                // Apply Gaussian blur to reduce noise
-                CvInvoke.GaussianBlur(gray, gray, new Size(9, 9), 2, 2);
-                
-                // HoughCircles parameters
-                double dp = 1.0;  // Inverse ratio of accumulator resolution
-                double minDist = Math.Max((parameters.Xmax - parameters.Xmin) / 2.0, 20);  // Minimum distance between circle centers
-                double param1 = 50;  // Canny edge threshold (LOWERED from 100 - more sensitive)
-                double param2 = 20;   // Accumulator threshold (LOWERED from 30 - more circles detected)
-                int minRadius = (int)(parameters.Xmin / 2.0);
-                int maxRadius = (int)(parameters.Xmax / 2.0);
-                
-                // Debug logging
-                _mainForm.DisplayText($"EmguCV HoughCircles: minDist={minDist:F1}, param1={param1}, param2={param2}, " +
-                    $"minR={minRadius}, maxR={maxRadius}", System.Drawing.KnownColor.DarkCyan);
-                
-                // Detect circles
-                CircleF[] circles = CvInvoke.HoughCircles(gray, HoughModes.Gradient, dp, minDist, 
-                    param1, param2, minRadius, maxRadius);
-                
-                _mainForm.DisplayText($"EmguCV: Found {circles.Length} raw circles", System.Drawing.KnownColor.DarkCyan);
-                
-                gray.Dispose();
-                
-                if (circles.Length == 0)
-                {
-                    if (DisplayResults)
-                    {
-                        _mainForm.DisplayText("EmguCV: No circles found", 
-                            System.Drawing.KnownColor.DarkOrange);
-                    }
-                    return false;
-                }
-                
-                // Find closest circle to image center (apply distance filtering)
+
                 int centerX = image.Width / 2;
                 int centerY = image.Height / 2;
-                double bestDist = double.MaxValue;
-                CircleF bestCircle = circles[0];
-                
-                foreach (var circle in circles)
+
+                using (VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint())
                 {
-                    double dx = circle.Center.X - centerX;
-                    double dy = circle.Center.Y - centerY;
-                    double dist = Math.Sqrt(dx * dx + dy * dy);
-                    
-                    // Check if within distance limits
-                    if (dist <= parameters.XUniqueDistance && dist < bestDist)
-                    {
-                        bestDist = dist;
-                        bestCircle = circle;
-                    }
-                }
-                
-                if (bestDist == double.MaxValue)
-                {
+                    CvInvoke.FindContours(gray, contours, null, RetrType.External, ChainApproxMethod.ChainApproxSimple);
+                    gray.Dispose();
+
                     if (DisplayResults)
+                        _mainForm.DisplayText($"EmguCV Circles: image={image.Width}x{image.Height}, {contours.Size} raw contours, XmmPerPix={XmmPerPixel:F4}", System.Drawing.KnownColor.DarkCyan);
+
+                    double bestDist = double.MaxValue;
+                    double bestX = 0, bestY = 0;
+                    bool foundValid = false;
+
+                    for (int i = 0; i < contours.Size; i++)
                     {
-                        _mainForm.DisplayText($"EmguCV: {circles.Length} circles found, none within distance limit", 
-                            System.Drawing.KnownColor.DarkOrange);
+                        using (VectorOfPoint contour = contours[i])
+                        {
+                            double area = CvInvoke.ContourArea(contour);
+                            if (area < 5) continue; // ignore noise - matches AForge MinHeight/MinWidth=5
+
+                            // Circularity check: 4*pi*area/perimeter^2 == 1.0 for perfect circle
+                            // matches AForge SimpleShapeChecker.IsCircle() logic
+                            double perimeter = CvInvoke.ArcLength(contour, true);
+                            if (perimeter < 1) continue;
+                            double circularity = (4.0 * Math.PI * area) / (perimeter * perimeter);
+
+                            // Accept if circularity > 0.7 (AForge uses ~0.7 internally)
+                            if (circularity < 0.7) continue;
+
+                            // Derive radius and diameter in mm
+                            double radiusPx = Math.Sqrt(area / Math.PI);
+                            double diameterMm = radiusPx * 2.0 * XmmPerPixel;
+
+                            // Size filter - matches AForge Measure() FilteredForSize check
+                            if (diameterMm < parameters.Xmin || diameterMm > parameters.Xmax)
+                                continue;
+
+                            // Centre of contour
+                            var moments = CvInvoke.Moments(contour);
+                            if (moments.M00 == 0) continue;
+                            double cx = moments.M10 / moments.M00;
+                            double cy = moments.M01 / moments.M00;
+
+                            // Distance filter in mm - matches AForge FilteredForDistance
+                            double XdistMm = Math.Abs((cx - centerX) * XmmPerPixel);
+                            double YdistMm = Math.Abs((cy - centerY) * YmmPerPixel);
+                            if (XdistMm > parameters.XUniqueDistance || YdistMm > parameters.YUniqueDistance)
+                                continue;
+
+                            double distPx = Math.Sqrt((cx - centerX) * (cx - centerX) + (cy - centerY) * (cy - centerY));
+                            if (distPx < bestDist)
+                            {
+                                bestDist = distPx;
+                                bestX = (cx - centerX) * XmmPerPixel;
+                                bestY = (centerY - cy) * YmmPerPixel; // flip Y: image top-down
+                                foundValid = true;
+                            }
+                        }
                     }
-                    return false;
+
+                    if (!foundValid)
+                    {
+                        if (DisplayResults)
+                            _mainForm.DisplayText($"EmguCV: no circles passed filters (Xmin={parameters.Xmin:F2}mm Xmax={parameters.Xmax:F2}mm XDist={parameters.XUniqueDistance:F2}mm YDist={parameters.YUniqueDistance:F2}mm)",
+                                System.Drawing.KnownColor.DarkOrange);
+                        return false;
+                    }
+
+                    X = bestX;
+                    Y = bestY;
+                    A = 0.0; // circles have no rotation
+
+                    if (DisplayResults)
+                        _mainForm.DisplayText($"EmguCV Circle: X={X:F3}mm, Y={Y:F3}mm", System.Drawing.KnownColor.DarkGreen);
+
+                    return true;
                 }
-                
-                // Return coordinates relative to image center (matching AForge behavior)
-                X = bestCircle.Center.X - centerX;
-                Y = centerY - bestCircle.Center.Y;  // Flip Y (image coordinates are top-down)
-                A = 0.0;  // Circles don't have rotation
-                
-                if (DisplayResults)
-                {
-                    _mainForm.DisplayText($"EmguCV Circle: X={X:F2}, Y={Y:F2}, R={bestCircle.Radius:F2} " +
-                        $"({circles.Length} candidates, best dist={bestDist:F2})", 
-                        System.Drawing.KnownColor.DarkGreen);
-                }
-                
-                return true;
             }
             catch (Exception ex)
             {
-                _mainForm.DisplayText($"EmguCV circle detection error: {ex.Message}", 
-                    System.Drawing.KnownColor.DarkRed);
+                _mainForm.DisplayText($"EmguCV circle detection error: {ex.Message}", System.Drawing.KnownColor.DarkRed);
                 return false;
             }
         }
@@ -442,13 +457,17 @@ namespace LitePlacer.CameraEngines
         /// Detect rectangles using contour detection with minimum area rectangle fitting
         /// </summary>
         private bool DetectRectangles_Precise(Mat image, MeasurementParametersClass parameters,
+                                              double XmmPerPixel, double YmmPerPixel,
                                               out double X, out double Y, out double A, bool DisplayResults)
         {
             X = Y = A = 0;
             
             try
             {
-                // Convert to grayscale if needed
+                // The image has already been processed by the user's pipeline (Threshold, Invert, Canny, etc.).
+                // FindContours needs a binary (single-channel) image.
+                // If the pipeline included Canny the image is already an edge image - use it directly.
+                // If not (e.g. only Threshold+Invert), it is already binary - also fine for FindContours.
                 Mat gray = new Mat();
                 if (image.NumberOfChannels > 1)
                 {
@@ -459,28 +478,23 @@ namespace LitePlacer.CameraEngines
                     gray = image.Clone();
                 }
                 
-                // Apply Canny edge detection
-                Mat edges = new Mat();
-                CvInvoke.Canny(gray, edges, 50, 150);
-                gray.Dispose();
-                
-                // Find contours
+                // Find contours on the pipeline-processed image
                 using (VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint())
                 {
-                    CvInvoke.FindContours(edges, contours, null, RetrType.List, ChainApproxMethod.ChainApproxSimple);
-                    edges.Dispose();
+                    CvInvoke.FindContours(gray, contours, null, RetrType.External, ChainApproxMethod.ChainApproxSimple);
+                    gray.Dispose();
                     
                     if (contours.Size == 0)
                     {
                         if (DisplayResults)
                         {
-                            _mainForm.DisplayText("EmguCV: No rectangles found", 
+                            _mainForm.DisplayText("EmguCV: No contours found for rectangle detection", 
                                 System.Drawing.KnownColor.DarkOrange);
                         }
                         return false;
                     }
                     
-                    // Find best rectangle
+                    // Find best rectangle - all comparisons in mm to match AForge filter logic
                     int centerX = image.Width / 2;
                     int centerY = image.Height / 2;
                     double bestDist = double.MaxValue;
@@ -491,27 +505,35 @@ namespace LitePlacer.CameraEngines
                     {
                         using (VectorOfPoint contour = contours[i])
                         {
-                            double area = CvInvoke.ContourArea(contour);
+                            // Fit minimum area rectangle to get width/height in pixels
+                            RotatedRect rect = CvInvoke.MinAreaRect(contour);
                             
-                            // Check if area is within size limits
-                            double minArea = parameters.Xmin * parameters.Ymin;
-                            double maxArea = parameters.Xmax * parameters.Ymax;
-                            if (area < minArea || area > maxArea)
+                            // Convert pixel size to mm (matching AForge Measure() filter)
+                            double XsizeMm = Math.Max(rect.Size.Width, rect.Size.Height) * XmmPerPixel;
+                            double YsizeMm = Math.Min(rect.Size.Width, rect.Size.Height) * YmmPerPixel;
+                            
+                            // Check size in mm (Bug 4 fix: was comparing mm params to pixel area)
+                            if (XsizeMm < parameters.Xmin || XsizeMm > parameters.Xmax ||
+                                YsizeMm < parameters.Ymin || YsizeMm > parameters.Ymax)
                             {
                                 continue;
                             }
                             
-                            // Fit minimum area rectangle
-                            RotatedRect rect = CvInvoke.MinAreaRect(contour);
-                            
-                            // Check distance from center
+                            // Check distance from center in mm (Bug 5 fix: was comparing mm to pixels)
                             double dx = rect.Center.X - centerX;
                             double dy = rect.Center.Y - centerY;
-                            double dist = Math.Sqrt(dx * dx + dy * dy);
+                            double XdistMm = Math.Abs(dx * XmmPerPixel);
+                            double YdistMm = Math.Abs(dy * YmmPerPixel);
                             
-                            if (dist <= parameters.XUniqueDistance && dist < bestDist)
+                            if (XdistMm > parameters.XUniqueDistance || YdistMm > parameters.YUniqueDistance)
                             {
-                                bestDist = dist;
+                                continue;
+                            }
+                            
+                            double distPixels = Math.Sqrt(dx * dx + dy * dy);
+                            if (distPixels < bestDist)
+                            {
+                                bestDist = distPixels;
                                 bestRect = rect;
                                 foundAny = true;
                             }
@@ -522,23 +544,20 @@ namespace LitePlacer.CameraEngines
                     {
                         if (DisplayResults)
                         {
-                            _mainForm.DisplayText($"EmguCV: {contours.Size} contours found, no valid rectangles", 
+                            _mainForm.DisplayText($"EmguCV: {contours.Size} contours found, none passed size/distance filters " +
+                                $"(Xmin={parameters.Xmin:F2}mm, Xmax={parameters.Xmax:F2}mm, " +
+                                $"Ymin={parameters.Ymin:F2}mm, Ymax={parameters.Ymax:F2}mm, " +
+                                $"XmaxDist={parameters.XUniqueDistance:F2}mm, YmaxDist={parameters.YUniqueDistance:F2}mm)",
                                 System.Drawing.KnownColor.DarkOrange);
                         }
                         return false;
                     }
                     
-                    // Return coordinates relative to image center
-                    X = bestRect.Center.X - centerX;
-                    Y = centerY - bestRect.Center.Y;
+                    // Bug 6 fix: Return coordinates in mm (matching AForge output), not raw pixels
+                    X = (bestRect.Center.X - centerX) * XmmPerPixel;
+                    Y = (centerY - bestRect.Center.Y) * YmmPerPixel;  // Flip Y: image coords are top-down
                     A = bestRect.Angle;
                     
-                    if (DisplayResults)
-                    {
-                        _mainForm.DisplayText($"EmguCV Rectangle: X={X:F2}, Y={Y:F2}, A={A:F2}°, " +
-                            $"Size={bestRect.Size.Width:F2}x{bestRect.Size.Height:F2}", 
-                            System.Drawing.KnownColor.DarkGreen);
-                    }
                     
                     return true;
                 }
@@ -555,11 +574,12 @@ namespace LitePlacer.CameraEngines
         /// Detect component using advanced contour analysis
         /// </summary>
         private bool DetectComponent_Contours(Mat image, MeasurementParametersClass parameters,
+                                              double XmmPerPixel, double YmmPerPixel,
                                               out double X, out double Y, out double A, bool DisplayResults)
         {
             // For now, use rectangle detection as component detection is similar
             // Future: Add more sophisticated shape analysis
-            return DetectRectangles_Precise(image, parameters, out X, out Y, out A, DisplayResults);
+            return DetectRectangles_Precise(image, parameters, XmmPerPixel, YmmPerPixel, out X, out Y, out A, DisplayResults);
         }
     }
 }

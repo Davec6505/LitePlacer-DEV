@@ -668,10 +668,6 @@ namespace LitePlacer
 
         public void ClearDisplayFunctionsList()
         {
-            if (DisplayFunctions.Count == 0)
-            {
-                return;
-            }
             // Stop video
             bool pause = PauseProcessing;
             int tries = 0;
@@ -696,6 +692,10 @@ namespace LitePlacer
             lock (DisplayFunctionsLock)
             {
                 DisplayFunctions.Clear();
+            }
+            lock (_displayEnginePipelineLock)
+            {
+                _displayEnginePipeline.Clear();
             }
             PauseProcessing = pause;  // restart video is it was running
         }
@@ -942,13 +942,22 @@ namespace LitePlacer
 
             bool ShowUnprocessed = true;
 
-            if (DisplayFunctions != null)
+            if (DisplayFunctions != null && DisplayFunctions.Count != 0)
             {
-                if (DisplayFunctions.Count != 0)
+                ShowUnprocessed = false;
+            }
+
+            // Also check the engine pipeline (EmguCV etc.) - DisplayFunctions is empty when engine is active
+            if (ShowUnprocessed && _currentEngine != null && _currentEngine.EngineName != "AForge.NET")
+            {
+                lock (_displayEnginePipelineLock)
                 {
-                    ShowUnprocessed = false;
+                    if (_displayEnginePipeline != null && _displayEnginePipeline.Count != 0)
+                    {
+                        ShowUnprocessed = false;
+                    }
                 }
-            };
+            }
 
             double Zoom = 1;
             if (ShowUnprocessed)
@@ -2853,11 +2862,17 @@ namespace LitePlacer
             if (_currentEngine != null && _currentEngine.EngineName != "AForge.NET")
             {
                 MainForm.DisplayText($"Using {_currentEngine.EngineName} for measurement", KnownColor.DarkCyan);
+                
+                // Calculate mm per pixel (matching AForge logic)
+                double engineZoom = GetMeasurementZoom();
+                double engineXmmPpix = XmmPerPixel / engineZoom;
+                double engineYmmPpix = YmmPerPixel / engineZoom;
+                
                 bool result;
                 lock (_enginePipelineLock)
                 {
                     result = _currentEngine.Measure(image, _enginePipeline, MeasurementParameters, 
-                        out Xresult, out Yresult, out Aresult, DisplayResults);
+                        engineXmmPpix, engineYmmPpix, out Xresult, out Yresult, out Aresult, DisplayResults);
                 }
                 Paused = PauseSave;
                 PauseProcessing = false;

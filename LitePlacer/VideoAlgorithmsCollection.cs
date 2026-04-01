@@ -225,6 +225,14 @@ namespace LitePlacer
         public double Ymax = 0.0;
         public double XUniqueDistance = 0.0;
         public double YUniqueDistance = 0.0;
+        // EmguCV / Hough circle parameters - reserved for future use if HoughCircles is
+        // added as a user-selectable pipeline function (like AForge's "Hough circles" step).
+        public double Hough_dp = 1.0;
+        public double Hough_param1 = 50.0;
+        public double Hough_param2 = 20.0;
+        public double Hough_minRadiusMm = 0.0;
+        public double Hough_maxRadiusMm = 0.0;
+        public double Hough_minDistMm = 0.0;
     }
 
 }

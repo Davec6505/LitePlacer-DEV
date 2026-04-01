@@ -54,6 +54,8 @@ namespace LitePlacer.CameraEngines
         bool Measure(Bitmap image, 
                      List<IProcessingFunction> pipeline,
                      MeasurementParametersClass parameters,
+                     double XmmPerPixel,
+                     double YmmPerPixel,
                      out double X, 
                      out double Y, 
                      out double A,

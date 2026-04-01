@@ -160,6 +160,10 @@ namespace LitePlacer
                 
                 DisplayText($"Camera engine selector initialized: {listBoxCameraEngin.SelectedItem}", 
                     System.Drawing.KnownColor.DarkCyan);
+
+                // Apply the saved engine immediately - the SelectedIndexChanged event is blocked
+                // by the StartingUp guard, so we call SwitchCameraEngine directly here.
+                SwitchCameraEngine(listBoxCameraEngin.SelectedItem.ToString());
             }
             
             // Initialize function list from camera engine (EmguCV or AForge)
@@ -1704,7 +1708,7 @@ namespace LitePlacer
             {
                 return;
             }
-            if (VideoAlgorithms.CurrentAlgorithm == null)
+            if (VideoAlgorithms == null || VideoAlgorithms.CurrentAlgorithm == null)
             {
                 DisplayText("UpdateVideoProcessing(), no current algorithm");
                 return;

@@ -2948,7 +2948,7 @@ namespace LitePlacer
             do
             {
                 ok = true;
-                if (!GoToFeatureLocation_m(0.1, out X, out Y, out A))
+                if (!GoToFeatureLocation_m(0.02, out X, out Y, out A))
                 {
                     ok = false;
                     string nl = Environment.NewLine;
@@ -9352,7 +9352,7 @@ namespace LitePlacer
             do
             {
                 ok = true;
-                if (!GoToFeatureLocation_m(0.1, out X, out Y, out A))
+                if (!GoToFeatureLocation_m(0.02, out X, out Y, out A))
                 {
                     ok = false;
                     string nl = Environment.NewLine;
@@ -9942,7 +9942,7 @@ namespace LitePlacer
                 return false;
             }
 
-            if (!GoToFeatureLocation_m(0.1, out double X, out double Y, out double A))
+            if (!GoToFeatureLocation_m(0.02, out double X, out double Y, out double A))
             {
                 ShowMessageBox(
                     "Finding fiducial: Can't regognize fiducial " + fid.Designator,
