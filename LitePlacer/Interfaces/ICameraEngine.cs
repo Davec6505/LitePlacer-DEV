@@ -59,6 +59,8 @@ namespace LitePlacer.CameraEngines
                      out double X, 
                      out double Y, 
                      out double A,
+                     out double XSizeMm,
+                     out double YSizeMm,
                      bool DisplayResults);
     }
 }

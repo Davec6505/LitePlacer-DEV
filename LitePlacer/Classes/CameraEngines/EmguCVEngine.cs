@@ -281,9 +281,12 @@ namespace LitePlacer.CameraEngines
                            out double X, 
                            out double Y, 
                            out double A,
+                           out double XSizeMm,
+                           out double YSizeMm,
                            bool DisplayResults)
         {
             X = Y = A = 0;
+            XSizeMm = YSizeMm = 0;
             
             if (!IsAvailable)
             {
@@ -304,17 +307,17 @@ namespace LitePlacer.CameraEngines
                     // a combined candidates list from all enabled types.
                     if (parameters.SearchRounds)
                     {
-                        if (DetectCircles_SubPixel(matImage, parameters, XmmPerPixel, YmmPerPixel, out X, out Y, out A, DisplayResults))
+                        if (DetectCircles_SubPixel(matImage, parameters, XmmPerPixel, YmmPerPixel, out X, out Y, out A, out XSizeMm, out YSizeMm, DisplayResults))
                             return true;
                     }
                     if (parameters.SearchRectangles)
                     {
-                        if (DetectRectangles_Precise(matImage, parameters, XmmPerPixel, YmmPerPixel, out X, out Y, out A, DisplayResults))
+                        if (DetectRectangles_Precise(matImage, parameters, XmmPerPixel, YmmPerPixel, out X, out Y, out A, out XSizeMm, out YSizeMm, DisplayResults))
                             return true;
                     }
                     if (parameters.SearchComponentOutlines || parameters.SearchComponentPads)
                     {
-                        if (DetectComponent_Contours(matImage, parameters, XmmPerPixel, YmmPerPixel, out X, out Y, out A, DisplayResults))
+                        if (DetectComponent_Contours(matImage, parameters, XmmPerPixel, YmmPerPixel, out X, out Y, out A, out XSizeMm, out YSizeMm, DisplayResults))
                             return true;
                     }
 
@@ -352,14 +355,15 @@ namespace LitePlacer.CameraEngines
         /// </summary>
         private bool DetectCircles_SubPixel(Mat image, MeasurementParametersClass parameters,
                                             double XmmPerPixel, double YmmPerPixel,
-                                            out double X, out double Y, out double A, bool DisplayResults)
+                                            out double X, out double Y, out double A,
+                                            out double XSizeMm, out double YSizeMm,
+                                            bool DisplayResults)
         {
             X = Y = A = 0;
+            XSizeMm = YSizeMm = 0;
 
             try
             {
-                // The image has already been processed by the user's pipeline (Threshold, Invert, etc.).
-                // Ensure single-channel for FindContours - matches AForge BlobCounter behaviour.
                 Mat gray = new Mat();
                 if (image.NumberOfChannels > 1)
                     CvInvoke.CvtColor(image, gray, ColorConversion.Bgr2Gray);
@@ -369,49 +373,122 @@ namespace LitePlacer.CameraEngines
                 int centerX = image.Width / 2;
                 int centerY = image.Height / 2;
 
+                // Detect whether the pipeline produced an edge image (Canny/Sobel) or a filled binary image
+                // (Threshold+Invert). This drives which radius estimator is correct:
+                //   Filled image -> radius = sqrt(area / pi)   [area of the filled disc - most accurate]
+                //   Edge image   -> radius = perimeter / (2*pi)[arc length of the ring]
+                //
+                // The filled-disc area estimator is always preferred when available because it averages
+                // out pixel stairstepping across the whole disc boundary rather than amplifying it via
+                // perimeter measurement.
+                //
+                // Detection method: compare the largest single contour's area to its enclosing circle area.
+                // A filled disc has contourArea / enclosingCircleArea > 0.85 (nearly fills the circle).
+                // A Canny ring has contourArea / enclosingCircleArea << 0.1 (ring pixels vs filled area).
+                // This is robust regardless of the dot's size relative to the frame.
+                double totalPixels = image.Width * image.Height;
+                MCvScalar nonZeroCount = new MCvScalar(CvInvoke.CountNonZero(gray));
+                double fillRatio = nonZeroCount.V0 / totalPixels;
+
+                // Find largest contour to test filled vs edge
+                bool isEdgeImage = true;
+                using (VectorOfVectorOfPoint testContours = new VectorOfVectorOfPoint())
+                {
+                    CvInvoke.FindContours(gray.Clone(), testContours, null, RetrType.External, ChainApproxMethod.ChainApproxSimple);
+                    double maxArea = 0;
+                    for (int t = 0; t < testContours.Size; t++)
+                    {
+                        using (VectorOfPoint tc = testContours[t])
+                        {
+                            double a = CvInvoke.ContourArea(tc);
+                            if (a > maxArea)
+                            {
+                                maxArea = a;
+                                CircleF enc = CvInvoke.MinEnclosingCircle(tc);
+                                double encArea = Math.PI * enc.Radius * enc.Radius;
+                                // Filled disc fills > 75% of its enclosing circle area
+                                isEdgeImage = encArea < 1 || (maxArea / encArea) < 0.75;
+                            }
+                        }
+                    }
+                }
+
+                if (DisplayResults)
+                    _mainForm.DisplayText($"EmguCV Circles: image={image.Width}x{image.Height}, fill={fillRatio:P1}, mode={(isEdgeImage ? "edge" : "filled")}, XmmPerPix={XmmPerPixel:F4}",
+                        System.Drawing.KnownColor.DarkCyan);
+
+                // ChainApproxNone: keep every boundary pixel for accurate perimeter and centroid.
+                // RetrType.List: retrieves all contours without hierarchy — needed for edge images
+                // where Canny produces two concentric rings (inner + outer of the bright halo).
                 using (VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint())
                 {
-                    CvInvoke.FindContours(gray, contours, null, RetrType.External, ChainApproxMethod.ChainApproxSimple);
+                    CvInvoke.FindContours(gray, contours, null, RetrType.List, ChainApproxMethod.ChainApproxNone);
                     gray.Dispose();
 
                     if (DisplayResults)
-                        _mainForm.DisplayText($"EmguCV Circles: image={image.Width}x{image.Height}, {contours.Size} raw contours, XmmPerPix={XmmPerPixel:F4}", System.Drawing.KnownColor.DarkCyan);
+                        _mainForm.DisplayText($"  {contours.Size} raw contours found", System.Drawing.KnownColor.DarkCyan);
+
+                    // Minimum perimeter guard based on Xmin: contours shorter than the
+                    // circumference of a circle of diameter Xmin are too small to be the target.
+                    double minPerimeterPx = Math.PI * (parameters.Xmin / XmmPerPixel); // pi * d
 
                     double bestDist = double.MaxValue;
-                    double bestX = 0, bestY = 0;
+                    double bestCx = 0, bestCy = 0, bestDiameterMm = 0;
                     bool foundValid = false;
 
                     for (int i = 0; i < contours.Size; i++)
                     {
                         using (VectorOfPoint contour = contours[i])
                         {
-                            double area = CvInvoke.ContourArea(contour);
-                            if (area < 5) continue; // ignore noise - matches AForge MinHeight/MinWidth=5
-
-                            // Circularity check: 4*pi*area/perimeter^2 == 1.0 for perfect circle
-                            // matches AForge SimpleShapeChecker.IsCircle() logic
                             double perimeter = CvInvoke.ArcLength(contour, true);
-                            if (perimeter < 1) continue;
-                            double circularity = (4.0 * Math.PI * area) / (perimeter * perimeter);
+                            if (perimeter < minPerimeterPx) continue;
 
-                            // Accept if circularity > 0.7 (AForge uses ~0.7 internally)
-                            if (circularity < 0.7) continue;
+                            // Radius estimator chosen by image type:
+                            //   Edge image: r = perimeter / (2*pi)
+                            //     The Canny ring perimeter directly measures the circle circumference.
+                            //     This is invariant to halo thickness and threshold level.
+                            //   Filled image: r = sqrt(area / pi)
+                            //     Area of the filled disc gives true radius without stairstepping bias.
+                            double area = CvInvoke.ContourArea(contour);
+                            double radiusPx;
+                            if (isEdgeImage)
+                                radiusPx = perimeter / (2.0 * Math.PI);
+                            else
+                                radiusPx = Math.Sqrt(area / Math.PI);
 
-                            // Derive radius and diameter in mm
-                            double radiusPx = Math.Sqrt(area / Math.PI);
                             double diameterMm = radiusPx * 2.0 * XmmPerPixel;
 
-                            // Size filter - matches AForge Measure() FilteredForSize check
+                            // Circularity check on perimeter vs area to reject non-circular contours.
+                            // For edge images, use a ring-aware formula: compare enclosing circle area to contour area.
+                            double circularity;
+                            if (isEdgeImage)
+                            {
+                                // For edge rings: expected area of a thin ring ~ perimeter * 1px
+                                // Use bounding circle area vs perimeter-derived circle area
+                                double expectedFilledArea = Math.PI * radiusPx * radiusPx;
+                                double enclosingArea = Math.PI * (CvInvoke.MinEnclosingCircle(contour).Radius *
+                                                                   CvInvoke.MinEnclosingCircle(contour).Radius);
+                                circularity = expectedFilledArea / enclosingArea; // ~1.0 for a circle ring
+                            }
+                            else
+                            {
+                                circularity = (4.0 * Math.PI * area) / (perimeter * perimeter);
+                            }
+
+                            if (circularity < 0.6) continue;
+
+                            // Size filter
                             if (diameterMm < parameters.Xmin || diameterMm > parameters.Xmax)
                                 continue;
 
-                            // Centre of contour
+                            // Sub-pixel centroid from moments - works correctly for both
+                            // edge rings and filled discs.
                             var moments = CvInvoke.Moments(contour);
-                            if (moments.M00 == 0) continue;
+                            if (moments.M00 < 1) continue;
                             double cx = moments.M10 / moments.M00;
                             double cy = moments.M01 / moments.M00;
 
-                            // Distance filter in mm - matches AForge FilteredForDistance
+                            // Distance filter
                             double XdistMm = Math.Abs((cx - centerX) * XmmPerPixel);
                             double YdistMm = Math.Abs((cy - centerY) * YmmPerPixel);
                             if (XdistMm > parameters.XUniqueDistance || YdistMm > parameters.YUniqueDistance)
@@ -421,8 +498,9 @@ namespace LitePlacer.CameraEngines
                             if (distPx < bestDist)
                             {
                                 bestDist = distPx;
-                                bestX = (cx - centerX) * XmmPerPixel;
-                                bestY = (centerY - cy) * YmmPerPixel; // flip Y: image top-down
+                                bestCx = cx;
+                                bestCy = cy;
+                                bestDiameterMm = diameterMm;
                                 foundValid = true;
                             }
                         }
@@ -436,12 +514,14 @@ namespace LitePlacer.CameraEngines
                         return false;
                     }
 
-                    X = bestX;
-                    Y = bestY;
-                    A = 0.0; // circles have no rotation
+                    X = (bestCx - centerX) * XmmPerPixel;
+                    Y = (centerY - bestCy) * YmmPerPixel;
+                    A = 0.0;
+                    XSizeMm = bestDiameterMm;
+                    YSizeMm = bestDiameterMm;
 
                     if (DisplayResults)
-                        _mainForm.DisplayText($"EmguCV Circle: X={X:F3}mm, Y={Y:F3}mm", System.Drawing.KnownColor.DarkGreen);
+                        _mainForm.DisplayText($"EmguCV Circle: X={X:F3}mm, Y={Y:F3}mm, Diameter={bestDiameterMm:F3}mm", System.Drawing.KnownColor.DarkGreen);
 
                     return true;
                 }
@@ -458,9 +538,12 @@ namespace LitePlacer.CameraEngines
         /// </summary>
         private bool DetectRectangles_Precise(Mat image, MeasurementParametersClass parameters,
                                               double XmmPerPixel, double YmmPerPixel,
-                                              out double X, out double Y, out double A, bool DisplayResults)
+                                              out double X, out double Y, out double A,
+                                              out double XSizeMm, out double YSizeMm,
+                                              bool DisplayResults)
         {
             X = Y = A = 0;
+            XSizeMm = YSizeMm = 0;
             
             try
             {
@@ -499,6 +582,7 @@ namespace LitePlacer.CameraEngines
                     int centerY = image.Height / 2;
                     double bestDist = double.MaxValue;
                     RotatedRect bestRect = new RotatedRect();
+                    double bestXSizeMm = 0, bestYSizeMm = 0;
                     bool foundAny = false;
                     
                     for (int i = 0; i < contours.Size; i++)
@@ -535,6 +619,8 @@ namespace LitePlacer.CameraEngines
                             {
                                 bestDist = distPixels;
                                 bestRect = rect;
+                                bestXSizeMm = XsizeMm;
+                                bestYSizeMm = YsizeMm;
                                 foundAny = true;
                             }
                         }
@@ -557,8 +643,9 @@ namespace LitePlacer.CameraEngines
                     X = (bestRect.Center.X - centerX) * XmmPerPixel;
                     Y = (centerY - bestRect.Center.Y) * YmmPerPixel;  // Flip Y: image coords are top-down
                     A = bestRect.Angle;
-                    
-                    
+                    XSizeMm = bestXSizeMm;
+                    YSizeMm = bestYSizeMm;
+
                     return true;
                 }
             }
@@ -575,11 +662,13 @@ namespace LitePlacer.CameraEngines
         /// </summary>
         private bool DetectComponent_Contours(Mat image, MeasurementParametersClass parameters,
                                               double XmmPerPixel, double YmmPerPixel,
-                                              out double X, out double Y, out double A, bool DisplayResults)
+                                              out double X, out double Y, out double A,
+                                              out double XSizeMm, out double YSizeMm,
+                                              bool DisplayResults)
         {
             // For now, use rectangle detection as component detection is similar
             // Future: Add more sophisticated shape analysis
-            return DetectRectangles_Precise(image, parameters, XmmPerPixel, YmmPerPixel, out X, out Y, out A, DisplayResults);
+            return DetectRectangles_Precise(image, parameters, XmmPerPixel, YmmPerPixel, out X, out Y, out A, out XSizeMm, out YSizeMm, DisplayResults);
         }
     }
 }

@@ -101,15 +101,14 @@ namespace LitePlacer.CameraEngines
                            out double X, 
                            out double Y, 
                            out double A,
+                           out double XSizeMm,
+                           out double YSizeMm,
                            bool DisplayResults)
         {
-            // Delegate directly to existing Camera.Measure() method
-            // This ensures zero breaking changes to current functionality
-            
-            // Note: pipeline, XmmPerPixel, YmmPerPixel parameters are ignored for AForge engine
-            // The Camera class maintains its own internal processing pipeline
-            // and calculates mm/pixel internally
-            
+            // Size is reported by Camera.Measure's AForge path; return 0 here as this stub
+            // delegates entirely to Camera.Measure which handles its own display.
+            XSizeMm = 0;
+            YSizeMm = 0;
             return _camera.Measure(out X, out Y, out A, DisplayResults);
         }
     }

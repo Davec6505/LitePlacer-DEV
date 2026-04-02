@@ -2869,10 +2869,31 @@ namespace LitePlacer
                 double engineYmmPpix = YmmPerPixel / engineZoom;
                 
                 bool result;
+                double XSizeMm = 0, YSizeMm = 0;
                 lock (_enginePipelineLock)
                 {
                     result = _currentEngine.Measure(image, _enginePipeline, MeasurementParameters, 
-                        engineXmmPpix, engineYmmPpix, out Xresult, out Yresult, out Aresult, DisplayResults);
+                        engineXmmPpix, engineYmmPpix, out Xresult, out Yresult, out Aresult,
+                        out XSizeMm, out YSizeMm, DisplayResults);
+                }
+                if (DisplayResults)
+                {
+                    if (result)
+                    {
+                        MainForm.DisplayText("");
+                        MainForm.DisplayText("Result: X= " + Xresult.ToString("0.000", CultureInfo.InvariantCulture) +
+                                             ", Y= " + Yresult.ToString("0.000", CultureInfo.InvariantCulture) +
+                                             ", A= " + Aresult.ToString("0.00", CultureInfo.InvariantCulture) +
+                                             ", X size = " + XSizeMm.ToString("0.000", CultureInfo.InvariantCulture) +
+                                             ", Y size = " + YSizeMm.ToString("0.000", CultureInfo.InvariantCulture),
+                                             KnownColor.DarkGreen);
+                        MainForm.DisplayText("Elapsed time " + stopwatch.ElapsedMilliseconds.ToString() + "ms");
+                    }
+                    else
+                    {
+                        MainForm.DisplayText("Measurement failed - no feature found.", KnownColor.Red, true);
+                        MainForm.DisplayText("Elapsed time " + stopwatch.ElapsedMilliseconds.ToString() + "ms");
+                    }
                 }
                 Paused = PauseSave;
                 PauseProcessing = false;

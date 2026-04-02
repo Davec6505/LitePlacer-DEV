@@ -11219,7 +11219,7 @@ namespace LitePlacer
             // 
             // AlgorithmsLoad_button
             // 
-            this.AlgorithmsLoad_button.Location = new System.Drawing.Point(739, 162);
+            this.AlgorithmsLoad_button.Location = new System.Drawing.Point(739, 167);
             this.AlgorithmsLoad_button.Name = "AlgorithmsLoad_button";
             this.AlgorithmsLoad_button.Size = new System.Drawing.Size(75, 23);
             this.AlgorithmsLoad_button.TabIndex = 235;
@@ -11270,7 +11270,7 @@ namespace LitePlacer
             // 
             // Save_button
             // 
-            this.Save_button.Location = new System.Drawing.Point(658, 163);
+            this.Save_button.Location = new System.Drawing.Point(658, 168);
             this.Save_button.Name = "Save_button";
             this.Save_button.Size = new System.Drawing.Size(75, 23);
             this.Save_button.TabIndex = 234;
@@ -11302,7 +11302,7 @@ namespace LitePlacer
             // label167
             // 
             this.label167.AutoSize = true;
-            this.label167.Location = new System.Drawing.Point(658, 147);
+            this.label167.Location = new System.Drawing.Point(658, 152);
             this.label167.Name = "label167";
             this.label167.Size = new System.Drawing.Size(91, 16);
             this.label167.TabIndex = 233;

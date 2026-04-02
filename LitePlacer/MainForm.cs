@@ -12382,7 +12382,8 @@ namespace LitePlacer
             // Temporarily disable Z-guard to allow the optimization of lifting only 10mm
             // instead of returning all the way to home
             const double LIFT_CLEARANCE = 10.0;  // mm - enough to clear tape without wasting time
-            double liftZ = engageZ - LIFT_CLEARANCE;  // Lift 10mm above engaged position
+            const double LIFT_Z_MINIMUM = 3.0;   // mm - never go above this Z (avoid Z home switch)
+            double liftZ = Math.Max(engageZ - LIFT_CLEARANCE, LIFT_Z_MINIMUM);
             
             DisplayText($"  Lifting nozzle {LIFT_CLEARANCE}mm clear to Z={liftZ:F3}", KnownColor.DarkCyan);
             
