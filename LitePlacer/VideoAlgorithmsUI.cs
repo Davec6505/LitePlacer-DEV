@@ -579,6 +579,81 @@ namespace LitePlacer
             RenameAlgorithm_button_Click(sender, e);
         }
 
+        /// <summary>
+        /// Copies functions and measurement parameters from a chosen source algorithm into the
+        /// currently selected algorithm.  Useful for initialising empty tape algorithms from a
+        /// working one without creating a duplicate entry.
+        /// </summary>
+        private void CopyFrom_button_Click(object sender, EventArgs e)
+        {
+            string destName = Algorithm_comboBox.SelectedItem.ToString();
+
+            // Build list of candidate sources (all algorithms except the destination)
+            List<string> sources = new List<string>();
+            foreach (VideoAlgorithmsCollection.FullAlgorithmDescription alg in VideoAlgorithms.AllAlgorithms)
+            {
+                if (alg.Name != destName)
+                    sources.Add(alg.Name);
+            }
+
+            if (sources.Count == 0)
+            {
+                DisplayText("CopyFrom: no other algorithms available as source.");
+                return;
+            }
+
+            // Show a simple selection dialog reusing the existing ComboBox-style picker
+            using (Form dlg = new Form())
+            {
+                dlg.Text = "Copy from algorithm";
+                dlg.FormBorderStyle = FormBorderStyle.FixedDialog;
+                dlg.StartPosition = FormStartPosition.CenterParent;
+                dlg.ClientSize = new System.Drawing.Size(300, 90);
+                dlg.MaximizeBox = false;
+                dlg.MinimizeBox = false;
+
+                Label lbl = new Label { Text = "Copy functions from:", Left = 10, Top = 12, Width = 130 };
+                ComboBox cb = new ComboBox { Left = 145, Top = 8, Width = 145, DropDownStyle = ComboBoxStyle.DropDownList };
+                foreach (string s in sources) cb.Items.Add(s);
+                cb.SelectedIndex = 0;
+
+                Button ok = new Button { Text = "OK", DialogResult = DialogResult.OK, Left = 130, Top = 50, Width = 70 };
+                Button cancel = new Button { Text = "Cancel", DialogResult = DialogResult.Cancel, Left = 210, Top = 50, Width = 70 };
+                dlg.AcceptButton = ok;
+                dlg.CancelButton = cancel;
+                dlg.Controls.AddRange(new Control[] { lbl, cb, ok, cancel });
+
+                if (dlg.ShowDialog(this) != DialogResult.OK)
+                {
+                    DisplayText("CopyFrom: cancelled.");
+                    return;
+                }
+
+                string srcName = cb.SelectedItem.ToString();
+                int srcLoc;
+                int destLoc;
+                if (!FindLocation(srcName, out srcLoc) || !FindLocation(destName, out destLoc))
+                {
+                    DisplayText("CopyFrom: algorithm not found!");
+                    return;
+                }
+
+                VideoAlgorithmsCollection.FullAlgorithmDescription src = VideoAlgorithms.AllAlgorithms[srcLoc];
+                VideoAlgorithmsCollection.FullAlgorithmDescription dest = VideoAlgorithms.AllAlgorithms[destLoc];
+
+                dest.FunctionList = DeepClone(src.FunctionList);
+                dest.MeasurementParameters = DeepClone(src.MeasurementParameters);
+
+                DisplayText($"CopyFrom: copied '{srcName}' -> '{destName}'");
+                AlgorithmChange = true;
+                FillFunctionTable(destName);
+                FillMeasurementValues(destName);
+                ClearFunctionParameters();
+                AlgorithmChange = false;
+                UpdateVideoProcessing();
+            }
+        }
+
         private void RenameAlgorithm_button_Click(object sender, EventArgs e)
         {
             if (Algorithm_comboBox.SelectedIndex == 0)
@@ -975,25 +1050,21 @@ namespace LitePlacer
 
         void FillFunctionTable(string AlgorithmName)
         {
-            // User changed the current algorithm or deleted a fuction. 
-            // This function (re-)fills Algorithms_dataGridView function column
+            // User changed the current algorithm or deleted a function.
+            // This function (re-)fills the Functions_dataGridView.
+            // IMPORTANT: every FunctionList entry is shown (even if not in KnownFunctions),
+            // and the grid row index always equals the FunctionList index so that
+            // RemoveFunction_button_Click and CurrentFunctionIndex are always in sync.
             Functions_dataGridView.Rows.Clear();
-            int row = 0;
-            AForgeFunctionDefinition func = new AForgeFunctionDefinition();
 
             for (int i = 0; i < VideoAlgorithms.CurrentAlgorithm.FunctionList.Count; i++)
             {
-                func = VideoAlgorithms.CurrentAlgorithm.FunctionList[i];
-                if (KnownFunctions.Contains(func.Name))
-                {
-                    int index = KnownFunctions.IndexOf(func.Name);
-                    Functions_dataGridView.Rows.Add();
-                    Functions_dataGridView.Rows[row].Cells[(int)Functions_dataGridViewColumns.FunctionColumn].Value =
-                        func.Name;
-                    Functions_dataGridView.Rows[row].Cells[(int)Functions_dataGridViewColumns.ActiveColumn].Value =
-                        func.Active;
-                    row++;
-                }
+                AForgeFunctionDefinition func = VideoAlgorithms.CurrentAlgorithm.FunctionList[i];
+                Functions_dataGridView.Rows.Add();
+                Functions_dataGridView.Rows[i].Cells[(int)Functions_dataGridViewColumns.FunctionColumn].Value =
+                    KnownFunctions.Contains(func.Name) ? func.Name : func.Name + " (unknown)";
+                Functions_dataGridView.Rows[i].Cells[(int)Functions_dataGridViewColumns.ActiveColumn].Value =
+                    func.Active;
             }
             Update_GridView(Functions_dataGridView);
         }

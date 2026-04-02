@@ -913,6 +913,7 @@ namespace LitePlacer
             this.label138 = new System.Windows.Forms.Label();
             this.RenameAlgorithm_button = new System.Windows.Forms.Button();
             this.DuplicateAlgorithm_button = new System.Windows.Forms.Button();
+            this.CopyFrom_button = new System.Windows.Forms.Button();
             this.RemoveAlgorithm_button = new System.Windows.Forms.Button();
             this.AddAlgorithm_button = new System.Windows.Forms.Button();
             this.label166 = new System.Windows.Forms.Label();
@@ -9976,6 +9977,7 @@ namespace LitePlacer
             this.Algorithms_tabPage.Controls.Add(this.label138);
             this.Algorithms_tabPage.Controls.Add(this.RenameAlgorithm_button);
             this.Algorithms_tabPage.Controls.Add(this.DuplicateAlgorithm_button);
+            this.Algorithms_tabPage.Controls.Add(this.CopyFrom_button);
             this.Algorithms_tabPage.Controls.Add(this.RemoveAlgorithm_button);
             this.Algorithms_tabPage.Controls.Add(this.AddAlgorithm_button);
             this.Algorithms_tabPage.Controls.Add(this.label166);
@@ -11519,6 +11521,16 @@ namespace LitePlacer
             this.RenameAlgorithm_button.Text = "Rename";
             this.RenameAlgorithm_button.UseVisualStyleBackColor = true;
             this.RenameAlgorithm_button.Click += new System.EventHandler(this.RenameAlgorithm_button_Click);
+            // 
+            // CopyFrom_button
+            // 
+            this.CopyFrom_button.Location = new System.Drawing.Point(1120, 211);
+            this.CopyFrom_button.Name = "CopyFrom_button";
+            this.CopyFrom_button.Size = new System.Drawing.Size(75, 23);
+            this.CopyFrom_button.TabIndex = 214;
+            this.CopyFrom_button.Text = "Copy from...";
+            this.CopyFrom_button.UseVisualStyleBackColor = true;
+            this.CopyFrom_button.Click += new System.EventHandler(this.CopyFrom_button_Click);
             // 
             // DuplicateAlgorithm_button
             // 
@@ -13390,6 +13402,7 @@ namespace LitePlacer
         private System.Windows.Forms.Label label138;
         private System.Windows.Forms.Button RenameAlgorithm_button;
         private System.Windows.Forms.Button DuplicateAlgorithm_button;
+        private System.Windows.Forms.Button CopyFrom_button;
         private System.Windows.Forms.Button RemoveAlgorithm_button;
         private System.Windows.Forms.Button AddAlgorithm_button;
         private System.Windows.Forms.Label label166;

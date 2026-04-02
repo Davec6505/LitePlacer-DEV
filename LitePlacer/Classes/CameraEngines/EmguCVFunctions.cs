@@ -167,6 +167,58 @@ namespace LitePlacer.CameraEngines
         }
 
         /// <summary>
+        /// Measurement zoom: centre-crop then resize back to original dimensions.
+        /// Zooms in so small features fill more of the frame for detection.
+        /// par_d = zoom factor (e.g. 2.0 = 2x zoom). GetMeasurementZoom() reads this
+        /// value so mm/pixel is corrected automatically during measurement.
+        /// </summary>
+        public static void MeasZoom(ref Bitmap frame, int par_int, double par_d, int par_R, int par_G, int par_B,
+            double par_dA, double par_dB, double par_dC)
+        {
+            double factor = par_d < 0.1 ? 1.0 : par_d;
+            if (Math.Abs(factor - 1.0) < 0.01)
+                return;
+
+            int origW = frame.Width;
+            int origH = frame.Height;
+            int centerX = origW / 2;
+            int centerY = origH / 2;
+            int cropW = (int)(origW / factor);
+            int cropH = (int)(origH / factor);
+            int fromX = centerX - cropW / 2;
+            int fromY = centerY - cropH / 2;
+
+            // Clamp to frame bounds
+            fromX = Math.Max(0, fromX);
+            fromY = Math.Max(0, fromY);
+            cropW = Math.Min(cropW, origW - fromX);
+            cropH = Math.Min(cropH, origH - fromY);
+
+            try
+            {
+                Bitmap cropped = new Bitmap(cropW, cropH);
+                using (Graphics g = Graphics.FromImage(cropped))
+                {
+                    g.DrawImage(frame, new Rectangle(0, 0, cropW, cropH),
+                        new Rectangle(fromX, fromY, cropW, cropH), GraphicsUnit.Pixel);
+                }
+                Bitmap resized = new Bitmap(origW, origH);
+                using (Graphics g = Graphics.FromImage(resized))
+                {
+                    g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.Bilinear;
+                    g.DrawImage(cropped, 0, 0, origW, origH);
+                }
+                cropped.Dispose();
+                frame.Dispose();
+                frame = resized;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"EmguCV MeasZoom error: {ex.Message}");
+            }
+        }
+
+        /// <summary>
         /// Simple box filter blur
         /// par_int = kernel size
         /// </summary>

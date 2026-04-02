@@ -1011,22 +1011,40 @@ namespace LitePlacer
                     }
                     
                     // Find features (still uses AForge for display - TODO: make engine-aware)
+                    // AForge BlobCounter requires a 24bpp colour bitmap; EmguCV pipelines may
+                    // produce 8-bit grayscale. Ensure the frame is 24bpp before blob detection.
+                    Bitmap blobInputFrame = AnalyzedFrame;
+                    bool blobFrameOwned = false;
+                    if (AnalyzedFrame.PixelFormat != System.Drawing.Imaging.PixelFormat.Format24bppRgb &&
+                        AnalyzedFrame.PixelFormat != System.Drawing.Imaging.PixelFormat.Format32bppArgb &&
+                        AnalyzedFrame.PixelFormat != System.Drawing.Imaging.PixelFormat.Format32bppRgb)
+                    {
+                        blobInputFrame = new Bitmap(AnalyzedFrame.Width, AnalyzedFrame.Height,
+                            System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+                        using (Graphics g = Graphics.FromImage(blobInputFrame))
+                            g.DrawImage(AnalyzedFrame, 0, 0);
+                        blobFrameOwned = true;
+                    }
+
                     if (FindCircles)
                     {
-                        Circles = FindCirclesFunct(AnalyzedFrame);
+                        Circles = FindCirclesFunct(blobInputFrame);
                     }
                     if (FindRectangles)
                     {
-                        Rectangles = FindRectanglesFunct(AnalyzedFrame);
+                        Rectangles = FindRectanglesFunct(blobInputFrame);
                     }
                     if (FindComponentByOutlines)
                     {
-                        ComponentsByOutline = FindComponentsFromOutline_Funct(AnalyzedFrame);
+                        ComponentsByOutline = FindComponentsFromOutline_Funct(blobInputFrame);
                     }
                     if (FindComponentByPads)
                     {
-                        ComponentsFromPads = FindComponentsFromPads_Funct(AnalyzedFrame, GetProcessingZoom());
+                        ComponentsFromPads = FindComponentsFromPads_Funct(blobInputFrame, GetProcessingZoom());
                     }
+
+                    if (blobFrameOwned)
+                        blobInputFrame.Dispose();
 
                     // Fit the image we are going to show to the UI
                     double ProcessingZoom = GetProcessingZoom();
@@ -2686,6 +2704,22 @@ namespace LitePlacer
         public double GetMeasurementZoom()
         {
             double zoom = 1.0;
+
+            // EmguCV path: scan the engine pipeline for Meas. zoom entries
+            if (_currentEngine != null && _currentEngine.EngineName != "AForge.NET")
+            {
+                lock (_enginePipelineLock)
+                {
+                    foreach (var f in _enginePipeline)
+                    {
+                        if (f != null && f.Name == "Meas. zoom" && f.ParameterDouble >= 0.1)
+                            zoom *= f.ParameterDouble;
+                    }
+                }
+                return zoom;
+            }
+
+            // AForge path
             if (MeasurementFunctions == null)
             {
                 return zoom;
@@ -2704,6 +2738,22 @@ namespace LitePlacer
         public double GetProcessingZoom()
         {
             double zoom = 1.0;
+
+            // EmguCV path: scan the display engine pipeline for Meas. zoom entries
+            if (_currentEngine != null && _currentEngine.EngineName != "AForge.NET")
+            {
+                lock (_displayEnginePipelineLock)
+                {
+                    foreach (var f in _displayEnginePipeline)
+                    {
+                        if (f != null && f.Name == "Meas. zoom" && f.ParameterDouble >= 0.1)
+                            zoom *= f.ParameterDouble;
+                    }
+                }
+                return zoom;
+            }
+
+            // AForge path
             if (DisplayFunctions == null)
             {
                 return zoom;

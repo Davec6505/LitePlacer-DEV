@@ -1183,6 +1183,140 @@ LitePlacer2/
 | Date | Change |
 |---|---|
 | 2025-07-15 | Initial creation from full codebase analysis |
+| 2025-07-16 | Session: EmguCV display overlay fixes + algorithm data management improvements |
+
+> **Session 2025-07-16 — Detail**
+
+### Bug: EmguCV display overlay always showed no circles (all red / nothing drawn)
+
+**Root cause:** `FindCirclesFunct()` in `Camera.cs` uses AForge's `BlobCounter.ProcessImage()`.
+`BlobCounter` silently fails and finds zero blobs when given an **8-bit grayscale** bitmap.
+EmguCV's `Threshold` function outputs a single-channel grayscale bitmap (`thresholded.ToBitmap()`),
+not the 24bpp colour bitmap that `BlobCounter` requires.
+
+**Fix (`Camera.cs` — `Video_NewFrame`):**  
+Before passing `AnalyzedFrame` to `FindCirclesFunct` / `FindRectanglesFunct` / `FindComponentsFromOutline_Funct` /
+`FindComponentsFromPads_Funct`, the pixel format is checked. If it is not 24bpp or 32bpp colour, a temporary
+24bpp copy is created via `Graphics.DrawImage`, used for blob detection, then disposed. `AnalyzedFrame` itself
+is unchanged (it continues to be used for display). The conversion is a no-op cost on the AForge path.
+
+```csharp
+// Ensure blob input is 24bpp - BlobCounter fails silently on 8-bit grayscale (EmguCV Threshold output)
+Bitmap blobInputFrame = AnalyzedFrame;
+bool blobFrameOwned = false;
+if (AnalyzedFrame.PixelFormat != PixelFormat.Format24bppRgb &&
+    AnalyzedFrame.PixelFormat != PixelFormat.Format32bppArgb &&
+    AnalyzedFrame.PixelFormat != PixelFormat.Format32bppRgb)
+{
+    blobInputFrame = new Bitmap(AnalyzedFrame.Width, AnalyzedFrame.Height, PixelFormat.Format24bppRgb);
+    using (Graphics g = Graphics.FromImage(blobInputFrame))
+        g.DrawImage(AnalyzedFrame, 0, 0);
+    blobFrameOwned = true;
+}
+// ... use blobInputFrame for all Find*Funct calls ...
+if (blobFrameOwned) blobInputFrame.Dispose();
+```
+
+**Key insight for new project:** In the new project only EmguCV will be used.
+`DetectCircles_SubPixel` / `DetectRectangles_Precise` / `DetectComponent_Contours` return typed result
+objects directly — no `BlobCounter` blob detection on the display path is needed at all.
+The overlay drawing should consume `MeasurementResult` objects returned by the EmguCV engine,
+not re-detect from the display frame.
+
+---
+
+### Bug: `GetProcessingZoom()` returned 1.0 when EmguCV was active
+
+**Root cause:** `GetProcessingZoom()` only scanned `DisplayFunctions` (the AForge list).
+When EmguCV is active, `DisplayFunctions` is always empty; the zoom multiplier lives in
+`_displayEnginePipeline` instead.
+
+**Fix (`Camera.cs` — `GetProcessingZoom`):**  
+Added the same engine-detection pattern used by `GetMeasurementZoom()`:
+
+```csharp
+if (_currentEngine != null && _currentEngine.EngineName != "AForge.NET")
+{
+    lock (_displayEnginePipelineLock)
+    {
+        foreach (var f in _displayEnginePipeline)
+        {
+            if (f != null && f.Name == "Meas. zoom" && f.ParameterDouble >= 0.1)
+                zoom *= f.ParameterDouble;
+        }
+    }
+    return zoom;
+}
+// AForge path unchanged ...
+```
+
+**Note for new project:** `GetProcessingZoom` and `GetMeasurementZoom` being separate methods that
+each scan a different list is a structural smell. In the new project there is one pipeline; zoom is
+a named step in that pipeline read once by the display renderer.
+
+---
+
+### Bug: Empty tape algorithms caused "Nothing to search for" during job execution
+
+**Root cause:** The `"Paper tape"`, `"Black tape"`, and `"Clear tape"` algorithm entries in the
+engine-specific save file (`LitePlacer.VideoAlgorithms.EmguCVOpenCV`) were created as empty
+placeholders (no functions, `SearchRounds=false`, all size parameters 0.0). The working algorithm
+had been set up under the name `"Paper (White)"` instead. When a tape row referenced `"Paper tape"`,
+`SetCurrentTapeMeasurement_m` loaded it, built a pipeline of 0 functions, and emitted:
+`"Nothing to search for. Check some of the 'Features to search for' boxes."`
+
+**Fix:** Three-part fix:
+
+1. **Data file patched** (`LitePlacer.VideoAlgorithms.EmguCVOpenCV`):  
+   `"Paper tape"`, `"Black tape"`, and `"Clear tape"` were populated by direct JSON text replacement
+   with the content of the working `"Paper (White)"` algorithm:
+   - Functions: `Meas. zoom (1.5x)` ? `Threshold (78)` ? `Invert` ? `Canny edge detection (100/150)`
+   - `SearchRounds = true`, `Xmin = 0.5mm`, `Xmax = 2.0mm`, `XDist = 1.0mm`
+   - Note: Black and Clear tape start with paper tape settings; threshold will need per-tape tuning.
+
+2. **New `CopyFrom_button_Click` handler** (`VideoAlgorithmsUI.cs`):  
+   Copies functions and measurement parameters from any source algorithm into the currently selected
+   one. Opens a minimal inline dialog (label + ComboBox + OK/Cancel). Uses the existing `DeepClone<T>`
+   JSON round-trip for a true independent copy. Refreshes the function table and measurement values UI.
+
+3. **`CopyFrom_button` added to `MainForm.Designer.cs`**:  
+   Placed at `(1120, 211)` to the right of the existing `Rename` button on the Algorithms tab.
+   Field declaration, `Controls.Add`, location/size/text/event wiring all added.
+
+**Important:** The `"Paper tape"` name is hardcoded in `SetCurrentTapeMeasurement_m()` (tapes.cs).
+In the new project, algorithm names should not be hardcoded anywhere — the tape row carries a
+reference to the algorithm by name/ID and the algorithm is resolved from the collection at runtime.
+
+---
+
+### Architecture note: Algorithm save files are engine-specific
+
+The save file name is `LitePlacer.VideoAlgorithms.<EngineSuffix>` where the suffix is derived by
+stripping spaces, parentheses, and `.NET` from the engine name:
+- AForge.NET ? `.AForge`
+- EmguCV (OpenCV) ? `.EmguCVOpenCV`
+
+Algorithms contain an `EngineName` field. On load, old engine-agnostic files are migrated to the
+engine-specific file. In the new project, since only EmguCV exists, there is no suffix or migration;
+the single file is `VideoAlgorithms.json`.
+
+---
+
+### Summary: EmguCV overlay pipeline (correct display path)
+
+```
+Camera frame
+  ?? EmguCV _displayEnginePipeline (Meas.zoom / Threshold / Invert / Canny ...)
+       ?? AnalyzedFrame (8-bit grayscale after Threshold)
+            ?? Convert to 24bpp copy for BlobCounter ? FindCircles/Rectangles/Components
+            ?    ?? DrawCirclesFunct / DrawRectanglesFunct (green if in size, red if not)
+            ?? ShowProcessing=true  ? DisplayedFrame = FitImageToUI(AnalyzedFrame)
+               ShowProcessing=false ? DisplayedFrame = FitImageToUI(rawSourceFrame)
+```
+
+The green/red colour in `DrawCirclesFunct` is determined by comparing the detected circle diameter
+(in mm, using `XmmPerPixel * Zoom`) against `MeasurementParameters.Xmin` / `Xmax` from the current
+algorithm. Yellow is used when the circle centre is too far from the frame centre (`XUniqueDistance`).
 
 > **Source repository:** https://github.com/Davec6505/LitePlacer-DEV  
 > **Source branch at time of analysis:** `feature/nozzle-pull-tape-indexing`  

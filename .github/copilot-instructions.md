@@ -112,11 +112,34 @@ Pull feature bugs fixed (2025-07-14):
 
 Next on pull feature: runtime testing on hardware.
 
+## EmguCV Display Overlay (Fixed 2025-07-16)
+
+BlobCounter pixel format requirement:
+  AForge BlobCounter.ProcessImage() requires 24bpp/32bpp colour bitmap.
+  EmguCV Threshold outputs 8-bit grayscale -> BlobCounter found zero blobs -> no overlay drawn.
+  Fix: Camera.cs Video_NewFrame converts AnalyzedFrame to 24bpp temp copy before Find*Funct calls.
+  The converted copy is owned locally and disposed after blob detection; AnalyzedFrame unchanged.
+
+GetProcessingZoom() fixed for EmguCV:
+  Now scans _displayEnginePipeline for 'Meas. zoom' entries when EmguCV is active.
+  Matches the same pattern already used by GetMeasurementZoom().
+
+Algorithm data file patched:
+  'Paper tape', 'Black tape', 'Clear tape' were empty (no functions, SearchRounds=false).
+  Populated by copying 'Paper (White)': Meas.zoom(1.5) + Threshold(78) + Invert + Canny(100/150).
+  File: LitePlacer.VideoAlgorithms.EmguCVOpenCV
+  Black/Clear tape threshold will need per-tape tuning in the field.
+
+CopyFrom_button added to Algorithms tab:
+  Copies functions + MeasurementParameters from any source algorithm into current selection.
+  Uses DeepClone<T> (JSON round-trip). Located at (1120, 211), right of Rename button.
+  Handler: CopyFrom_button_Click in VideoAlgorithmsUI.cs
+
 ## Status
 Plan/STATUS.md        full project history (TinyG, MZ_CNC, SKR3, concurrency, EmguCV) — 1393+ lines
 Plan/PULL_INDEXING.md nozzle pull feature complete changelog — 1114 lines
 LitePlacer/Docs/STATUS.md        session fix log (editable by tools)
 LitePlacer/Docs/copilot-instructions.md  mirror of this file (editable by tools)
-Last updated: 2025-07-14
-Current state: EmguCV fully wired. Pull feature camera-path bugs fixed.
-Next: runtime testing on hardware
+Last updated: 2025-07-16
+Current state: EmguCV fully wired. Overlay display fixed. Pull feature camera-path bugs fixed.
+Next: runtime testing on hardware - tape placement with EmguCV hole detection.

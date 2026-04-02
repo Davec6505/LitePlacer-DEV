@@ -96,7 +96,8 @@ namespace LitePlacer.CameraEngines
                 "Gaussian blur",
                 "Erosion",
                 "Dilation",
-                "Noise reduction"
+                "Noise reduction",
+                "Meas. zoom"
             });
             
             // NEW: EmguCV-exclusive advanced functions
@@ -174,6 +175,7 @@ namespace LitePlacer.CameraEngines
                 case "Erosion":                 return new EmguCVProcessor(def, EmguCVFunctions.Erosion);
                 case "Dilation":                return new EmguCVProcessor(def, EmguCVFunctions.Dilation);
                 case "Noise reduction":         return new EmguCVProcessor(def, EmguCVFunctions.NoiseReduction);
+                case "Meas. zoom":               return new EmguCVProcessor(def, EmguCVFunctions.MeasZoom);
                 // EmguCV advanced functions
                 case "Canny edge detection":    return new EmguCVProcessor(def, EmguCVFunctions.CannyEdge);
                 case "Sobel edge detection":    return new EmguCVProcessor(def, EmguCVFunctions.SobelEdge);
@@ -436,6 +438,12 @@ namespace LitePlacer.CameraEngines
                     double bestCx = 0, bestCy = 0, bestDiameterMm = 0;
                     bool foundValid = false;
 
+                    // Diagnostic: track the most circular candidate regardless of size/distance
+                    // filters so we can log what the algorithm actually sees when nothing passes.
+                    double diagBestCircularity = 0;
+                    double diagBestDiameterMm = 0;
+                    double diagBestDist = double.MaxValue;
+
                     for (int i = 0; i < contours.Size; i++)
                     {
                         using (VectorOfPoint contour = contours[i])
@@ -463,12 +471,10 @@ namespace LitePlacer.CameraEngines
                             double circularity;
                             if (isEdgeImage)
                             {
-                                // For edge rings: expected area of a thin ring ~ perimeter * 1px
-                                // Use bounding circle area vs perimeter-derived circle area
                                 double expectedFilledArea = Math.PI * radiusPx * radiusPx;
                                 double enclosingArea = Math.PI * (CvInvoke.MinEnclosingCircle(contour).Radius *
                                                                    CvInvoke.MinEnclosingCircle(contour).Radius);
-                                circularity = expectedFilledArea / enclosingArea; // ~1.0 for a circle ring
+                                circularity = expectedFilledArea / enclosingArea;
                             }
                             else
                             {
@@ -476,6 +482,21 @@ namespace LitePlacer.CameraEngines
                             }
 
                             if (circularity < 0.6) continue;
+
+                            // Track best circular candidate for diagnostics (before size/distance filter)
+                            var momDiag = CvInvoke.Moments(contour);
+                            if (momDiag.M00 >= 1)
+                            {
+                                double dxDiag = (momDiag.M10 / momDiag.M00) - centerX;
+                                double dyDiag = (momDiag.M01 / momDiag.M00) - centerY;
+                                double distDiag = Math.Sqrt(dxDiag * dxDiag + dyDiag * dyDiag);
+                                if (circularity > diagBestCircularity || (circularity >= diagBestCircularity && distDiag < diagBestDist))
+                                {
+                                    diagBestCircularity = circularity;
+                                    diagBestDiameterMm = diameterMm;
+                                    diagBestDist = distDiag;
+                                }
+                            }
 
                             // Size filter
                             if (diameterMm < parameters.Xmin || diameterMm > parameters.Xmax)
@@ -509,8 +530,14 @@ namespace LitePlacer.CameraEngines
                     if (!foundValid)
                     {
                         if (DisplayResults)
-                            _mainForm.DisplayText($"EmguCV: no circles passed filters (Xmin={parameters.Xmin:F2}mm Xmax={parameters.Xmax:F2}mm XDist={parameters.XUniqueDistance:F2}mm YDist={parameters.YUniqueDistance:F2}mm)",
+                        {
+                            string diagHint = diagBestCircularity > 0
+                                ? $" Best candidate: Diameter={diagBestDiameterMm:F3}mm circularity={diagBestCircularity:F2} dist={diagBestDist * XmmPerPixel:F2}mm"
+                                : " No circular contours found above circularity threshold.";
+                            _mainForm.DisplayText(
+                                $"EmguCV: no circles passed filters (Xmin={parameters.Xmin:F2}mm Xmax={parameters.Xmax:F2}mm XDist={parameters.XUniqueDistance:F2}mm YDist={parameters.YUniqueDistance:F2}mm).{diagHint}",
                                 System.Drawing.KnownColor.DarkOrange);
+                        }
                         return false;
                     }
 
