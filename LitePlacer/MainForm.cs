@@ -8821,28 +8821,35 @@ namespace LitePlacer
                 if (!Tapes.GetPartLocationFromHolePosition_m(TapeNumber, holeX, holeY, out partX, out partY, out partA))
                     return false;
 
-                // After pull the nozzle is ahead of the part in the pull direction.
-                // Approach the part by continuing forward (in pull direction) past it, then
-                // arriving from that side — never reversing back over the tape.
-                // A 3mm overshoot clears any lip on the support plate edge.
+                // After pull the nozzle is ahead of the part in the feed direction.
+                // The support plate lever sits between the hole and the part in the WIDTH direction.
+                // Approach from BEYOND the part in the width direction so the nozzle never
+                // crosses back over the lever — overshoot in the hole-to-part direction, then
+                // arrive at the part from that side.
                 const double PICKUP_OVERSHOOT = 3.0;
                 string orientation = Tapes_dataGridView.Rows[TapeNumber].Cells["Orientation_Column"].Value.ToString();
                 double overshootX = partX;
                 double overshootY = partY;
+                // Width direction (hole → part):
+                //   +Y tape: part is at holeX - dW  → approach from further -X
+                //   -Y tape: part is at holeX + dW  → approach from further +X
+                //   +X tape: part is at holeY + dW  → approach from further +Y
+                //   -X tape: part is at holeY - dW  → approach from further -Y
                 switch (orientation)
                 {
-                    case "+Y": overshootY = partY + PICKUP_OVERSHOOT; break;
-                    case "-Y": overshootY = partY - PICKUP_OVERSHOOT; break;
-                    case "+X": overshootX = partX + PICKUP_OVERSHOOT; break;
-                    case "-X": overshootX = partX - PICKUP_OVERSHOOT; break;
+                    case "+Y": overshootX = partX - PICKUP_OVERSHOOT; break;
+                    case "-Y": overshootX = partX + PICKUP_OVERSHOOT; break;
+                    case "+X": overshootY = partY + PICKUP_OVERSHOOT; break;
+                    case "-X": overshootY = partY - PICKUP_OVERSHOOT; break;
                 }
+                DisplayText($"Pull pickup: overshoot to X={overshootX:F3}, Y={overshootY:F3} then part X={partX:F3}, Y={partY:F3}", KnownColor.DarkCyan);
 
                 // Move to part and pick up (ZGuard is off from pull, nozzle is at liftZ)
                 VacuumOff();
-                // Waypoint: pass part in pull direction first
+                // Waypoint: approach from beyond part in width direction
                 if (!CNC_XYA_m(overshootX, overshootY, partA))
                     return false;
-                // Final approach to pickup position (arriving from pull-direction side)
+                // Final approach to pickup position (arriving from width-direction side)
                 if (!Nozzle.Move_m(partX, partY, partA))
                     return false;
                 if (!PickUpThis_m(TapeNumber))
