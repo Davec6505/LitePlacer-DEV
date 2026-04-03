@@ -8820,13 +8820,13 @@ namespace LitePlacer
                          return false;
 
                     // After pull the tape has moved by pullDistance in the pull direction.
-                    // Shift the part position by the same amount.
+                    // Shift the part position by the same amount in the same direction.
                     switch (Tapes_dataGridView.Rows[TapeNumber].Cells["Orientation_Column"].Value.ToString())
                     {
-                        case "+Y": partY -= pullDistance; break;
-                        case "-Y": partY += pullDistance; break;
-                        case "+X": partX -= pullDistance; break;
-                        case "-X": partX += pullDistance; break;
+                        case "+Y": partY += pullDistance; break;
+                        case "-Y": partY -= pullDistance; break;
+                        case "+X": partX += pullDistance; break;
+                        case "-X": partX -= pullDistance; break;
                     }
 
                     // Overshoot in width direction past the support plate lever, then approach from that side
@@ -8876,10 +8876,10 @@ namespace LitePlacer
                     // After pull the tape has moved by pullDistance in the pull direction.
                     switch (Tapes_dataGridView.Rows[TapeNumber].Cells["Orientation_Column"].Value.ToString())
                     {
-                        case "+Y": partY2 -= pullDistance; break;
-                        case "-Y": partY2 += pullDistance; break;
-                        case "+X": partX2 -= pullDistance; break;
-                        case "-X": partX2 += pullDistance; break;
+                        case "+Y": partY2 += pullDistance; break;
+                        case "-Y": partY2 -= pullDistance; break;
+                        case "+X": partX2 += pullDistance; break;
+                        case "-X": partX2 -= pullDistance; break;
                     }
 
                     // Overshoot in width direction past the support plate lever, then approach from that side
@@ -12428,8 +12428,10 @@ namespace LitePlacer
             double pullTargetY = nozzleHoleY;
             switch (orientation)
             {
-                case "+Y": case "-Y": pullTargetY += pullDistance; break;
-                case "+X": case "-X": pullTargetX += pullDistance; break;
+                case "+Y": pullTargetY += pullDistance; break;
+                case "-Y": pullTargetY -= pullDistance; break;
+                case "+X": pullTargetX += pullDistance; break;
+                case "-X": pullTargetX -= pullDistance; break;
                 default:
                     ShowMessageBox($"Unknown tape orientation: {orientation}", "Tape error", MessageBoxButtons.OK);
                     Cnc.Z(engageZ - 10.0);
