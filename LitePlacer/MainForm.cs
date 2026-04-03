@@ -8797,73 +8797,95 @@ namespace LitePlacer
                     } while (!ok);
                     holeX = Cnc.CurrentX + offX;
                     holeY = Cnc.CurrentY + offY;
-                    // holeX/Y are now the camera-measured machine coords of the hole centre.
-                    // Write back as nozzle coords (camera pos + nozzle offset) so NozzlePullTapeIndex_m
-                    // does not double-apply the offset when useNozzleCoords=False.
-                    double nozzleWriteX = holeX + Setting.DownCam_NozzleOffsetX;
-                    double nozzleWriteY = holeY + Setting.DownCam_NozzleOffsetY;
-                    Tapes_dataGridView.Rows[TapeNumber].Cells["Next_X_Column"].Value = nozzleWriteX.ToString("0.000", CultureInfo.InvariantCulture);
-                    Tapes_dataGridView.Rows[TapeNumber].Cells["Next_Y_Column"].Value = nozzleWriteY.ToString("0.000", CultureInfo.InvariantCulture);
-                    // Pass the original camera-coord hole position to GetPartLocationFromHolePosition_m
-                    DisplayText($"  Hole verified at X={holeX:F3}, Y={holeY:F3} (nozzle coords: X={nozzleWriteX:F3}, Y={nozzleWriteY:F3})", KnownColor.DarkCyan);
+                    // holeX/Y are camera-measured machine coords of the hole centre.
+                    // Don't write back to grid — pass nozzle coords directly to the pull overload
+                    // to avoid any double-application of the nozzle offset.
+                    double nozzleHoleX = holeX + Setting.DownCam_NozzleOffsetX;
+                    double nozzleHoleY = holeY + Setting.DownCam_NozzleOffsetY;
+                    DisplayText($"  Hole verified at X={holeX:F3}, Y={holeY:F3} (nozzle: X={nozzleHoleX:F3}, Y={nozzleHoleY:F3})", KnownColor.DarkCyan);
+
+                    // Pull using pre-resolved nozzle coords — no grid read, no offset applied inside
+                    if (!NozzlePullTapeIndex_m(TapeNumber, pullDistance, nozzleHoleX, nozzleHoleY))
+                    {
+                        DisplayText("*** Nozzle pull failed!", KnownColor.DarkRed);
+                        return false;
+                    }
+
+                    // Get part position from camera-coord hole position
+                    double partX, partY, partA;
+                    if (!Tapes.GetPartLocationFromHolePosition_m(TapeNumber, holeX, holeY, out partX, out partY, out partA))
+                        return false;
+
+                    // Overshoot in width direction past the support plate lever, then approach from that side
+                    const double PICKUP_OVERSHOOT = 3.0;
+                    string orientation2 = Tapes_dataGridView.Rows[TapeNumber].Cells["Orientation_Column"].Value.ToString();
+                    double overshootX = partX;
+                    double overshootY = partY;
+                    switch (orientation2)
+                    {
+                        case "+Y": overshootX = partX - PICKUP_OVERSHOOT; break;
+                        case "-Y": overshootX = partX + PICKUP_OVERSHOOT; break;
+                        case "+X": overshootY = partY + PICKUP_OVERSHOOT; break;
+                        case "-X": overshootY = partY - PICKUP_OVERSHOOT; break;
+                    }
+                    DisplayText($"Pull pickup: overshoot to X={overshootX:F3}, Y={overshootY:F3} then part X={partX:F3}, Y={partY:F3}", KnownColor.DarkCyan);
+
+                    VacuumOff();
+                    if (!CNC_XYA_m(overshootX, overshootY, partA))
+                        return false;
+                    if (!Nozzle.Move_m(partX, partY, partA))
+                        return false;
+                    if (!PickUpThis_m(TapeNumber))
+                        return false;
+
+                    ZGuardOn();
+                    if (!Tapes.IncrementTape(TapeNumber, holeX, holeY))
+                        return false;
                 }
                 else
                 {
-                    // No verify: use Next_X/Y as set by user
+                    // No verify: use Next_X/Y as set by user (camera coords), pull via standard overload
                     double.TryParse(Tapes_dataGridView.Rows[TapeNumber].Cells["Next_X_Column"].Value.ToString().Replace(',', '.'), out holeX);
                     double.TryParse(Tapes_dataGridView.Rows[TapeNumber].Cells["Next_Y_Column"].Value.ToString().Replace(',', '.'), out holeY);
+
+                    // Pull the tape
+                    if (!NozzlePullTapeIndex_m(TapeNumber, pullDistance))
+                    {
+                        DisplayText("*** Nozzle pull failed!", KnownColor.DarkRed);
+                        return false;
+                    }
+
+                    // Get part position from the (verified or fixed) hole position
+                    double partX2, partY2, partA2;
+                    if (!Tapes.GetPartLocationFromHolePosition_m(TapeNumber, holeX, holeY, out partX2, out partY2, out partA2))
+                        return false;
+
+                    // Overshoot in width direction past the support plate lever, then approach from that side
+                    const double PICKUP_OVERSHOOT2 = 3.0;
+                    string orientation3 = Tapes_dataGridView.Rows[TapeNumber].Cells["Orientation_Column"].Value.ToString();
+                    double overshootX2 = partX2;
+                    double overshootY2 = partY2;
+                    switch (orientation3)
+                    {
+                        case "+Y": overshootX2 = partX2 - PICKUP_OVERSHOOT2; break;
+                        case "-Y": overshootX2 = partX2 + PICKUP_OVERSHOOT2; break;
+                        case "+X": overshootY2 = partY2 + PICKUP_OVERSHOOT2; break;
+                        case "-X": overshootY2 = partY2 - PICKUP_OVERSHOOT2; break;
+                    }
+                    DisplayText($"Pull pickup: overshoot to X={overshootX2:F3}, Y={overshootY2:F3} then part X={partX2:F3}, Y={partY2:F3}", KnownColor.DarkCyan);
+
+                    VacuumOff();
+                    if (!CNC_XYA_m(overshootX2, overshootY2, partA2))
+                        return false;
+                    if (!Nozzle.Move_m(partX2, partY2, partA2))
+                        return false;
+                    if (!PickUpThis_m(TapeNumber))
+                        return false;
+
+                    ZGuardOn();
+                    if (!Tapes.IncrementTape(TapeNumber, holeX, holeY))
+                        return false;
                 }
-
-                // Pull the tape
-                if (!NozzlePullTapeIndex_m(TapeNumber, pullDistance))
-                {
-                    DisplayText("*** Nozzle pull failed!", KnownColor.DarkRed);
-                    return false;
-                }
-
-                // Get part position from the (verified or fixed) hole position
-                double partX, partY, partA;
-                if (!Tapes.GetPartLocationFromHolePosition_m(TapeNumber, holeX, holeY, out partX, out partY, out partA))
-                    return false;
-
-                // After pull the nozzle is ahead of the part in the feed direction.
-                // The support plate lever sits between the hole and the part in the WIDTH direction.
-                // Approach from BEYOND the part in the width direction so the nozzle never
-                // crosses back over the lever — overshoot in the hole-to-part direction, then
-                // arrive at the part from that side.
-                const double PICKUP_OVERSHOOT = 3.0;
-                string orientation = Tapes_dataGridView.Rows[TapeNumber].Cells["Orientation_Column"].Value.ToString();
-                double overshootX = partX;
-                double overshootY = partY;
-                // Width direction (hole → part):
-                //   +Y tape: part is at holeX - dW  → approach from further -X
-                //   -Y tape: part is at holeX + dW  → approach from further +X
-                //   +X tape: part is at holeY + dW  → approach from further +Y
-                //   -X tape: part is at holeY - dW  → approach from further -Y
-                switch (orientation)
-                {
-                    case "+Y": overshootX = partX - PICKUP_OVERSHOOT; break;
-                    case "-Y": overshootX = partX + PICKUP_OVERSHOOT; break;
-                    case "+X": overshootY = partY + PICKUP_OVERSHOOT; break;
-                    case "-X": overshootY = partY - PICKUP_OVERSHOOT; break;
-                }
-                DisplayText($"Pull pickup: overshoot to X={overshootX:F3}, Y={overshootY:F3} then part X={partX:F3}, Y={partY:F3}", KnownColor.DarkCyan);
-
-                // Move to part and pick up (ZGuard is off from pull, nozzle is at liftZ)
-                VacuumOff();
-                // Waypoint: approach from beyond part in width direction
-                if (!CNC_XYA_m(overshootX, overshootY, partA))
-                    return false;
-                // Final approach to pickup position (arriving from width-direction side)
-                if (!Nozzle.Move_m(partX, partY, partA))
-                    return false;
-                if (!PickUpThis_m(TapeNumber))
-                    return false;
-
-                ZGuardOn();
-                // IncrementTape skips when pull enabled
-                if (!Tapes.IncrementTape(TapeNumber, holeX, holeY))
-                    return false;
             }
             else
             {
@@ -12221,6 +12243,61 @@ namespace LitePlacer
         // NozzlePullTapeIndex_m(): Uses nozzle to pull tape via sprocket hole
         // Works with Nozzle #1 (0.5-1.0mm) or Nozzle #2 (0.8-1.5mm) - CP40 compatible
         // Call this BEFORE measuring/picking component position
+        // Overload: pass pre-verified nozzle coords directly (skips grid read for hole position)
+        // ========================================================================================
+        public bool NozzlePullTapeIndex_m(int tapeRow, double pullDistance, double nozzleHoleX, double nozzleHoleY)
+        {
+            // Caller has already resolved hole position to nozzle coords — skip grid read for X/Y
+            string orientation = "";
+            double pickupZ = 0;
+
+            string orientationTmp = "";
+            double pickupZTmp = 0;
+            if (InvokeRequired)
+            {
+                bool success = false;
+                Invoke(new Action(() =>
+                {
+                    try
+                    {
+                        orientationTmp = Tapes_dataGridView.Rows[tapeRow].Cells["Orientation_Column"].Value.ToString();
+                        string pickupZstr = Tapes_dataGridView.Rows[tapeRow].Cells["Z_Pickup_Column"].Value.ToString();
+                        if (pickupZstr != "--")
+                        {
+                            pickupZTmp = double.Parse(pickupZstr.Replace(',', '.'));
+                            success = true;
+                        }
+                    }
+                    catch { success = false; }
+                }));
+                if (!success)
+                {
+                    DisplayText("*** Pickup Z not set for this tape. Please set pickup Z first!", KnownColor.DarkRed);
+                    ShowMessageBox("Nozzle pull requires Pickup Z to be set.\n\nPlease teach the pickup Z height for this tape first.", "Pickup Z Not Set", MessageBoxButtons.OK);
+                    return false;
+                }
+            }
+            else
+            {
+                orientationTmp = Tapes_dataGridView.Rows[tapeRow].Cells["Orientation_Column"].Value.ToString();
+                string pickupZstr = Tapes_dataGridView.Rows[tapeRow].Cells["Z_Pickup_Column"].Value.ToString();
+                if (pickupZstr == "--" || !double.TryParse(pickupZstr.Replace(',', '.'), out pickupZTmp))
+                {
+                    DisplayText("*** Pickup Z not set for this tape. Please set pickup Z first!", KnownColor.DarkRed);
+                    ShowMessageBox("Nozzle pull requires Pickup Z to be set.\n\nPlease teach the pickup Z height for this tape first.", "Pickup Z Not Set", MessageBoxButtons.OK);
+                    return false;
+                }
+            }
+            orientation = orientationTmp;
+            pickupZ = pickupZTmp;
+
+            // Delegate to the core implementation with nozzle coords already resolved
+            return NozzlePullTapeIndex_Core(tapeRow, pullDistance, nozzleHoleX, nozzleHoleY, orientation, pickupZ);
+        }
+
+        // NozzlePullTapeIndex_m(): Uses nozzle to pull tape via sprocket hole
+        // Works with Nozzle #1 (0.5-1.0mm) or Nozzle #2 (0.8-1.5mm) - CP40 compatible
+        // Call this BEFORE measuring/picking component position
         // ========================================================================================
         public bool NozzlePullTapeIndex_m(int tapeRow, double pullDistance)
         {
@@ -12294,7 +12371,19 @@ namespace LitePlacer
             double nozzleHoleX = useNozzleCoords ? holeX : holeX + Setting.DownCam_NozzleOffsetX;
             double nozzleHoleY = useNozzleCoords ? holeY : holeY + Setting.DownCam_NozzleOffsetY;
 
-            // STEP 1: Move nozzle to hole (XY only, Z stays safe)
+            return NozzlePullTapeIndex_Core(tapeRow, pullDistance, nozzleHoleX, nozzleHoleY, orientation, pickupZ);
+        }
+
+        // Core pull implementation — called with nozzle coords already resolved.
+        private bool NozzlePullTapeIndex_Core(int tapeRow, double pullDistance, double nozzleHoleX, double nozzleHoleY, string orientation, double pickupZ)
+        {
+            double ENGAGEMENT_DEPTH = 1.0;
+            {
+                var edCell = Tapes_dataGridView.Rows[tapeRow].Cells["EngageDepth_Column"];
+                if (edCell.Value != null && double.TryParse(edCell.Value.ToString().Replace(',', '.'), System.Globalization.NumberStyles.Any, CultureInfo.InvariantCulture, out double ed) && ed > 0)
+                    ENGAGEMENT_DEPTH = ed;
+            }
+            DisplayText($"Nozzle pull indexing: {pullDistance}mm engage={ENGAGEMENT_DEPTH}mm...", KnownColor.DarkCyan);
             DisplayText($"  Moving nozzle to hole: X={nozzleHoleX:F3}, Y={nozzleHoleY:F3}", KnownColor.DarkCyan);
             if (!CNC_XYA_m(nozzleHoleX, nozzleHoleY, Cnc.CurrentA))
             {
