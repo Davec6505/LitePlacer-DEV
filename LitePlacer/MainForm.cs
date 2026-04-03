@@ -8819,12 +8819,14 @@ namespace LitePlacer
                      if (!Tapes.GetPartLocationFromHolePosition_m(TapeNumber, holeX, holeY, out partX, out partY, out partA))
                          return false;
 
-                    // After pull the tape has advanced: the part is now on the opposite side of the hole
-                    // in the length direction. Reflect through the hole to flip the dL sign.
+                    // After pull the tape has moved by pullDistance in the pull direction.
+                    // Shift the part position by the same amount.
                     switch (Tapes_dataGridView.Rows[TapeNumber].Cells["Orientation_Column"].Value.ToString())
                     {
-                        case "+Y": case "-Y": partY = 2.0 * holeY - partY; break;
-                        case "+X": case "-X": partX = 2.0 * holeX - partX; break;
+                        case "+Y": partY -= pullDistance; break;
+                        case "-Y": partY += pullDistance; break;
+                        case "+X": partX -= pullDistance; break;
+                        case "-X": partX += pullDistance; break;
                     }
 
                     // Overshoot in width direction past the support plate lever, then approach from that side
@@ -8871,11 +8873,13 @@ namespace LitePlacer
                      if (!Tapes.GetPartLocationFromHolePosition_m(TapeNumber, holeX, holeY, out partX2, out partY2, out partA2))
                          return false;
 
-                    // After pull: reflect part through hole in the tape length direction
+                    // After pull the tape has moved by pullDistance in the pull direction.
                     switch (Tapes_dataGridView.Rows[TapeNumber].Cells["Orientation_Column"].Value.ToString())
                     {
-                        case "+Y": case "-Y": partY2 = 2.0 * holeY - partY2; break;
-                        case "+X": case "-X": partX2 = 2.0 * holeX - partX2; break;
+                        case "+Y": partY2 -= pullDistance; break;
+                        case "-Y": partY2 += pullDistance; break;
+                        case "+X": partX2 -= pullDistance; break;
+                        case "-X": partX2 += pullDistance; break;
                     }
 
                     // Overshoot in width direction past the support plate lever, then approach from that side
