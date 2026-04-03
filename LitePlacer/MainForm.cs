@@ -8834,7 +8834,7 @@ namespace LitePlacer
                     DisplayText($"Pull pickup: overshoot to X={overshootX:F3}, Y={overshootY:F3} then part X={partX:F3}, Y={partY:F3}", KnownColor.DarkCyan);
 
                     VacuumOff();
-                    if (!CNC_XYA_m(overshootX, overshootY, partA))
+                    if (!Nozzle.Move_m(overshootX, overshootY, partA))
                         return false;
                     if (!Nozzle.Move_m(partX, partY, partA))
                         return false;
@@ -8878,7 +8878,7 @@ namespace LitePlacer
                     DisplayText($"Pull pickup: overshoot to X={overshootX2:F3}, Y={overshootY2:F3} then part X={partX2:F3}, Y={partY2:F3}", KnownColor.DarkCyan);
 
                     VacuumOff();
-                    if (!CNC_XYA_m(overshootX2, overshootY2, partA2))
+                    if (!Nozzle.Move_m(overshootX2, overshootY2, partA2))
                         return false;
                     if (!Nozzle.Move_m(partX2, partY2, partA2))
                         return false;
