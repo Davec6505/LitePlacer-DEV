@@ -8748,13 +8748,7 @@ namespace LitePlacer
                     DisplayText("*** Nozzle pull failed!", KnownColor.DarkRed);
                     return false;
                 }
-
-                // After pull the tape has advanced. Reset Next_X/Y to FirstX/Y so the camera
-                // measurement in GotoNextPartByMeasurement_m looks for hole #1 (always same place).
-                Tapes_dataGridView.Rows[TapeNumber].Cells["Next_X_Column"].Value =
-                    Tapes_dataGridView.Rows[TapeNumber].Cells["FirstX_Column"].Value;
-                Tapes_dataGridView.Rows[TapeNumber].Cells["Next_Y_Column"].Value =
-                    Tapes_dataGridView.Rows[TapeNumber].Cells["FirstY_Column"].Value;
+                // Next_X/Y is the fixed hole position set by the user - never modified when pull is enabled
             }
             
             // Go to part location (with or without nozzle pull, this uses hole position to calculate part position):
@@ -8770,8 +8764,8 @@ namespace LitePlacer
                 return false;
             }
 
-            // Re-enable Z-guard after nozzle pull + pickup sequence completes
-            if (useNozzlePull && !ZguardIsOn())
+            // Re-enable Z-guard now that nozzle is back at Z=0 after pickup
+            if (useNozzlePull)
             {
                 ZGuardOn();
             }
@@ -8928,6 +8922,17 @@ namespace LitePlacer
 
         private bool PickUpPartWithDirectCoordinates_m(int TapeNum)
         {
+            // Mode A: CoordinatesForParts=true, UseNozzlePull=true
+            // Next_X/Y holds the HOLE position. FindPartWithDirectCoordinates_m
+            // then uses FirstX/Y + pitch to get the COMPONENT position.
+            // So: read hole X/Y first (from Next_X/Y), run pull, then pick.
+
+            bool useNozzlePull = false;
+            if (Tapes_dataGridView.Rows[TapeNum].Cells["UseNozzlePull_Column"].Value != null)
+            {
+                bool.TryParse(Tapes_dataGridView.Rows[TapeNum].Cells["UseNozzlePull_Column"].Value.ToString(), out useNozzlePull);
+            }
+
             double X;
             double Y;
             double A;
@@ -8937,135 +8942,37 @@ namespace LitePlacer
             {
                 return false;
             }
+
+            // Pull is enabled: block increment now, before anything can set it back
+            if (useNozzlePull)
+            {
+                increment = false;
+            }
+
             DisplayText("PickUpPartWithDirectCoordinates_m(), tape " + Tapes_dataGridView.Rows[TapeNum].Cells["Id_Column"].Value.ToString()
                 + ", X: " + X.ToString("0.000", CultureInfo.InvariantCulture)
                 + ", Y: " + Y.ToString("0.000", CultureInfo.InvariantCulture)
                 + ", A: " + A.ToString("0.000", CultureInfo.InvariantCulture));
 
-            // ========================================================================================
-            // NOZZLE PULL INDEXING (if enabled)
-            // Pull tape BEFORE picking component when using direct coordinates mode
-            // ========================================================================================
-            bool useNozzlePull = false;
-            if (Tapes_dataGridView.Rows[TapeNum].Cells["UseNozzlePull_Column"].Value != null)
-            {
-                bool.TryParse(Tapes_dataGridView.Rows[TapeNum].Cells["UseNozzlePull_Column"].Value.ToString(), out useNozzlePull);
-            }
-
-
             if (useNozzlePull)
             {
-                // Get pull distance
                 double pullDistance = 4.0;
                 if (Tapes_dataGridView.Rows[TapeNum].Cells["PullDistance_Column"].Value != null)
                 {
                     double.TryParse(Tapes_dataGridView.Rows[TapeNum].Cells["PullDistance_Column"].Value.ToString().Replace(',', '.'), out pullDistance);
                 }
 
-                // Get tape parameters (orientation and offsets) from UI
-                string orientation = Tapes_dataGridView.Rows[TapeNum].Cells["Orientation_Column"].Value.ToString();
-                
-                double offsetX = 0;
-                double offsetY = 0;
-                if (!double.TryParse(Tapes_dataGridView.Rows[TapeNum].Cells["OffsetX_Column"].Value.ToString().Replace(',', '.'), out offsetX))
-                {
-                    DisplayText("*** Bad data at OffsetX_Column", KnownColor.DarkRed);
-                    return false;
-                }
-                if (!double.TryParse(Tapes_dataGridView.Rows[TapeNum].Cells["OffsetY_Column"].Value.ToString().Replace(',', '.'), out offsetY))
-                {
-                    DisplayText("*** Bad data at OffsetY_Column", KnownColor.DarkRed);
-                    return false;
-                }
-
-                // CRITICAL: For nozzle pull mode, adjust offsets based on EIA-481 standard geometry
-                // Standard tapes have holes on ONE SIDE, and the offset values from tape width dropdown
-                // are typically POSITIVE, but we need to make them NEGATIVE to point toward the hole side
-                //
-                // EIA-481 Standard:
-                // - Vertical tapes (+Y/-Y): Holes are on LEFT side → OffsetX should be NEGATIVE
-                // - Horizontal tapes (+X/-X): Holes are on BOTTOM side → OffsetY should be NEGATIVE
-                //
-                // If user entered positive offset (default), make it negative to find holes
-                if (orientation == "+Y" || orientation == "-Y")
-                {
-                    // Vertical tape: holes on left, ensure OffsetX is negative
-                    if (offsetX > 0)
-                    {
-                        offsetX = -offsetX;
-                        DisplayText($"  Adjusting OffsetX to negative for hole on left: {offsetX:F3}", KnownColor.DarkCyan);
-                    }
-                }
-                else if (orientation == "+X" || orientation == "-X")
-                {
-                    // Horizontal tape: holes on bottom, ensure OffsetY is negative  
-                    if (offsetY > 0)
-                    {
-                        offsetY = -offsetY;
-                        DisplayText($"  Adjusting OffsetY to negative for hole on bottom: {offsetY:F3}", KnownColor.DarkCyan);
-                    }
-                }
-
-                // Get component position (X, Y from above are the component coordinates)
-                double componentX = X;
-                double componentY = Y;
-
-                // Validate component position
-                if (double.IsNaN(componentX) || double.IsNaN(componentY))
-                {
-                    DisplayText("*** Component position not set (NaN)!", KnownColor.DarkRed);
-                    ShowMessageBox(
-                        "Component position is not valid for tape: " + Tapes_dataGridView.Rows[TapeNum].Cells["Id_Column"].Value.ToString() + "\n\n" +
-                        "Please:\n" +
-                        "1. Jog to the component position\n" +
-                        "2. Set the 'Next X' and 'Next Y' coordinates\n" +
-                        "3. Make sure 'Coordinates For Parts' is enabled\n\n" +
-                        "Then try again.",
-                        "Invalid Component Position",
-                        MessageBoxButtons.OK);
-                    return false;
-                }
-
-                DisplayText($"Nozzle pull: Component at X={componentX:F3}, Y={componentY:F3}", KnownColor.DarkCyan);
-
-                // Calculate hole position from component position using tape offsets
-                double holeX = 0;
-                double holeY = 0;
-                
-                if (!Tapes.GetHoleLocationFromPartPosition(TapeNum, componentX, componentY, orientation, offsetX, offsetY, out holeX, out holeY))
-                {
-                    DisplayText("*** Failed to calculate hole position from component position", KnownColor.DarkRed);
-                    return false;
-                }
-
-                // Temporarily update grid with hole position for nozzle pull
-                string savedNextX = Tapes_dataGridView.Rows[TapeNum].Cells["Next_X_Column"].Value.ToString();
-                string savedNextY = Tapes_dataGridView.Rows[TapeNum].Cells["Next_Y_Column"].Value.ToString();
-                
-                Tapes_dataGridView.Rows[TapeNum].Cells["Next_X_Column"].Value = holeX.ToString("0.000", CultureInfo.InvariantCulture);
-                Tapes_dataGridView.Rows[TapeNum].Cells["Next_Y_Column"].Value = holeY.ToString("0.000", CultureInfo.InvariantCulture);
-
-                // Execute nozzle pull
-                DisplayText($"Pulling tape {pullDistance}mm from hole position...", KnownColor.DarkCyan);
-                
+                // Next_X/Y is always the fixed hole position - NozzlePullTapeIndex_m reads it directly
+                DisplayText($"Nozzle pull (Mode A): pulling {pullDistance}mm", KnownColor.DarkCyan);
                 if (!NozzlePullTapeIndex_m(TapeNum, pullDistance))
                 {
-                    // Restore component position on failure
-                    Tapes_dataGridView.Rows[TapeNum].Cells["Next_X_Column"].Value = savedNextX;
-                    Tapes_dataGridView.Rows[TapeNum].Cells["Next_Y_Column"].Value = savedNextY;
-                    
                     DisplayText("*** Nozzle pull failed!", KnownColor.DarkRed);
                     return false;
                 }
-
-                // CRITICAL: Restore component position in grid
-                Tapes_dataGridView.Rows[TapeNum].Cells["Next_X_Column"].Value = savedNextX;
-                Tapes_dataGridView.Rows[TapeNum].Cells["Next_Y_Column"].Value = savedNextY;
-
-                DisplayText($"Tape advanced, picking from X={componentX:F3}, Y={componentY:F3}", KnownColor.DarkGreen);
             }
 
-            // Continue with normal pickup from component position (X, Y, A)
+            // Move to component position and pick up
+            VacuumOff();
             if (UseNozzleCoordinates(TapeNum))
             {
                 if (!CNC_XYA_m(X, Y, A))
@@ -9080,23 +8987,15 @@ namespace LitePlacer
                     return false;
                 }
             }
+
             if (!PickUpThis_m(TapeNum))
             {
                 return false;
             }
 
-            // Re-enable Z-guard after nozzle pull + pickup sequence completes
-            // (It was disabled during nozzle pull to allow 10mm lift optimization)
-            if (useNozzlePull && !ZguardIsOn())
-            {
-                ZGuardOn();
-            }
-
-            // CRITICAL: When nozzle pull is enabled, DO NOT increment part counter!
-            // We use the same fixed position for all components (user manages manually)
             if (useNozzlePull)
             {
-                increment = false;
+                ZGuardOn();
             }
 
             if (increment)
@@ -9107,7 +9006,6 @@ namespace LitePlacer
                     i++;
                     Tapes_dataGridView.Rows[TapeNum].Cells["NextPart_Column"].Value = i.ToString(CultureInfo.InvariantCulture);
                 }
-                // we know it parses, but compiler wants us to check enayway; no else clause is needed.
             }
             return true;
         }
@@ -12378,44 +12276,26 @@ namespace LitePlacer
                 return false;
             }
 
-            // STEP 4: Lift nozzle out of sprocket hole (10mm clearance is enough)
-            // Temporarily disable Z-guard to allow the optimization of lifting only 10mm
-            // instead of returning all the way to home
-            const double LIFT_CLEARANCE = 10.0;  // mm - enough to clear tape without wasting time
-            const double LIFT_Z_MINIMUM = 3.0;   // mm - never go above this Z (avoid Z home switch)
-            double liftZ = Math.Max(engageZ - LIFT_CLEARANCE, LIFT_Z_MINIMUM);
-            
-            DisplayText($"  Lifting nozzle {LIFT_CLEARANCE}mm clear to Z={liftZ:F3}", KnownColor.DarkCyan);
-            
-            // Save Z-guard state and disable it
-            bool wasZGuardOn = ZguardIsOn();
-            if (wasZGuardOn)
-            {
-                ZGuardOff();
-            }
-            
+            // STEP 4: Lift nozzle 10mm clear of tape, then move to component position.
+            // Z-guard is disabled so the XY travel at low Z is permitted.
+            ZGuardOff();
+
+            double liftZ = engageZ - 10.0;
+            DisplayText($"  Lifting nozzle 10mm to Z={liftZ:F3}", KnownColor.DarkCyan);
             if (!Cnc.Z(liftZ))
             {
-                DisplayText("*** Warning: Failed to lift nozzle cleanly", KnownColor.DarkOrange);
-                // Re-enable Z-guard before returning
-                if (wasZGuardOn)
-                {
-                    ZGuardOn();
-                }
+                DisplayText("*** Warning: Failed to lift nozzle after tape pull", KnownColor.DarkOrange);
+                ZGuardOn();
                 return false;
             }
 
-            // Z-guard will be re-enabled by the calling function after component pickup
-            // Note: We leave it OFF here so the subsequent move to component position doesn't trigger warning
-            // The normal pickup flow will re-enable it after the component is picked
-
+            // Caller is responsible for re-enabling Z-guard after pickup is complete.
             // STEP 5: DO NOT update Next_X/Y here.
             // The caller (PickUpPartWithHoleMeasurement_m) resets Next_X/Y to FirstX/Y after this
             // returns, so GotoNextPartByMeasurement_m always re-measures hole #1 (which is always
             // in the same physical position after the tape has been pulled).
             
-            DisplayText($"Nozzle pull complete. Tape advanced {pullDistance}mm, pickup position unchanged.", KnownColor.DarkGreen);
-            DisplayText($"Z-guard temporarily disabled - will be re-enabled after component pickup", KnownColor.DarkCyan);
+            DisplayText($"Nozzle pull complete. Tape advanced {pullDistance}mm.", KnownColor.DarkGreen);
 
             return true;
         }
