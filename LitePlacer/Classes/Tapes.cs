@@ -73,8 +73,10 @@ namespace LitePlacer
 		public bool IdValidates_m(string Id, out int Tape)
 		{
 			Tape = -1;
-			foreach (DataGridViewRow Row in Grid.Rows)
+		foreach (DataGridViewRow Row in Grid.Rows)
 			{
+				if (Row.Cells["Id_Column"].Value == null)
+					continue;
 				Tape++;
 				if (Row.Cells["Id_Column"].Value.ToString() == Id)
 				{
