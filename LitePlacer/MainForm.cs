@@ -1399,6 +1399,8 @@ namespace LitePlacer
             bool Exists;
             for (int i = 0; i < Grid.Rows.Count; i++)
             {
+                if (Grid.Rows[i].Cells[ColumnName].Value == null)
+                    continue;
                 string AlgName = Grid.Rows[i].Cells[ColumnName].Value.ToString();  // value is correct, cell content is not
                                                                                    // Does the algorithm exist?
                 if (VideoAlgorithms.AlgorithmExists(AlgName))
