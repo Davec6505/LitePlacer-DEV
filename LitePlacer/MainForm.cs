@@ -8829,23 +8829,9 @@ namespace LitePlacer
                         case "-X": partX -= pullDistance; break;
                     }
 
-                    // Overshoot in width direction past the support plate lever, then approach from that side
-                    const double PICKUP_OVERSHOOT = 3.0;
-                    string orientation2 = Tapes_dataGridView.Rows[TapeNumber].Cells["Orientation_Column"].Value.ToString();
-                    double overshootX = partX;
-                    double overshootY = partY;
-                    switch (orientation2)
-                    {
-                        case "+Y": overshootX = partX - PICKUP_OVERSHOOT; break;
-                        case "-Y": overshootX = partX + PICKUP_OVERSHOOT; break;
-                        case "+X": overshootY = partY + PICKUP_OVERSHOOT; break;
-                        case "-X": overshootY = partY - PICKUP_OVERSHOOT; break;
-                    }
-                    DisplayText($"Pull pickup: overshoot to X={overshootX:F3}, Y={overshootY:F3} then part X={partX:F3}, Y={partY:F3}", KnownColor.DarkCyan);
+                    DisplayText($"Pull pickup: part X={partX:F3}, Y={partY:F3}", KnownColor.DarkCyan);
 
                     VacuumOff();
-                    if (!Nozzle.Move_m(overshootX, overshootY, partA))
-                        return false;
                     if (!Nozzle.Move_m(partX, partY, partA))
                         return false;
                     if (!PickUpThis_m(TapeNumber))
@@ -8882,23 +8868,9 @@ namespace LitePlacer
                         case "-X": partX2 -= pullDistance; break;
                     }
 
-                    // Overshoot in width direction past the support plate lever, then approach from that side
-                    const double PICKUP_OVERSHOOT2 = 3.0;
-                    string orientation3 = Tapes_dataGridView.Rows[TapeNumber].Cells["Orientation_Column"].Value.ToString();
-                    double overshootX2 = partX2;
-                    double overshootY2 = partY2;
-                    switch (orientation3)
-                    {
-                        case "+Y": overshootX2 = partX2 - PICKUP_OVERSHOOT2; break;
-                        case "-Y": overshootX2 = partX2 + PICKUP_OVERSHOOT2; break;
-                        case "+X": overshootY2 = partY2 + PICKUP_OVERSHOOT2; break;
-                        case "-X": overshootY2 = partY2 - PICKUP_OVERSHOOT2; break;
-                    }
-                    DisplayText($"Pull pickup: overshoot to X={overshootX2:F3}, Y={overshootY2:F3} then part X={partX2:F3}, Y={partY2:F3}", KnownColor.DarkCyan);
+                    DisplayText($"Pull pickup: part X={partX2:F3}, Y={partY2:F3}", KnownColor.DarkCyan);
 
                     VacuumOff();
-                    if (!Nozzle.Move_m(overshootX2, overshootY2, partA2))
-                        return false;
                     if (!Nozzle.Move_m(partX2, partY2, partA2))
                         return false;
                     if (!PickUpThis_m(TapeNumber))
