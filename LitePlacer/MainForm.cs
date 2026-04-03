@@ -8815,9 +8815,17 @@ namespace LitePlacer
                     }
 
                     // Get part position from camera-coord hole position
-                    double partX, partY, partA;
-                    if (!Tapes.GetPartLocationFromHolePosition_m(TapeNumber, holeX, holeY, out partX, out partY, out partA))
-                        return false;
+                     double partX, partY, partA;
+                     if (!Tapes.GetPartLocationFromHolePosition_m(TapeNumber, holeX, holeY, out partX, out partY, out partA))
+                         return false;
+
+                    // After pull the tape has advanced: the part is now on the opposite side of the hole
+                    // in the length direction. Reflect through the hole to flip the dL sign.
+                    switch (Tapes_dataGridView.Rows[TapeNumber].Cells["Orientation_Column"].Value.ToString())
+                    {
+                        case "+Y": case "-Y": partY = 2.0 * holeY - partY; break;
+                        case "+X": case "-X": partX = 2.0 * holeX - partX; break;
+                    }
 
                     // Overshoot in width direction past the support plate lever, then approach from that side
                     const double PICKUP_OVERSHOOT = 3.0;
@@ -8859,9 +8867,16 @@ namespace LitePlacer
                     }
 
                     // Get part position from the (verified or fixed) hole position
-                    double partX2, partY2, partA2;
-                    if (!Tapes.GetPartLocationFromHolePosition_m(TapeNumber, holeX, holeY, out partX2, out partY2, out partA2))
-                        return false;
+                     double partX2, partY2, partA2;
+                     if (!Tapes.GetPartLocationFromHolePosition_m(TapeNumber, holeX, holeY, out partX2, out partY2, out partA2))
+                         return false;
+
+                    // After pull: reflect part through hole in the tape length direction
+                    switch (Tapes_dataGridView.Rows[TapeNumber].Cells["Orientation_Column"].Value.ToString())
+                    {
+                        case "+Y": case "-Y": partY2 = 2.0 * holeY - partY2; break;
+                        case "+X": case "-X": partX2 = 2.0 * holeX - partX2; break;
+                    }
 
                     // Overshoot in width direction past the support plate lever, then approach from that side
                     const double PICKUP_OVERSHOOT2 = 3.0;
