@@ -993,6 +993,11 @@ namespace LitePlacer
 		}	// end GotoNextPartByMeasurement_m
 
 
+        public bool SetCurrentTapeMeasurement_m_public(int row)
+        {
+            return SetCurrentTapeMeasurement_m(row);
+        }
+
 		// ========================================================================================
 		// SetCurrentTapeMeasurement_m(): sets the camera measurement parameters according to the tape type.
 		private bool SetCurrentTapeMeasurement_m(int row)
