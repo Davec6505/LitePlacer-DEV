@@ -78,7 +78,10 @@ namespace LitePlacer
 				if (Row.Cells["Id_Column"].Value == null)
 					continue;
 				Tape++;
-				if (Row.Cells["Id_Column"].Value.ToString() == Id)
+				
+                
+                
+                if (Row.Cells["Id_Column"].Value.ToString() == Id)
 				{
 					return true;
 				}
@@ -103,8 +106,7 @@ namespace LitePlacer
         public double FastYpos { get; set; }
         public double FastXstep { get; set; }       // step sizes for one hole to next
         public double FastYstep { get; set; }
-
-        // ========================================================================================
+                // ========================================================================================
         // PrepareForFastPlacement_m: Called before starting fast placement
 
         /* 
