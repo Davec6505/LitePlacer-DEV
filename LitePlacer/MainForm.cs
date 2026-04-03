@@ -8819,16 +8819,6 @@ namespace LitePlacer
                      if (!Tapes.GetPartLocationFromHolePosition_m(TapeNumber, holeX, holeY, out partX, out partY, out partA))
                          return false;
 
-                    // After pull the tape has moved by pullDistance in the pull direction.
-                    // Shift the part position by the same amount in the same direction.
-                    switch (Tapes_dataGridView.Rows[TapeNumber].Cells["Orientation_Column"].Value.ToString())
-                    {
-                        case "+Y": partY += pullDistance; break;
-                        case "-Y": partY -= pullDistance; break;
-                        case "+X": partX += pullDistance; break;
-                        case "-X": partX -= pullDistance; break;
-                    }
-
                     DisplayText($"Pull pickup: part X={partX:F3}, Y={partY:F3}", KnownColor.DarkCyan);
 
                     VacuumOff();
@@ -8858,15 +8848,6 @@ namespace LitePlacer
                      double partX2, partY2, partA2;
                      if (!Tapes.GetPartLocationFromHolePosition_m(TapeNumber, holeX, holeY, out partX2, out partY2, out partA2))
                          return false;
-
-                    // After pull the tape has moved by pullDistance in the pull direction.
-                    switch (Tapes_dataGridView.Rows[TapeNumber].Cells["Orientation_Column"].Value.ToString())
-                    {
-                        case "+Y": partY2 += pullDistance; break;
-                        case "-Y": partY2 -= pullDistance; break;
-                        case "+X": partX2 += pullDistance; break;
-                        case "-X": partX2 -= pullDistance; break;
-                    }
 
                     DisplayText($"Pull pickup: part X={partX2:F3}, Y={partY2:F3}", KnownColor.DarkCyan);
 
