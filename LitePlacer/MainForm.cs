@@ -1110,6 +1110,7 @@ namespace LitePlacer
                     Headers.Add("Next_Y_Column");
                     Headers.Add("UseNozzlePull_Column");
                     Headers.Add("PullDistance_Column");
+                    Headers.Add("EngageDepth_Column");
                     break;
 
                 case DataTableType.VideoProcessing:
@@ -8657,6 +8658,18 @@ namespace LitePlacer
         // ========================================================================================
         public bool PickUpPartFast_m(int TapeNum)
         {
+            // Pull is master — check it first, before any other mode redirect
+            bool useNozzlePullFast = false;
+            DataGridViewCheckBoxCell pullCellFast = Tapes_dataGridView.Rows[TapeNum].Cells["UseNozzlePull_Column"] as DataGridViewCheckBoxCell;
+            if (pullCellFast != null && pullCellFast.Value != null)
+                useNozzlePullFast = pullCellFast.Value.ToString() == "True";
+
+            if (useNozzlePullFast)
+            {
+                // Delegate entirely to the full pull path
+                return PickUpPartWithHoleMeasurement_m(TapeNum);
+            }
+
             if (UseCoordinatesDirectly(TapeNum))
             {
                 return (PickUpPartWithDirectCoordinates_m(TapeNum));
@@ -8719,9 +8732,8 @@ namespace LitePlacer
             if (pullCell != null && pullCell.Value != null)
                 useNozzlePull = pullCell.Value.ToString() == "True";
 
-            // Diagnostic: show raw cell value so we know exactly what was read
             string pullRaw = (pullCell == null) ? "cell=null" : (pullCell.Value == null) ? "value=null" : "value='" + pullCell.Value.ToString() + "' type=" + pullCell.Value.GetType().Name;
-            DisplayText("PickUpPart_m(), tape no: " + TapeNumber.ToString(CultureInfo.InvariantCulture) + ", useNozzlePull=" + useNozzlePull.ToString() + " [" + pullRaw + "]");
+            DisplayText(">>> PULL CHECK: tape=" + TapeNumber.ToString(CultureInfo.InvariantCulture) + " useNozzlePull=" + useNozzlePull.ToString() + " raw=[" + pullRaw + "]", KnownColor.Red, true);
 
             if (!useNozzlePull)
             {
@@ -12237,8 +12249,13 @@ namespace LitePlacer
                     useNozzleCoords = nc.Value.ToString() == "True";
             }
 
-            const double ENGAGEMENT_DEPTH = 2.5;
-            DisplayText($"Nozzle pull indexing: {pullDistance}mm, NozzleCoords={useNozzleCoords}...", KnownColor.DarkCyan);
+            double ENGAGEMENT_DEPTH = 1.0;
+            {
+                var edCell = Tapes_dataGridView.Rows[tapeRow].Cells["EngageDepth_Column"];
+                if (edCell.Value != null && double.TryParse(edCell.Value.ToString().Replace(',', '.'), System.Globalization.NumberStyles.Any, CultureInfo.InvariantCulture, out double ed) && ed > 0)
+                    ENGAGEMENT_DEPTH = ed;
+            }
+            DisplayText($"Nozzle pull indexing: {pullDistance}mm engage={ENGAGEMENT_DEPTH}mm, NozzleCoords={useNozzleCoords}...", KnownColor.DarkCyan);
 
             // When UseNozzleCoords: Next_X/Y is already the nozzle position — go directly.
             // Otherwise: Next_X/Y is a camera position — apply nozzle offset so the NOZZLE is over the hole.

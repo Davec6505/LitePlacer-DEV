@@ -157,6 +157,7 @@ namespace LitePlacer
             this.RotationDirect_Column = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.UseNozzlePull_Column = new System.Windows.Forms.DataGridViewCheckBoxColumn();
             this.PullDistance_Column = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.EngageDepth_Column = new System.Windows.Forms.DataGridViewTextBoxColumn();
             this.VerifyHoleWithCamera_Column = new System.Windows.Forms.DataGridViewCheckBoxColumn();
             this.Tapes_contextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.editToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -2150,6 +2151,7 @@ namespace LitePlacer
             this.RotationDirect_Column,
             this.UseNozzlePull_Column,
             this.PullDistance_Column,
+            this.EngageDepth_Column,
             this.VerifyHoleWithCamera_Column});
             this.Tapes_dataGridView.ContextMenuStrip = this.Tapes_contextMenuStrip;
             this.Tapes_dataGridView.Location = new System.Drawing.Point(655, 19);
@@ -2399,6 +2401,15 @@ namespace LitePlacer
             this.PullDistance_Column.Name = "PullDistance_Column";
             this.PullDistance_Column.ToolTipText = "Distance to pull tape (mm) - usually same as Pitch";
             this.PullDistance_Column.Width = 78;
+            // 
+            // EngageDepth_Column
+            // 
+            this.EngageDepth_Column.DefaultCellStyle = dataGridViewCellStyle1;
+            this.EngageDepth_Column.HeaderText = "Engage Depth";
+            this.EngageDepth_Column.MinimumWidth = 6;
+            this.EngageDepth_Column.Name = "EngageDepth_Column";
+            this.EngageDepth_Column.ToolTipText = "Depth nozzle engages into sprocket hole below pickup Z (mm), default 1.0";
+            this.EngageDepth_Column.Width = 88;
             // 
             // VerifyHoleWithCamera_Column
             // 
@@ -13608,6 +13619,7 @@ namespace LitePlacer
         private System.Windows.Forms.DataGridViewTextBoxColumn RotationDirect_Column;
         private System.Windows.Forms.DataGridViewCheckBoxColumn UseNozzlePull_Column;
         private System.Windows.Forms.DataGridViewTextBoxColumn PullDistance_Column;
+        private System.Windows.Forms.DataGridViewTextBoxColumn EngageDepth_Column;
         private System.Windows.Forms.DataGridViewCheckBoxColumn VerifyHoleWithCamera_Column;
         private System.Windows.Forms.ContextMenuStrip Tapes_contextMenuStrip;
         private System.Windows.Forms.ToolStripMenuItem editToolStripMenuItem;
