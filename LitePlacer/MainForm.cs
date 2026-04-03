@@ -8713,16 +8713,24 @@ namespace LitePlacer
         // PickUpPartWithHoleMeasurement_m(): Picks next part from the tape, measuring the hole
         private bool PickUpPartWithHoleMeasurement_m(int TapeNumber)
         {
-            if (UseCoordinatesDirectly(TapeNumber))
-            {
-                return (PickUpPartWithDirectCoordinates_m(TapeNumber));
-            }
-
+            // Pull is master — check it first, before any other mode redirect
             bool useNozzlePull = false;
-            if (Tapes_dataGridView.Rows[TapeNumber].Cells["UseNozzlePull_Column"].Value != null)
-                bool.TryParse(Tapes_dataGridView.Rows[TapeNumber].Cells["UseNozzlePull_Column"].Value.ToString(), out useNozzlePull);
+            DataGridViewCheckBoxCell pullCell = Tapes_dataGridView.Rows[TapeNumber].Cells["UseNozzlePull_Column"] as DataGridViewCheckBoxCell;
+            if (pullCell != null && pullCell.Value != null)
+                useNozzlePull = pullCell.Value.ToString() == "True";
 
-            DisplayText("PickUpPart_m(), tape no: " + TapeNumber.ToString(CultureInfo.InvariantCulture));
+            // Diagnostic: show raw cell value so we know exactly what was read
+            string pullRaw = (pullCell == null) ? "cell=null" : (pullCell.Value == null) ? "value=null" : "value='" + pullCell.Value.ToString() + "' type=" + pullCell.Value.GetType().Name;
+            DisplayText("PickUpPart_m(), tape no: " + TapeNumber.ToString(CultureInfo.InvariantCulture) + ", useNozzlePull=" + useNozzlePull.ToString() + " [" + pullRaw + "]");
+
+            if (!useNozzlePull)
+            {
+                // No pull — honour CoordinatesForParts redirect as before
+                if (UseCoordinatesDirectly(TapeNumber))
+                {
+                    return (PickUpPartWithDirectCoordinates_m(TapeNumber));
+                }
+            }
 
             // ================================================================
             // PULL PATH: pull is master, all other modes ignored
@@ -8735,8 +8743,10 @@ namespace LitePlacer
 
                 // Verify mode: use camera to refine the exact hole position before engaging
                 bool verifyHole = false;
-                if (Tapes_dataGridView.Rows[TapeNumber].Cells["VerifyHoleWithCamera_Column"].Value != null)
-                    bool.TryParse(Tapes_dataGridView.Rows[TapeNumber].Cells["VerifyHoleWithCamera_Column"].Value.ToString(), out verifyHole);
+                DataGridViewCheckBoxCell verifyCell = Tapes_dataGridView.Rows[TapeNumber].Cells["VerifyHoleWithCamera_Column"] as DataGridViewCheckBoxCell;
+                if (verifyCell != null && verifyCell.Value != null)
+                    verifyHole = verifyCell.Value.ToString() == "True";
+                DisplayText($"  verifyHole={verifyHole}", KnownColor.DarkCyan);
 
                 double holeX = 0;
                 double holeY = 0;
@@ -12195,7 +12205,7 @@ namespace LitePlacer
                         }
                         DataGridViewCheckBoxCell nc = Tapes_dataGridView.Rows[tapeRow].Cells["UseNozzleCoordinates_Column"] as DataGridViewCheckBoxCell;
                         if (nc != null && nc.Value != null)
-                            bool.TryParse(nc.Value.ToString(), out useNozzleCoords);
+                            useNozzleCoords = nc.Value.ToString() == "True";
                     }
                     catch { success = false; }
                 }));
@@ -12224,7 +12234,7 @@ namespace LitePlacer
                 }
                 DataGridViewCheckBoxCell nc = Tapes_dataGridView.Rows[tapeRow].Cells["UseNozzleCoordinates_Column"] as DataGridViewCheckBoxCell;
                 if (nc != null && nc.Value != null)
-                    bool.TryParse(nc.Value.ToString(), out useNozzleCoords);
+                    useNozzleCoords = nc.Value.ToString() == "True";
             }
 
             const double ENGAGEMENT_DEPTH = 2.5;
