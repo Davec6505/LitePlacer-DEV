@@ -8765,14 +8765,15 @@ namespace LitePlacer
 
                 if (verifyHole)
                 {
-                    // Camera verifies exact hole centre; result goes into holeX/Y
+                    // Camera verifies exact hole centre; use FirstX/Y (user-taught, always camera coord)
+                    // so a stale Next_X/Y value can never send the camera to the wrong place.
                     DisplayText("Nozzle pull: verifying hole with camera...", KnownColor.DarkCyan);
                     double nextX = 0;
                     double nextY = 0;
-                    if (!double.TryParse(Tapes_dataGridView.Rows[TapeNumber].Cells["Next_X_Column"].Value.ToString().Replace(',', '.'), out nextX) ||
-                        !double.TryParse(Tapes_dataGridView.Rows[TapeNumber].Cells["Next_Y_Column"].Value.ToString().Replace(',', '.'), out nextY))
+                    if (!double.TryParse(Tapes_dataGridView.Rows[TapeNumber].Cells["FirstX_Column"].Value.ToString().Replace(',', '.'), out nextX) ||
+                        !double.TryParse(Tapes_dataGridView.Rows[TapeNumber].Cells["FirstY_Column"].Value.ToString().Replace(',', '.'), out nextY))
                     {
-                        DisplayText("*** Bad Next_X/Y data", KnownColor.DarkRed);
+                        DisplayText("*** Bad FirstX/Y data", KnownColor.DarkRed);
                         return false;
                     }
                     if (!Tapes.SetCurrentTapeMeasurement_m_public(TapeNumber))
