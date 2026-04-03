@@ -8821,8 +8821,28 @@ namespace LitePlacer
                 if (!Tapes.GetPartLocationFromHolePosition_m(TapeNumber, holeX, holeY, out partX, out partY, out partA))
                     return false;
 
+                // After pull the nozzle is ahead of the part in the pull direction.
+                // Approach the part by continuing forward (in pull direction) past it, then
+                // arriving from that side — never reversing back over the tape.
+                // A 3mm overshoot clears any lip on the support plate edge.
+                const double PICKUP_OVERSHOOT = 3.0;
+                string orientation = Tapes_dataGridView.Rows[TapeNumber].Cells["Orientation_Column"].Value.ToString();
+                double overshootX = partX;
+                double overshootY = partY;
+                switch (orientation)
+                {
+                    case "+Y": overshootY = partY + PICKUP_OVERSHOOT; break;
+                    case "-Y": overshootY = partY - PICKUP_OVERSHOOT; break;
+                    case "+X": overshootX = partX + PICKUP_OVERSHOOT; break;
+                    case "-X": overshootX = partX - PICKUP_OVERSHOOT; break;
+                }
+
                 // Move to part and pick up (ZGuard is off from pull, nozzle is at liftZ)
                 VacuumOff();
+                // Waypoint: pass part in pull direction first
+                if (!CNC_XYA_m(overshootX, overshootY, partA))
+                    return false;
+                // Final approach to pickup position (arriving from pull-direction side)
                 if (!Nozzle.Move_m(partX, partY, partA))
                     return false;
                 if (!PickUpThis_m(TapeNumber))
