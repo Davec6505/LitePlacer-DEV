@@ -8797,10 +8797,15 @@ namespace LitePlacer
                     } while (!ok);
                     holeX = Cnc.CurrentX + offX;
                     holeY = Cnc.CurrentY + offY;
-                    // Write refined position back so NozzlePullTapeIndex_m reads it
-                    Tapes_dataGridView.Rows[TapeNumber].Cells["Next_X_Column"].Value = holeX.ToString("0.000", CultureInfo.InvariantCulture);
-                    Tapes_dataGridView.Rows[TapeNumber].Cells["Next_Y_Column"].Value = holeY.ToString("0.000", CultureInfo.InvariantCulture);
-                    DisplayText($"  Hole verified at X={holeX:F3}, Y={holeY:F3}", KnownColor.DarkCyan);
+                    // holeX/Y are now the camera-measured machine coords of the hole centre.
+                    // Write back as nozzle coords (camera pos + nozzle offset) so NozzlePullTapeIndex_m
+                    // does not double-apply the offset when useNozzleCoords=False.
+                    double nozzleWriteX = holeX + Setting.DownCam_NozzleOffsetX;
+                    double nozzleWriteY = holeY + Setting.DownCam_NozzleOffsetY;
+                    Tapes_dataGridView.Rows[TapeNumber].Cells["Next_X_Column"].Value = nozzleWriteX.ToString("0.000", CultureInfo.InvariantCulture);
+                    Tapes_dataGridView.Rows[TapeNumber].Cells["Next_Y_Column"].Value = nozzleWriteY.ToString("0.000", CultureInfo.InvariantCulture);
+                    // Pass the original camera-coord hole position to GetPartLocationFromHolePosition_m
+                    DisplayText($"  Hole verified at X={holeX:F3}, Y={holeY:F3} (nozzle coords: X={nozzleWriteX:F3}, Y={nozzleWriteY:F3})", KnownColor.DarkCyan);
                 }
                 else
                 {
