@@ -12214,9 +12214,15 @@ namespace LitePlacer
             // Save current Z position for restoration
             double originalZ = Cnc.CurrentZ;
 
+            // Apply nozzle offset: holeX/Y are camera-measured coordinates.
+            // The nozzle is offset from the camera, so move to hole + nozzle offset
+            // so the NOZZLE is over the hole, not the camera.
+            double nozzleHoleX = holeX + Setting.DownCam_NozzleOffsetX;
+            double nozzleHoleY = holeY + Setting.DownCam_NozzleOffsetY;
+
             // STEP 1: Move nozzle to sprocket hole position (X/Y only, Z stays high/safe)
-            DisplayText($"  Moving to hole: X={holeX:F3}, Y={holeY:F3}", KnownColor.DarkCyan);
-            if (!CNC_XYA_m(holeX, holeY, Cnc.CurrentA))
+            DisplayText($"  Moving nozzle to hole: X={nozzleHoleX:F3}, Y={nozzleHoleY:F3} (cam hole: {holeX:F3},{holeY:F3} + offset: {Setting.DownCam_NozzleOffsetX:F3},{Setting.DownCam_NozzleOffsetY:F3})", KnownColor.DarkCyan);
+            if (!CNC_XYA_m(nozzleHoleX, nozzleHoleY, Cnc.CurrentA))
             {
                 DisplayText("*** Failed to move to hole position", KnownColor.DarkRed);
                 return false;
@@ -12234,37 +12240,36 @@ namespace LitePlacer
                 return false;
             }
 
-            // STEP 3: Pull tape by moving in tape FEED direction
-            // Orientation indicates feed direction in nozzle pull mode
-            double pullTargetX = holeX;
-            double pullTargetY = holeY;
+            // STEP 3: Pull tape by moving in tape FEED direction.
+            // The pull target also uses nozzle coordinates (not camera coordinates).
+            // Pull direction: for your feeder (hole on LEFT side), orientation is set to -Y/-X
+            // but the tape feeds in +Y/+X. The rule: pull always moves OPPOSITE to orientation sign.
+            // +Y = hole on right, feed direction is +Y → pull +Y
+            // -Y = hole on left,  feed direction is +Y → pull +Y  (same physical feed direction)
+            // +X = hole on bottom, feed direction is +X → pull +X
+            // -X = hole on top,    feed direction is +X → pull +X
+            double pullTargetX = nozzleHoleX;
+            double pullTargetY = nozzleHoleY;
 
             switch (orientation)
             {
-                case "+Y":  // Tape feeds toward +Y, pull in +Y direction
+                case "+Y":
+                case "-Y":
                     pullTargetY += pullDistance;
                     break;
 
-                case "+X":  // Tape feeds toward +X, pull in +X direction
+                case "+X":
+                case "-X":
                     pullTargetX += pullDistance;
-                    break;
-
-                case "-Y":  // Tape feeds toward -Y, pull in -Y direction
-                    pullTargetY -= pullDistance;
-                    break;
-
-                case "-X":  // Tape feeds toward -X, pull in -X direction
-                    pullTargetX -= pullDistance;
                     break;
 
                 default:
                     ShowMessageBox($"Unknown tape orientation: {orientation}", "Tape error", MessageBoxButtons.OK);
-                    // Lift nozzle before returning
                     Cnc.Z(originalZ);
                     return false;
             }
 
-            DisplayText($"  Pulling tape {pullDistance}mm in {orientation} direction", KnownColor.DarkCyan);
+            DisplayText($"  Pulling tape {pullDistance}mm (orientation {orientation})", KnownColor.DarkCyan);
 
             // Execute pull with faster speed (300 mm/min is fast enough for efficiency while maintaining control)
             double xySpeed = 300.0;  // mm/min - much faster than before
