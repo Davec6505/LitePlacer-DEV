@@ -476,12 +476,13 @@ namespace LitePlacer
 				);
 				return false;
 			}
-            // if pitch == 2 and part# is even, DL=0
+            // For 2mm pitch tapes: even-numbered parts share a hole with the previous odd part.
+            // The length offset alternates: odd parts use dL as-is, even parts use 0 (no length offset).
             if (Math.Abs(Pitch - 2) < 0.01)
             {
                 if ((pos % 2) == 0)
                 {
-                    dL = 2.0 - dL;
+                    dL = 0.0;
                 }
             }
 
