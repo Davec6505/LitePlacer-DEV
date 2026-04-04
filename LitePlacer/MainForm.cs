@@ -8751,36 +8751,34 @@ namespace LitePlacer
             // ================================================================
             if (useNozzlePull)
             {
-                double pullDistance = 4.0;
+                double pullDistance = 0.0;
                 if (Tapes_dataGridView.Rows[TapeNumber].Cells["PullDistance_Column"].Value != null)
                     double.TryParse(Tapes_dataGridView.Rows[TapeNumber].Cells["PullDistance_Column"].Value.ToString().Replace(',', '.'), out pullDistance);
 
-                // Verify mode: use camera to refine the exact hole position before engaging
                 bool verifyHole = false;
                 DataGridViewCheckBoxCell verifyCell = Tapes_dataGridView.Rows[TapeNumber].Cells["VerifyHoleWithCamera_Column"] as DataGridViewCheckBoxCell;
                 if (verifyCell != null && verifyCell.Value != null)
                     verifyHole = verifyCell.Value.ToString() == "True";
-                DisplayText($"  verifyHole={verifyHole}", KnownColor.DarkCyan);
+                DisplayText($"Pull: verifyHole={verifyHole}, overshoot={pullDistance}mm", KnownColor.DarkCyan);
 
+                // holeX/Y = camera-coord of the sprocket hole (used to compute pull-end part position)
                 double holeX = 0;
                 double holeY = 0;
 
                 if (verifyHole)
                 {
-                    // Camera verifies exact hole centre; use FirstX/Y (user-taught, always camera coord)
-                    // so a stale Next_X/Y value can never send the camera to the wrong place.
+                    // VERIFY PATH: camera measures exact hole centre from FirstX/Y, then pull with nozzle coords
                     DisplayText("Nozzle pull: verifying hole with camera...", KnownColor.DarkCyan);
-                    double nextX = 0;
-                    double nextY = 0;
-                    if (!double.TryParse(Tapes_dataGridView.Rows[TapeNumber].Cells["FirstX_Column"].Value.ToString().Replace(',', '.'), out nextX) ||
-                        !double.TryParse(Tapes_dataGridView.Rows[TapeNumber].Cells["FirstY_Column"].Value.ToString().Replace(',', '.'), out nextY))
+                    double firstX = 0, firstY = 0;
+                    if (!double.TryParse(Tapes_dataGridView.Rows[TapeNumber].Cells["FirstX_Column"].Value.ToString().Replace(',', '.'), out firstX) ||
+                        !double.TryParse(Tapes_dataGridView.Rows[TapeNumber].Cells["FirstY_Column"].Value.ToString().Replace(',', '.'), out firstY))
                     {
                         DisplayText("*** Bad FirstX/Y data", KnownColor.DarkRed);
                         return false;
                     }
                     if (!Tapes.SetCurrentTapeMeasurement_m_public(TapeNumber))
                         return false;
-                    if (!CNC_XYA_m(nextX, nextY, Cnc.CurrentA))
+                    if (!CNC_XYA_m(firstX, firstY, Cnc.CurrentA))
                         return false;
                     double offX, offY, A;
                     bool ok = true;
@@ -8800,97 +8798,63 @@ namespace LitePlacer
                     } while (!ok);
                     holeX = Cnc.CurrentX + offX;
                     holeY = Cnc.CurrentY + offY;
-                    // holeX/Y are camera-measured machine coords of the hole centre.
-                    // Don't write back to grid — pass nozzle coords directly to the pull overload
-                    // to avoid any double-application of the nozzle offset.
+                    DisplayText($"  Hole verified: camera X={holeX:F3}, Y={holeY:F3}", KnownColor.DarkCyan);
                     double nozzleHoleX = holeX + Setting.DownCam_NozzleOffsetX;
                     double nozzleHoleY = holeY + Setting.DownCam_NozzleOffsetY;
-                    DisplayText($"  Hole verified at X={holeX:F3}, Y={holeY:F3} (nozzle: X={nozzleHoleX:F3}, Y={nozzleHoleY:F3})", KnownColor.DarkCyan);
-
-                    // Pull using pre-resolved nozzle coords — no grid read, no offset applied inside
                     if (!NozzlePullTapeIndex_m(TapeNumber, pullDistance, nozzleHoleX, nozzleHoleY))
                     {
                         DisplayText("*** Nozzle pull failed!", KnownColor.DarkRed);
                         return false;
                     }
-
-                    // Part is now at pull-end position: original hole + pitch in feed direction.
-                    // Apply dW/dL offsets from that pull-end position to land on the part.
-                    double pitch1 = 4.0;
-                    {
-                        var pc = Tapes_dataGridView.Rows[TapeNumber].Cells["Pitch_Column"];
-                        if (pc.Value != null) double.TryParse(pc.Value.ToString().Replace(',', '.'), out pitch1);
-                    }
-                    string orient1 = Tapes_dataGridView.Rows[TapeNumber].Cells["Orientation_Column"].Value.ToString();
-                    double pullEndX1 = holeX, pullEndY1 = holeY;
-                    switch (orient1)
-                    {
-                        case "+Y": pullEndY1 += pitch1; break;
-                        case "-Y": pullEndY1 -= pitch1; break;
-                        case "+X": pullEndX1 += pitch1; break;
-                        case "-X": pullEndX1 -= pitch1; break;
-                    }
-                    double partX, partY, partA;
-                    if (!Tapes.GetPartLocationFromHolePosition_m(TapeNumber, pullEndX1, pullEndY1, out partX, out partY, out partA))
-                        return false;
-
-                    DisplayText($"Pull pickup: part X={partX:F3}, Y={partY:F3}", KnownColor.DarkCyan);
-
-                    VacuumOff();
-                    if (!Nozzle.Move_m(partX, partY, partA))
-                        return false;
-                    if (!PickUpThis_m(TapeNumber))
-                        return false;
-
-                    ZGuardOn();
-                    if (!Tapes.IncrementTape(TapeNumber, holeX, holeY))
-                        return false;
                 }
                 else
                 {
-                    // No verify: use Next_X/Y as set by user (camera coords), pull via standard overload
-                    double.TryParse(Tapes_dataGridView.Rows[TapeNumber].Cells["Next_X_Column"].Value.ToString().Replace(',', '.'), out holeX);
-                    double.TryParse(Tapes_dataGridView.Rows[TapeNumber].Cells["Next_Y_Column"].Value.ToString().Replace(',', '.'), out holeY);
-
-                    // Pull the tape
+                    // NO-VERIFY PATH: no camera — use FirstX/Y directly as the hole position
+                    // FirstX/Y is the user-taught camera coord of the sprocket hole.
+                    // NozzlePullTapeIndex_m (standard overload) reads Next_X/Y from grid and applies nozzle offset.
+                    if (!double.TryParse(Tapes_dataGridView.Rows[TapeNumber].Cells["FirstX_Column"].Value.ToString().Replace(',', '.'), out holeX) ||
+                        !double.TryParse(Tapes_dataGridView.Rows[TapeNumber].Cells["FirstY_Column"].Value.ToString().Replace(',', '.'), out holeY))
+                    {
+                        DisplayText("*** Bad FirstX/Y data", KnownColor.DarkRed);
+                        return false;
+                    }
+                    DisplayText($"  No-verify pull from FirstX/Y: X={holeX:F3}, Y={holeY:F3}", KnownColor.DarkCyan);
                     if (!NozzlePullTapeIndex_m(TapeNumber, pullDistance))
                     {
                         DisplayText("*** Nozzle pull failed!", KnownColor.DarkRed);
                         return false;
                     }
-
-                    // Part is now at pull-end position: original hole + pitch in feed direction.
-                    // Apply dW/dL offsets from that pull-end position to land on the part.
-                    double pitch2 = 4.0;
-                    {
-                        var pc = Tapes_dataGridView.Rows[TapeNumber].Cells["Pitch_Column"];
-                        if (pc.Value != null) double.TryParse(pc.Value.ToString().Replace(',', '.'), out pitch2);
-                    }
-                    string orient2 = Tapes_dataGridView.Rows[TapeNumber].Cells["Orientation_Column"].Value.ToString();
-                    double pullEndX2 = holeX, pullEndY2 = holeY;
-                    switch (orient2)
-                    {
-                        case "+Y": pullEndY2 += pitch2; break;
-                        case "-Y": pullEndY2 -= pitch2; break;
-                        case "+X": pullEndX2 += pitch2; break;
-                        case "-X": pullEndX2 -= pitch2; break;
-                    }
-                    double partX2, partY2, partA2;
-                    if (!Tapes.GetPartLocationFromHolePosition_m(TapeNumber, pullEndX2, pullEndY2, out partX2, out partY2, out partA2))
-                        return false;
-
-                    DisplayText($"Pull pickup: part X={partX2:F3}, Y={partY2:F3}", KnownColor.DarkCyan);
-
-                    VacuumOff();
-                    if (!Nozzle.Move_m(partX2, partY2, partA2))
-                        return false;
-                    if (!PickUpThis_m(TapeNumber))
-                        return false;
-
-                    ZGuardOn();
-                    if (!Tapes.IncrementTape(TapeNumber, holeX, holeY))
-                        return false;
                 }
+
+                // Both paths: part is now at pull-end position (hole + pitch in feed direction).
+                // Apply dW/dL offsets from tape data to get exact part position.
+                double pitch = 4.0;
+                {
+                    var pc = Tapes_dataGridView.Rows[TapeNumber].Cells["Pitch_Column"];
+                    if (pc.Value != null) double.TryParse(pc.Value.ToString().Replace(',', '.'), out pitch);
+                }
+                string orient = Tapes_dataGridView.Rows[TapeNumber].Cells["Orientation_Column"].Value.ToString();
+                double pullEndX = holeX, pullEndY = holeY;
+                switch (orient)
+                {
+                    case "+Y": pullEndY += pitch; break;
+                    case "-Y": pullEndY -= pitch; break;
+                    case "+X": pullEndX += pitch; break;
+                    case "-X": pullEndX -= pitch; break;
+                }
+                double partX, partY, partA;
+                if (!Tapes.GetPartLocationFromHolePosition_m(TapeNumber, pullEndX, pullEndY, out partX, out partY, out partA))
+                    return false;
+
+                DisplayText($"Pull pickup: part X={partX:F3}, Y={partY:F3}", KnownColor.DarkCyan);
+                VacuumOff();
+                if (!Nozzle.Move_m(partX, partY, partA))
+                    return false;
+                if (!PickUpThis_m(TapeNumber))
+                    return false;
+                ZGuardOn();
+                if (!Tapes.IncrementTape(TapeNumber, holeX, holeY))
+                    return false;
             }
             else
             {
