@@ -8809,9 +8809,9 @@ namespace LitePlacer
                 }
                 else
                 {
-                    // NO-VERIFY PATH: no camera — use FirstX/Y directly as the hole position
-                    // FirstX/Y is the user-taught camera coord of the sprocket hole.
-                    // NozzlePullTapeIndex_m (standard overload) reads Next_X/Y from grid and applies nozzle offset.
+                    // NO-VERIFY PATH: no camera — use FirstX/Y directly as the hole position.
+                    // Clear any active measurement pipeline so camera processing stops.
+                    DownCamera.BuildMeasurementFunctionsList(new System.Collections.Generic.List<AForgeFunctionDefinition>());
                     if (!double.TryParse(Tapes_dataGridView.Rows[TapeNumber].Cells["FirstX_Column"].Value.ToString().Replace(',', '.'), out holeX) ||
                         !double.TryParse(Tapes_dataGridView.Rows[TapeNumber].Cells["FirstY_Column"].Value.ToString().Replace(',', '.'), out holeY))
                     {
