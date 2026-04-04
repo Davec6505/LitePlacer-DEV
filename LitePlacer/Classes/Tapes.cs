@@ -106,7 +106,17 @@ namespace LitePlacer
         public double FastYpos { get; set; }
         public double FastXstep { get; set; }       // step sizes for one hole to next
         public double FastYstep { get; set; }
-                // ========================================================================================
+
+        // Returns true when the UseNozzlePull checkbox is checked for this tape row.
+        private bool UseNozzlePull(int TapeNum)
+        {
+            DataGridViewCheckBoxCell cell = Grid.Rows[TapeNum].Cells["UseNozzlePull_Column"] as DataGridViewCheckBoxCell;
+            if (cell != null && cell.Value != null)
+                return cell.Value.ToString() == "True";
+            return false;
+        }
+
+        // ========================================================================================
         // PrepareForFastPlacement_m: Called before starting fast placement
 
         /* 
@@ -123,6 +133,12 @@ namespace LitePlacer
                 return false;
             }
             if (MainForm.UseCoordinatesDirectly(TapeNum))
+            {
+                return true;
+            }
+            // When nozzle coordinates are active, FirstX/Y is a component position — hole measurement doesn't apply.
+            // When nozzle pull is active, the pull path handles positioning itself — no pre-measurement needed.
+            if (MainForm.UseNozzleCoordinates(TapeNum) || UseNozzlePull(TapeNum))
             {
                 return true;
             }

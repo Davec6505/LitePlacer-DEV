@@ -3254,7 +3254,7 @@ namespace LitePlacer
                 }
                 DisplayText("Optical positioning, round " + count.ToString(CultureInfo.InvariantCulture)
                     + ", dX= " + X.ToString("0.000", CultureInfo.InvariantCulture) + ", dY= " + Y.ToString("0.000", CultureInfo.InvariantCulture)
-                    + ", A= " + X.ToString("0.000", CultureInfo.InvariantCulture) + ", tries= " + tries.ToString(CultureInfo.InvariantCulture));
+                    + ", A= " + A.ToString("0.000", CultureInfo.InvariantCulture) + ", tries= " + tries.ToString(CultureInfo.InvariantCulture));
                 // If we are further than move tolerance, go there
                 if ((Math.Abs(X) > MoveTolerance) || (Math.Abs(Y) > MoveTolerance))
                 {
@@ -3273,7 +3273,7 @@ namespace LitePlacer
             //                && ((Math.Abs(X) > MoveTolerance)
             //                || (Math.Abs(Y) > MoveTolerance)));
 
-            if (count >= 7)
+            if (count >= 8)
             {
                 ShowMessageBox(
                     "Optical positioning: Process is unstable, result is unreliable.",
@@ -8668,7 +8668,12 @@ namespace LitePlacer
 
             if (useNozzlePullFast)
             {
-                // Delegate entirely to the full pull path
+                // Pull + any coordinates mode: PickUpPartWithDirectCoordinates_m owns the full path.
+                // FirstX/Y is always a component position (nozzle-coord or camera-coord), not a hole position.
+                // The hole-measurement pull path in PickUpPartWithHoleMeasurement_m does NOT apply here.
+                if (UseCoordinatesDirectly(TapeNum) || UseNozzleCoordinates(TapeNum))
+                    return PickUpPartWithDirectCoordinates_m(TapeNum);
+                // Camera-based hole mode with pull: delegate to hole-measurement pull path
                 return PickUpPartWithHoleMeasurement_m(TapeNum);
             }
 
@@ -8735,7 +8740,13 @@ namespace LitePlacer
                 useNozzlePull = pullCell.Value.ToString() == "True";
 
             string pullRaw = (pullCell == null) ? "cell=null" : (pullCell.Value == null) ? "value=null" : "value='" + pullCell.Value.ToString() + "' type=" + pullCell.Value.GetType().Name;
-            DisplayText(">>> PULL CHECK: tape=" + TapeNumber.ToString(CultureInfo.InvariantCulture) + " useNozzlePull=" + useNozzlePull.ToString() + " raw=[" + pullRaw + "]", KnownColor.Red, true);
+            bool coordsForParts = UseCoordinatesDirectly(TapeNumber);
+            bool nozzleCoords = UseNozzleCoordinates(TapeNumber);
+            DisplayText(">>> PULL CHECK: tape=" + TapeNumber.ToString(CultureInfo.InvariantCulture)
+                + " useNozzlePull=" + useNozzlePull.ToString()
+                + " CoordinatesForParts=" + coordsForParts.ToString()
+                + " UseNozzleCoordinates=" + nozzleCoords.ToString()
+                + " raw=[" + pullRaw + "]", KnownColor.Red, true);
 
             if (!useNozzlePull)
             {
@@ -8751,6 +8762,16 @@ namespace LitePlacer
             // ================================================================
             if (useNozzlePull)
             {
+                // When nozzle coordinates are active, FirstX/Y is a component nozzle coord, not a
+                // hole camera coord — the hole-measurement pull path doesn't apply.
+                // Delegate to PickUpPartWithDirectCoordinates_m which handles this correctly.
+                DisplayText(">>> PULL PATH: UseNozzleCoords=" + UseNozzleCoordinates(TapeNumber).ToString() + " CoordForParts=" + UseCoordinatesDirectly(TapeNumber).ToString(), KnownColor.Red, true);
+                if (UseNozzleCoordinates(TapeNumber) || UseCoordinatesDirectly(TapeNumber))
+                {
+                    DisplayText(">>> Redirecting to PickUpPartWithDirectCoordinates_m", KnownColor.Red, true);
+                    return PickUpPartWithDirectCoordinates_m(TapeNumber);
+                }
+
                 double pullDistance = 0.0;
                 if (Tapes_dataGridView.Rows[TapeNumber].Cells["PullDistance_Column"].Value != null)
                     double.TryParse(Tapes_dataGridView.Rows[TapeNumber].Cells["PullDistance_Column"].Value.ToString().Replace(',', '.'), out pullDistance);
@@ -8759,7 +8780,8 @@ namespace LitePlacer
                 DataGridViewCheckBoxCell verifyCell = Tapes_dataGridView.Rows[TapeNumber].Cells["VerifyHoleWithCamera_Column"] as DataGridViewCheckBoxCell;
                 if (verifyCell != null && verifyCell.Value != null)
                     verifyHole = verifyCell.Value.ToString() == "True";
-                DisplayText($"Pull: verifyHole={verifyHole}, overshoot={pullDistance}mm", KnownColor.DarkCyan);
+
+                DisplayText($">>> Pull: verifyHole={verifyHole}, pullDistance={pullDistance}mm — entering pull path", KnownColor.Red, true);
 
                 // holeX/Y = camera-coord of the sprocket hole (used to compute pull-end part position)
                 double holeX = 0;
@@ -9037,6 +9059,106 @@ namespace LitePlacer
             if (Tapes_dataGridView.Rows[TapeNum].Cells["UseNozzlePull_Column"].Value != null)
                 bool.TryParse(Tapes_dataGridView.Rows[TapeNum].Cells["UseNozzlePull_Column"].Value.ToString(), out useNozzlePull);
 
+            if (useNozzlePull)
+            {
+                // ================================================================
+                // PULL PATH: FirstX/Y is the nozzle position over the hole (before pull).
+                // After pulling one pitch, the component pocket is now at FirstX/Y + pitch
+                // in the feed direction. Compute the post-pull component position here.
+                // ================================================================
+                double pickX, pickY, pickA;
+                if (!double.TryParse(Tapes_dataGridView.Rows[TapeNum].Cells["FirstX_Column"].Value.ToString().Replace(',', '.'), out pickX) ||
+                    !double.TryParse(Tapes_dataGridView.Rows[TapeNum].Cells["FirstY_Column"].Value.ToString().Replace(',', '.'), out pickY))
+                {
+                    DisplayText("*** Bad FirstX/Y data for pull pickup", KnownColor.DarkRed);
+                    return false;
+                }
+                pickA = 0.0;
+                if (Tapes_dataGridView.Rows[TapeNum].Cells["RotationDirect_Column"].Value != null)
+                    double.TryParse(Tapes_dataGridView.Rows[TapeNum].Cells["RotationDirect_Column"].Value.ToString().Replace(',', '.'), out pickA);
+
+                double pullDistance = 4.0;
+                if (Tapes_dataGridView.Rows[TapeNum].Cells["PullDistance_Column"].Value != null)
+                    double.TryParse(Tapes_dataGridView.Rows[TapeNum].Cells["PullDistance_Column"].Value.ToString().Replace(',', '.'), out pullDistance);
+
+                // Compute post-pull component position.
+                // Four explicit cases — mirrors the move block below and NozzlePullTapeIndex_m.
+                if (useNozzlePull && UseNozzleCoordinates(TapeNum))
+                {
+                    // FirstX/Y = nozzle over the HOLE. After pull: advance by pitch, apply hole→component offsets.
+                    // Pull holes are on the opposite tape side → negate dW.
+                    double pitch = 4.0;
+                    if (Tapes_dataGridView.Rows[TapeNum].Cells["Pitch_Column"].Value != null)
+                        double.TryParse(Tapes_dataGridView.Rows[TapeNum].Cells["Pitch_Column"].Value.ToString().Replace(',', '.'), out pitch);
+                    double dW = 0, dL = 0;
+                    if (Tapes_dataGridView.Rows[TapeNum].Cells["OffsetX_Column"].Value != null)
+                        double.TryParse(Tapes_dataGridView.Rows[TapeNum].Cells["OffsetX_Column"].Value.ToString().Replace(',', '.'), out dW);
+                    if (Tapes_dataGridView.Rows[TapeNum].Cells["OffsetY_Column"].Value != null)
+                        double.TryParse(Tapes_dataGridView.Rows[TapeNum].Cells["OffsetY_Column"].Value.ToString().Replace(',', '.'), out dL);
+                    string orientation = Tapes_dataGridView.Rows[TapeNum].Cells["Orientation_Column"].Value.ToString();
+                    dW = -dW; // pull holes are on opposite side of tape
+                    switch (orientation)
+                    {
+                        case "+Y": pickY += pitch - dL; pickX -= dW; break;
+                        case "-Y": pickY -= pitch - dL; pickX += dW; break;
+                        case "+X": pickX += pitch - dL; pickY += dW; break;
+                        case "-X": pickX -= pitch - dL; pickY -= dW; break;
+                    }
+                }
+                else if (useNozzlePull && UseCoordinatesDirectly(TapeNum))
+                {
+                    // FirstX/Y = camera-space component position. pickX/Y used as-is by Nozzle.Move_m below.
+                    // No adjustment needed — the component is always at FirstX/Y after the pull.
+                }
+                else if (UseNozzleCoordinates(TapeNum))
+                {
+                    // No pull: FirstX/Y is already the nozzle position over the component — use as-is.
+                }
+                else
+                {
+                    // Should never reach here: this method is only called when UseCoordinatesDirectly or UseNozzleCoordinates is true.
+                    DisplayText("*** PickUpPartWithDirectCoordinates_m: unexpected coordinate mode", KnownColor.DarkRed);
+                    return false;
+                }
+
+                DisplayText($"Nozzle pull (coords mode): tape={Tapes_dataGridView.Rows[TapeNum].Cells["Id_Column"].Value} pulling {pullDistance}mm, then pickup at X={pickX:F3} Y={pickY:F3} A={pickA:F3}", KnownColor.DarkCyan);
+                if (!NozzlePullTapeIndex_m(TapeNum, pullDistance))
+                {
+                    DisplayText("*** Nozzle pull failed!", KnownColor.DarkRed);
+                    return false;
+                }
+
+                // Move to component position and pick up (ZGuard off from pull)
+                VacuumOff();
+                if (useNozzlePull && UseCoordinatesDirectly(TapeNum))
+                {
+                    // CoordinatesForParts + pull: pickX/Y is camera-space component position — apply nozzle offset
+                    if (!Nozzle.Move_m(pickX, pickY, pickA))
+                        return false;
+                }
+                else if (UseNozzleCoordinates(TapeNum))
+                {
+                    // pickX/Y is an exact nozzle coordinate (pull-adjusted or unchanged) — go directly
+                    if (!CNC_XYA_m(pickX, pickY, pickA))
+                        return false;
+                }
+                else
+                {
+                    // Should never reach here: this method is only called when UseCoordinatesDirectly or UseNozzleCoordinates is true.
+                    DisplayText("*** PickUpPartWithDirectCoordinates_m: unexpected coordinate mode for move", KnownColor.DarkRed);
+                    return false;
+                }
+                if (!PickUpThis_m(TapeNum))
+                    return false;
+
+                ZGuardOn();
+                // Never increment when pull is enabled
+                return true;
+            }
+
+            // ================================================================
+            // NON-PULL PATH: use NextPart_Column to calculate current part position
+            // ================================================================
             double X;
             double Y;
             double A;
@@ -9050,38 +9172,6 @@ namespace LitePlacer
                 + ", Y: " + Y.ToString("0.000", CultureInfo.InvariantCulture)
                 + ", A: " + A.ToString("0.000", CultureInfo.InvariantCulture));
 
-            if (useNozzlePull)
-            {
-                // ================================================================
-                // PULL PATH: pull is master, ignore CoordinatesForParts/NozzleCoords
-                // Next_X/Y is the fixed hole position set by user. Pull, then pick from X/Y/A above.
-                // ================================================================
-                double pullDistance = 4.0;
-                if (Tapes_dataGridView.Rows[TapeNum].Cells["PullDistance_Column"].Value != null)
-                    double.TryParse(Tapes_dataGridView.Rows[TapeNum].Cells["PullDistance_Column"].Value.ToString().Replace(',', '.'), out pullDistance);
-
-                DisplayText($"Nozzle pull (coords mode): pulling {pullDistance}mm", KnownColor.DarkCyan);
-                if (!NozzlePullTapeIndex_m(TapeNum, pullDistance))
-                {
-                    DisplayText("*** Nozzle pull failed!", KnownColor.DarkRed);
-                    return false;
-                }
-
-                // Move to component position and pick up (ZGuard off from pull)
-                VacuumOff();
-                if (!Nozzle.Move_m(X, Y, A))
-                    return false;
-                if (!PickUpThis_m(TapeNum))
-                    return false;
-
-                ZGuardOn();
-                // Never increment when pull is enabled
-                return true;
-            }
-
-            // ================================================================
-            // ORIGINAL PATH: no pull — untouched
-            // ================================================================
             VacuumOff();
             if (UseNozzleCoordinates(TapeNum))
             {
@@ -12288,61 +12378,78 @@ namespace LitePlacer
         // ========================================================================================
         public bool NozzlePullTapeIndex_m(int tapeRow, double pullDistance)
         {
-            // Thread-safe: read all grid data up front
-            double holeX = 0;
-            double holeY = 0;
-            string orientation = "";
-            double pickupZ = 0;
-            bool useNozzleCoords = false;
+            // Resolve which coordinate mode this tape uses and read the relevant columns.
+            // All grid access is done here, thread-safe, before any motion.
 
-            if (InvokeRequired)
+            bool coordsForParts = UseCoordinatesDirectly(tapeRow);    // FirstX/Y = component position
+            bool nozzleCoords   = UseNozzleCoordinates(tapeRow);       // FirstX/Y = nozzle-over-hole position
+            string orientation  = "";
+            double pickupZ      = 0;
+            double nozzleHoleX  = 0;
+            double nozzleHoleY  = 0;
+
+            Action readGrid = new Action(() =>
             {
-                bool success = false;
-                Invoke(new Action(() =>
-                {
-                    try
-                    {
-                        holeX = double.Parse(Tapes_dataGridView.Rows[tapeRow].Cells["Next_X_Column"].Value.ToString().Replace(',', '.'));
-                        holeY = double.Parse(Tapes_dataGridView.Rows[tapeRow].Cells["Next_Y_Column"].Value.ToString().Replace(',', '.'));
-                        orientation = Tapes_dataGridView.Rows[tapeRow].Cells["Orientation_Column"].Value.ToString();
-                        string pickupZstr = Tapes_dataGridView.Rows[tapeRow].Cells["Z_Pickup_Column"].Value.ToString();
-                        if (pickupZstr != "--")
-                        {
-                            pickupZ = double.Parse(pickupZstr.Replace(',', '.'));
-                            success = true;
-                        }
-                        DataGridViewCheckBoxCell nc = Tapes_dataGridView.Rows[tapeRow].Cells["UseNozzleCoordinates_Column"] as DataGridViewCheckBoxCell;
-                        if (nc != null && nc.Value != null)
-                            useNozzleCoords = nc.Value.ToString() == "True";
-                    }
-                    catch { success = false; }
-                }));
-                if (!success)
-                {
-                    DisplayText("*** Pickup Z not set for this tape. Please set pickup Z first!", KnownColor.DarkRed);
-                    ShowMessageBox("Nozzle pull requires Pickup Z to be set.\n\nPlease teach the pickup Z height for this tape first.", "Pickup Z Not Set", MessageBoxButtons.OK);
-                    return false;
-                }
-            }
-            else
-            {
-                if (!double.TryParse(Tapes_dataGridView.Rows[tapeRow].Cells["Next_X_Column"].Value.ToString().Replace(',', '.'), out holeX) ||
-                    !double.TryParse(Tapes_dataGridView.Rows[tapeRow].Cells["Next_Y_Column"].Value.ToString().Replace(',', '.'), out holeY))
-                {
-                    ShowMessageBox("Bad data at Next_X/Y_Column", "Tape data error", MessageBoxButtons.OK);
-                    return false;
-                }
                 orientation = Tapes_dataGridView.Rows[tapeRow].Cells["Orientation_Column"].Value.ToString();
                 string pickupZstr = Tapes_dataGridView.Rows[tapeRow].Cells["Z_Pickup_Column"].Value.ToString();
                 if (pickupZstr == "--" || !double.TryParse(pickupZstr.Replace(',', '.'), out pickupZ))
+                    throw new InvalidOperationException("Pickup Z not set");
+
+                if (nozzleCoords)
                 {
-                    DisplayText("*** Pickup Z not set for this tape. Please set pickup Z first!", KnownColor.DarkRed);
-                    ShowMessageBox("Nozzle pull requires Pickup Z to be set.\n\nPlease teach the pickup Z height for this tape first.", "Pickup Z Not Set", MessageBoxButtons.OK);
-                    return false;
+                    // FirstX/Y is already the nozzle position directly over the hole — use as-is.
+                    double nx, ny;
+                    if (!double.TryParse(Tapes_dataGridView.Rows[tapeRow].Cells["FirstX_Column"].Value.ToString().Replace(',', '.'), out nx) ||
+                        !double.TryParse(Tapes_dataGridView.Rows[tapeRow].Cells["FirstY_Column"].Value.ToString().Replace(',', '.'), out ny))
+                        throw new InvalidOperationException("Bad FirstX/Y data");
+                    nozzleHoleX = nx;
+                    nozzleHoleY = ny;
                 }
-                DataGridViewCheckBoxCell nc = Tapes_dataGridView.Rows[tapeRow].Cells["UseNozzleCoordinates_Column"] as DataGridViewCheckBoxCell;
-                if (nc != null && nc.Value != null)
-                    useNozzleCoords = nc.Value.ToString() == "True";
+                else if (coordsForParts)
+                {
+                    // FirstX/Y is the camera-centred component position taught via "Coordinates For Parts".
+                    // Reverse the tape offsets to find the camera-space hole position, then add nozzle offset.
+                    double partX, partY;
+                    if (!double.TryParse(Tapes_dataGridView.Rows[tapeRow].Cells["FirstX_Column"].Value.ToString().Replace(',', '.'), out partX) ||
+                        !double.TryParse(Tapes_dataGridView.Rows[tapeRow].Cells["FirstY_Column"].Value.ToString().Replace(',', '.'), out partY))
+                        throw new InvalidOperationException("Bad FirstX/Y data");
+
+                    double offsetX = 0, offsetY = 0;
+                    double.TryParse(Tapes_dataGridView.Rows[tapeRow].Cells["OffsetX_Column"].Value.ToString().Replace(',', '.'), out offsetX);
+                    double.TryParse(Tapes_dataGridView.Rows[tapeRow].Cells["OffsetY_Column"].Value.ToString().Replace(',', '.'), out offsetY);
+
+                    double hx, hy;
+                    if (!Tapes.GetHoleLocationFromPartPosition(tapeRow, partX, partY, orientation, offsetX, offsetY, out hx, out hy))
+                        throw new InvalidOperationException("Could not calculate hole position from component position");
+
+                    nozzleHoleX = hx + Setting.DownCam_NozzleOffsetX;
+                    nozzleHoleY = hy + Setting.DownCam_NozzleOffsetY;
+                    DisplayText($"Pull: component ({partX:F3},{partY:F3}) offsets ({offsetX:F3},{offsetY:F3}) → camera hole ({hx:F3},{hy:F3}) → nozzle hole ({nozzleHoleX:F3},{nozzleHoleY:F3})", KnownColor.DarkCyan);
+                }
+                else
+                {
+                    // Pure hole-camera mode: Next_X/Y is the camera-space hole position.
+                    double hx, hy;
+                    if (!double.TryParse(Tapes_dataGridView.Rows[tapeRow].Cells["Next_X_Column"].Value.ToString().Replace(',', '.'), out hx) ||
+                        !double.TryParse(Tapes_dataGridView.Rows[tapeRow].Cells["Next_Y_Column"].Value.ToString().Replace(',', '.'), out hy))
+                        throw new InvalidOperationException("Bad Next_X/Y data");
+                    nozzleHoleX = hx + Setting.DownCam_NozzleOffsetX;
+                    nozzleHoleY = hy + Setting.DownCam_NozzleOffsetY;
+                }
+            });
+
+            try
+            {
+                if (InvokeRequired)
+                    Invoke(readGrid);
+                else
+                    readGrid();
+            }
+            catch (InvalidOperationException ex)
+            {
+                DisplayText($"*** Nozzle pull setup failed: {ex.Message}", KnownColor.DarkRed);
+                ShowMessageBox(ex.Message, "Nozzle pull setup error", MessageBoxButtons.OK);
+                return false;
             }
 
             double ENGAGEMENT_DEPTH = 1.0;
@@ -12351,12 +12458,7 @@ namespace LitePlacer
                 if (edCell.Value != null && double.TryParse(edCell.Value.ToString().Replace(',', '.'), System.Globalization.NumberStyles.Any, CultureInfo.InvariantCulture, out double ed) && ed > 0)
                     ENGAGEMENT_DEPTH = ed;
             }
-            DisplayText($"Nozzle pull indexing: {pullDistance}mm engage={ENGAGEMENT_DEPTH}mm, NozzleCoords={useNozzleCoords}...", KnownColor.DarkCyan);
-
-            // When UseNozzleCoords: Next_X/Y is already the nozzle position — go directly.
-            // Otherwise: Next_X/Y is a camera position — apply nozzle offset so the NOZZLE is over the hole.
-            double nozzleHoleX = useNozzleCoords ? holeX : holeX + Setting.DownCam_NozzleOffsetX;
-            double nozzleHoleY = useNozzleCoords ? holeY : holeY + Setting.DownCam_NozzleOffsetY;
+            DisplayText($"Nozzle pull: nozzle→hole ({nozzleHoleX:F3},{nozzleHoleY:F3}) engage={ENGAGEMENT_DEPTH}mm pull={pullDistance}mm [coordsForParts={coordsForParts} nozzleCoords={nozzleCoords}]", KnownColor.DarkCyan);
 
             return NozzlePullTapeIndex_Core(tapeRow, pullDistance, nozzleHoleX, nozzleHoleY, orientation, pickupZ);
         }
