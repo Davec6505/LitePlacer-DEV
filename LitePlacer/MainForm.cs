@@ -8809,8 +8809,10 @@ namespace LitePlacer
                 }
                 else
                 {
-                    // NO-VERIFY PATH: no camera — use FirstX/Y directly as the hole position.
-                    // Clear any active measurement pipeline so camera processing stops.
+                    // NO-VERIFY PATH: no camera — FirstX/Y is the user-taught hole position.
+                    // UseNozzleCoordinates: if checked, FirstX/Y is already a nozzle coord — go directly.
+                    //                      if unchecked, FirstX/Y is a camera coord — apply nozzle offset.
+                    // holeX/Y always stays in camera coords for pull-end part position calculation.
                     DownCamera.BuildMeasurementFunctionsList(new System.Collections.Generic.List<AForgeFunctionDefinition>());
                     if (!double.TryParse(Tapes_dataGridView.Rows[TapeNumber].Cells["FirstX_Column"].Value.ToString().Replace(',', '.'), out holeX) ||
                         !double.TryParse(Tapes_dataGridView.Rows[TapeNumber].Cells["FirstY_Column"].Value.ToString().Replace(',', '.'), out holeY))
@@ -8818,8 +8820,24 @@ namespace LitePlacer
                         DisplayText("*** Bad FirstX/Y data", KnownColor.DarkRed);
                         return false;
                     }
-                    DisplayText($"  No-verify pull from FirstX/Y: X={holeX:F3}, Y={holeY:F3}", KnownColor.DarkCyan);
-                    if (!NozzlePullTapeIndex_m(TapeNumber, pullDistance))
+                    bool useNozzleCoords = false;
+                    DataGridViewCheckBoxCell nozzleCell = Tapes_dataGridView.Rows[TapeNumber].Cells["UseNozzleCoordinates_Column"] as DataGridViewCheckBoxCell;
+                    if (nozzleCell != null && nozzleCell.Value != null)
+                        useNozzleCoords = nozzleCell.Value.ToString() == "True";
+
+                    // Resolve nozzle coords: camera coord needs offset applied; nozzle coord is used as-is.
+                    double nozzleX = useNozzleCoords ? holeX : holeX + Setting.DownCam_NozzleOffsetX;
+                    double nozzleY = useNozzleCoords ? holeY : holeY + Setting.DownCam_NozzleOffsetY;
+
+                    // If FirstX/Y was a nozzle coord, back-calculate the camera coord for pull-end calculation.
+                    if (useNozzleCoords)
+                    {
+                        holeX = nozzleX - Setting.DownCam_NozzleOffsetX;
+                        holeY = nozzleY - Setting.DownCam_NozzleOffsetY;
+                    }
+
+                    DisplayText($"  No-verify pull: nozzle X={nozzleX:F3}, Y={nozzleY:F3} (useNozzleCoords={useNozzleCoords})", KnownColor.DarkCyan);
+                    if (!NozzlePullTapeIndex_m(TapeNumber, pullDistance, nozzleX, nozzleY))
                     {
                         DisplayText("*** Nozzle pull failed!", KnownColor.DarkRed);
                         return false;
