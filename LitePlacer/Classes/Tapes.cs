@@ -449,7 +449,7 @@ namespace LitePlacer
             PartY = 0.0;
             A = 0.0;
 
-			double dW;	// Part center pos from hole, tape width direction. Varies.
+		double dW;	// Part center pos from hole, tape width direction. Varies.
             double dL=2.0;   // Part center pos from hole, tape lenght direction. -2mm on all standard tapes
 			double Pitch;  // Distance from one part to another
 
@@ -457,6 +457,15 @@ namespace LitePlacer
 	        {
 		        return false;
 	        }
+
+            // Nozzle pull feeds tape from the opposite side: hole is on the opposite side of the tape.
+            // Negate dW so the nozzle moves to the correct side of the hole.
+            bool useNozzlePull = false;
+            if (Grid.Rows[Tape].Cells["UseNozzlePull_Column"].Value != null)
+                bool.TryParse(Grid.Rows[Tape].Cells["UseNozzlePull_Column"].Value.ToString(), out useNozzlePull);
+            if (useNozzlePull)
+                dW = -dW;
+
             int pos;
 			if (!int.TryParse(Grid.Rows[Tape].Cells["NextPart_Column"].Value.ToString(), out pos))
 			{
