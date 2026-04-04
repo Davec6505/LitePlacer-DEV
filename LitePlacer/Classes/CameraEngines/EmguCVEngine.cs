@@ -456,35 +456,34 @@ namespace LitePlacer.CameraEngines
                             double perimeter = CvInvoke.ArcLength(contour, true);
                             if (perimeter < minPerimeterPx) continue;
 
-                            // Radius estimator chosen by image type:
-                            //   Edge image: r = perimeter / (2*pi)
-                            //     The Canny ring perimeter directly measures the circle circumference.
-                            //     This is invariant to halo thickness and threshold level.
-                            //   Filled image: r = sqrt(area / pi)
-                            //     Area of the filled disc gives true radius without stairstepping bias.
                             double area = CvInvoke.ContourArea(contour);
+                            CircleF encCircle = CvInvoke.MinEnclosingCircle(contour);
+                            double encRadiusPx = encCircle.Radius;
+
                             double radiusPx;
-                            if (isEdgeImage)
-                                radiusPx = perimeter / (2.0 * Math.PI);
-                            else
-                                radiusPx = Math.Sqrt(area / Math.PI);
-
-                            double diameterMm = radiusPx * 2.0 * XmmPerPixel;
-
-                            // Circularity check on perimeter vs area to reject non-circular contours.
-                            // For edge images, use a ring-aware formula: compare enclosing circle area to contour area.
                             double circularity;
+
                             if (isEdgeImage)
                             {
-                                double expectedFilledArea = Math.PI * radiusPx * radiusPx;
-                                double enclosingArea = Math.PI * (CvInvoke.MinEnclosingCircle(contour).Radius *
-                                                                   CvInvoke.MinEnclosingCircle(contour).Radius);
-                                circularity = expectedFilledArea / enclosingArea;
+                                // Edge image (Canny ring): use MinEnclosingCircle radius as the size estimator.
+                                // It is immune to jagged perimeter noise that inflates perimeter/(2?).
+                                // Circularity: compare ideal perimeter (2?·r) to actual perimeter.
+                                // A perfect circle ? ratio=1.0. Noise/non-circle ? <1.0.
+                                // Clamped to [0,1] to prevent >1 from sub-pixel jaggedness.
+                                radiusPx = encRadiusPx;
+                                double idealPerimeter = 2.0 * Math.PI * encRadiusPx;
+                                circularity = idealPerimeter > 0
+                                    ? Math.Min(1.0, idealPerimeter / perimeter)
+                                    : 0;
                             }
                             else
                             {
+                                // Filled image: standard 4?A/P² circularity, area-based radius.
+                                radiusPx = Math.Sqrt(area / Math.PI);
                                 circularity = (4.0 * Math.PI * area) / (perimeter * perimeter);
                             }
+
+                            double diameterMm = radiusPx * 2.0 * XmmPerPixel;
 
                             if (circularity < 0.6) continue;
 
