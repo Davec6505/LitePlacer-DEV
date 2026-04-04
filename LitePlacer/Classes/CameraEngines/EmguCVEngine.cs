@@ -420,11 +420,13 @@ namespace LitePlacer.CameraEngines
                         System.Drawing.KnownColor.DarkCyan);
 
                 // ChainApproxNone: keep every boundary pixel for accurate perimeter and centroid.
-                // RetrType.List: retrieves all contours without hierarchy — needed for edge images
-                // where Canny produces two concentric rings (inner + outer of the bright halo).
+                // Edge images (Canny): use RetrType.External to suppress the inner concentric ring
+                // that Canny produces for the bright halo — only the outermost ring is needed.
+                // Filled images: RetrType.List is fine (single blob per feature).
+                RetrType retrieval = isEdgeImage ? RetrType.External : RetrType.List;
                 using (VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint())
                 {
-                    CvInvoke.FindContours(gray, contours, null, RetrType.List, ChainApproxMethod.ChainApproxNone);
+                    CvInvoke.FindContours(gray, contours, null, retrieval, ChainApproxMethod.ChainApproxNone);
                     gray.Dispose();
 
                     if (DisplayResults)
@@ -434,7 +436,10 @@ namespace LitePlacer.CameraEngines
                     // circumference of a circle of diameter Xmin are too small to be the target.
                     double minPerimeterPx = Math.PI * (parameters.Xmin / XmmPerPixel); // pi * d
 
+                    // Edge images: pick the SMALLEST valid circle (the hole, not the surrounding halo).
+                    // Filled images: pick the CLOSEST valid circle to the frame centre.
                     double bestDist = double.MaxValue;
+                    double bestDiameterForEdge = double.MaxValue;
                     double bestCx = 0, bestCy = 0, bestDiameterMm = 0;
                     bool foundValid = false;
 
@@ -483,6 +488,9 @@ namespace LitePlacer.CameraEngines
 
                             if (circularity < 0.6) continue;
 
+                            if (DisplayResults)
+                                _mainForm.DisplayText($"    contour {i}: d={diameterMm:F3}mm circ={circularity:F2}", System.Drawing.KnownColor.DarkGray);
+
                             // Track best circular candidate for diagnostics (before size/distance filter)
                             var momDiag = CvInvoke.Moments(contour);
                             if (momDiag.M00 >= 1)
@@ -502,8 +510,7 @@ namespace LitePlacer.CameraEngines
                             if (diameterMm < parameters.Xmin || diameterMm > parameters.Xmax)
                                 continue;
 
-                            // Sub-pixel centroid from moments - works correctly for both
-                            // edge rings and filled discs.
+                            // Sub-pixel centroid from moments
                             var moments = CvInvoke.Moments(contour);
                             if (moments.M00 < 1) continue;
                             double cx = moments.M10 / moments.M00;
@@ -516,9 +523,17 @@ namespace LitePlacer.CameraEngines
                                 continue;
 
                             double distPx = Math.Sqrt((cx - centerX) * (cx - centerX) + (cy - centerY) * (cy - centerY));
-                            if (distPx < bestDist)
+
+                            // Edge images: prefer smallest diameter (hole, not halo).
+                            // Filled images: prefer closest to centre.
+                            bool isBetter = isEdgeImage
+                                ? (diameterMm < bestDiameterForEdge)
+                                : (distPx < bestDist);
+
+                            if (isBetter)
                             {
                                 bestDist = distPx;
+                                bestDiameterForEdge = diameterMm;
                                 bestCx = cx;
                                 bestCy = cy;
                                 bestDiameterMm = diameterMm;
