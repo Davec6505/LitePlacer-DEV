@@ -8814,10 +8814,25 @@ namespace LitePlacer
                         return false;
                     }
 
-                    // Get part position from camera-coord hole position
-                     double partX, partY, partA;
-                     if (!Tapes.GetPartLocationFromHolePosition_m(TapeNumber, holeX, holeY, out partX, out partY, out partA))
-                         return false;
+                    // Part is now at pull-end position: original hole + pitch in feed direction.
+                    // Apply dW/dL offsets from that pull-end position to land on the part.
+                    double pitch1 = 4.0;
+                    {
+                        var pc = Tapes_dataGridView.Rows[TapeNumber].Cells["Pitch_Column"];
+                        if (pc.Value != null) double.TryParse(pc.Value.ToString().Replace(',', '.'), out pitch1);
+                    }
+                    string orient1 = Tapes_dataGridView.Rows[TapeNumber].Cells["Orientation_Column"].Value.ToString();
+                    double pullEndX1 = holeX, pullEndY1 = holeY;
+                    switch (orient1)
+                    {
+                        case "+Y": pullEndY1 += pitch1; break;
+                        case "-Y": pullEndY1 -= pitch1; break;
+                        case "+X": pullEndX1 += pitch1; break;
+                        case "-X": pullEndX1 -= pitch1; break;
+                    }
+                    double partX, partY, partA;
+                    if (!Tapes.GetPartLocationFromHolePosition_m(TapeNumber, pullEndX1, pullEndY1, out partX, out partY, out partA))
+                        return false;
 
                     DisplayText($"Pull pickup: part X={partX:F3}, Y={partY:F3}", KnownColor.DarkCyan);
 
@@ -8844,10 +8859,25 @@ namespace LitePlacer
                         return false;
                     }
 
-                    // Get part position from the (verified or fixed) hole position
-                     double partX2, partY2, partA2;
-                     if (!Tapes.GetPartLocationFromHolePosition_m(TapeNumber, holeX, holeY, out partX2, out partY2, out partA2))
-                         return false;
+                    // Part is now at pull-end position: original hole + pitch in feed direction.
+                    // Apply dW/dL offsets from that pull-end position to land on the part.
+                    double pitch2 = 4.0;
+                    {
+                        var pc = Tapes_dataGridView.Rows[TapeNumber].Cells["Pitch_Column"];
+                        if (pc.Value != null) double.TryParse(pc.Value.ToString().Replace(',', '.'), out pitch2);
+                    }
+                    string orient2 = Tapes_dataGridView.Rows[TapeNumber].Cells["Orientation_Column"].Value.ToString();
+                    double pullEndX2 = holeX, pullEndY2 = holeY;
+                    switch (orient2)
+                    {
+                        case "+Y": pullEndY2 += pitch2; break;
+                        case "-Y": pullEndY2 -= pitch2; break;
+                        case "+X": pullEndX2 += pitch2; break;
+                        case "-X": pullEndX2 -= pitch2; break;
+                    }
+                    double partX2, partY2, partA2;
+                    if (!Tapes.GetPartLocationFromHolePosition_m(TapeNumber, pullEndX2, pullEndY2, out partX2, out partY2, out partA2))
+                        return false;
 
                     DisplayText($"Pull pickup: part X={partX2:F3}, Y={partY2:F3}", KnownColor.DarkCyan);
 
