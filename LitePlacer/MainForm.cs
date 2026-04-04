@@ -12358,7 +12358,18 @@ namespace LitePlacer
                 if (edCell.Value != null && double.TryParse(edCell.Value.ToString().Replace(',', '.'), System.Globalization.NumberStyles.Any, CultureInfo.InvariantCulture, out double ed) && ed > 0)
                     ENGAGEMENT_DEPTH = ed;
             }
-            DisplayText($"Nozzle pull indexing: {pullDistance}mm engage={ENGAGEMENT_DEPTH}mm...", KnownColor.DarkCyan);
+
+            // Total pull = pitch + pullDistance (overshoot so part clears the cover tape support).
+            // pullDistance is the extra overshoot beyond one pitch step.
+            double pitch = 4.0; // default
+            {
+                var pitchCell = Tapes_dataGridView.Rows[tapeRow].Cells["Pitch_Column"];
+                if (pitchCell.Value != null && double.TryParse(pitchCell.Value.ToString().Replace(',', '.'), System.Globalization.NumberStyles.Any, CultureInfo.InvariantCulture, out double p) && p > 0)
+                    pitch = p;
+            }
+            double totalPull = pitch + pullDistance;
+
+            DisplayText($"Nozzle pull indexing: pitch={pitch}mm + overshoot={pullDistance}mm = total={totalPull}mm, engage={ENGAGEMENT_DEPTH}mm...", KnownColor.DarkCyan);
             DisplayText($"  Moving nozzle to hole: X={nozzleHoleX:F3}, Y={nozzleHoleY:F3}", KnownColor.DarkCyan);
             if (!CNC_XYA_m(nozzleHoleX, nozzleHoleY, Cnc.CurrentA))
             {
@@ -12375,22 +12386,21 @@ namespace LitePlacer
                 return false;
             }
 
-            // STEP 3: Pull in feed direction.
-            // +Y/-Y tape: feed is always +Y. +X/-X tape: feed is always +X.
+            // STEP 3: Pull in feed direction by pitch + overshoot.
             double pullTargetX = nozzleHoleX;
             double pullTargetY = nozzleHoleY;
             switch (orientation)
             {
-                case "+Y": pullTargetY += pullDistance; break;
-                case "-Y": pullTargetY -= pullDistance; break;
-                case "+X": pullTargetX += pullDistance; break;
-                case "-X": pullTargetX -= pullDistance; break;
+                case "+Y": pullTargetY += totalPull; break;
+                case "-Y": pullTargetY -= totalPull; break;
+                case "+X": pullTargetX += totalPull; break;
+                case "-X": pullTargetX -= totalPull; break;
                 default:
                     ShowMessageBox($"Unknown tape orientation: {orientation}", "Tape error", MessageBoxButtons.OK);
                     Cnc.Z(engageZ - 10.0);
                     return false;
             }
-            DisplayText($"  Pulling tape {pullDistance}mm ({orientation})", KnownColor.DarkCyan);
+            DisplayText($"  Pulling tape {totalPull}mm ({orientation})", KnownColor.DarkCyan);
             if (!Cnc.Execute_XYA(pullTargetX, pullTargetY, Cnc.CurrentA, 300.0, "G1"))
             {
                 DisplayText("*** Failed to pull tape", KnownColor.DarkRed);
