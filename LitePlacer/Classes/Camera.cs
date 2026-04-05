@@ -2994,6 +2994,13 @@ namespace LitePlacer
         public double XmmPerPixel;
         public double YmmPerPixel;
 
+        /// <summary>
+        /// Diameter (mm) of the circle found by the most recent successful Measure() call.
+        /// Zero if the last measurement failed or was not a circle search.
+        /// Used by NozzleCalibrationClass to detect cross-step size deviation.
+        /// </summary>
+        public double LastMeasuredSizeMm = 0.0;
+
         private void DisplayShapes(List<Shapes.Shape> Shapes, int StartFrom, double XmmPpix, double YmmPpix)
         {
             if ((Shapes.Count - StartFrom) == 0)
@@ -3102,6 +3109,10 @@ namespace LitePlacer
                     result = _currentEngine.Measure(image, _enginePipeline, MeasurementParameters, 
                         engineXmmPpix, engineYmmPpix, out Xresult, out Yresult, out Aresult,
                         out XSizeMm, out YSizeMm, DisplayResults);
+                }
+                if (result)
+                {
+                    LastMeasuredSizeMm = XSizeMm;
                 }
                 if (DisplayResults)
                 {

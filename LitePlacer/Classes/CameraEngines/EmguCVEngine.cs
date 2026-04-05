@@ -461,27 +461,31 @@ namespace LitePlacer.CameraEngines
                             }
                         }
 
-                        // Identify the selected candidate: the one that passes both filters and is
-                        // smallest (edge) or closest to centre (filled) — matches DetectCircles_SubPixel.
-                        int selectedIdx = -1;
-                        double bestDiameterForEdge = double.MaxValue;
-                        double bestDist = double.MaxValue;
+                        // Identify the selected candidate using the same logic as DetectCircles_SubPixel:
+                        // sort by diameter, pick the smallest. If the two smallest are within 5% of
+                        // each other the result would be ambiguous - mark both yellow, not green.
+                        var passing = new List<int>(); // indices of candidates that pass both filters
                         for (int i = 0; i < candidates.Count; i++)
                         {
-                            var c = candidates[i];
-                            if (!c.PassesSize || !c.PassesDistance) continue;
-                            double distPx = Math.Sqrt(
-                                (c.CenterX - centerX) * (c.CenterX - centerX) +
-                                (c.CenterY - centerY) * (c.CenterY - centerY));
-                            bool isBetter = isEdgeImage
-                                ? c.DiameterMm < bestDiameterForEdge
-                                : distPx < bestDist;
-                            if (isBetter)
-                            {
-                                bestDiameterForEdge = c.DiameterMm;
-                                bestDist = distPx;
-                                selectedIdx = i;
-                            }
+                            if (candidates[i].PassesSize && candidates[i].PassesDistance)
+                                passing.Add(i);
+                        }
+                        passing.Sort((a, b) => candidates[a].DiameterMm.CompareTo(candidates[b].DiameterMm));
+
+                        int selectedIdx = -1;
+                        bool ambiguous = false;
+                        if (passing.Count == 1)
+                        {
+                            selectedIdx = passing[0];
+                        }
+                        else if (passing.Count > 1)
+                        {
+                            double smallest = candidates[passing[0]].DiameterMm;
+                            double second   = candidates[passing[1]].DiameterMm;
+                            ambiguous = (second - smallest) / smallest < 0.05;
+                            if (!ambiguous)
+                                selectedIdx = passing[0]; // smallest is clearly distinct
+                            // if ambiguous, selectedIdx stays -1 so all passing show yellow
                         }
 
                         for (int i = 0; i < candidates.Count; i++)
@@ -586,12 +590,10 @@ namespace LitePlacer.CameraEngines
                     // circumference of a circle of diameter Xmin are too small to be the target.
                     double minPerimeterPx = Math.PI * (parameters.Xmin / XmmPerPixel); // pi * d
 
-                    // Edge images: pick the SMALLEST valid circle (the hole, not the surrounding halo).
-                    // Filled images: pick the CLOSEST valid circle to the frame centre.
-                    double bestDist = double.MaxValue;
-                    double bestDiameterForEdge = double.MaxValue;
-                    double bestCx = 0, bestCy = 0, bestDiameterMm = 0;
-                    bool foundValid = false;
+                    // Collect ALL candidates that pass both size AND distance filters.
+                    // Uniqueness is enforced after collection - mirrors AForge MeasureInternal exactly:
+                    // if more than one circle passes all filters the result is ambiguous and we abort.
+                    var validCandidates = new List<System.Tuple<double, double, double>>(); // cx, cy, diameterMm
 
                     // Diagnostic: track the most circular candidate regardless of size/distance
                     // filters so we can log what the algorithm actually sees when nothing passes.
@@ -671,27 +673,12 @@ namespace LitePlacer.CameraEngines
                             if (XdistMm > parameters.XUniqueDistance || YdistMm > parameters.YUniqueDistance)
                                 continue;
 
-                            double distPx = Math.Sqrt((cx - centerX) * (cx - centerX) + (cy - centerY) * (cy - centerY));
-
-                            // Edge images: prefer smallest diameter (hole, not halo).
-                            // Filled images: prefer closest to centre.
-                            bool isBetter = isEdgeImage
-                                ? (diameterMm < bestDiameterForEdge)
-                                : (distPx < bestDist);
-
-                            if (isBetter)
-                            {
-                                bestDist = distPx;
-                                bestDiameterForEdge = diameterMm;
-                                bestCx = cx;
-                                bestCy = cy;
-                                bestDiameterMm = diameterMm;
-                                foundValid = true;
-                            }
+                            // Passed both filters - add to candidates list
+                            validCandidates.Add(System.Tuple.Create(cx, cy, diameterMm));
                         }
                     }
 
-                    if (!foundValid)
+                    if (validCandidates.Count == 0)
                     {
                         if (DisplayResults)
                         {
@@ -704,6 +691,33 @@ namespace LitePlacer.CameraEngines
                         }
                         return false;
                     }
+
+                    // Sort candidates by diameter ascending so the smallest is always [0].
+                    validCandidates.Sort((a, b) => a.Item3.CompareTo(b.Item3));
+
+                    if (validCandidates.Count > 1)
+                    {
+                        double smallest = validCandidates[0].Item3;
+                        double second  = validCandidates[1].Item3;
+                        // If the two smallest are within 5% of each other we cannot reliably
+                        // tell them apart - abort as ambiguous, same as AForge uniqueness error.
+                        if ((second - smallest) / smallest < 0.05)
+                        {
+                            _mainForm.DisplayText(
+                                $"EmguCV: result is ambiguous - smallest circle ({smallest:F3}mm) and next ({second:F3}mm) are within 5%. Tighten Xmin/Xmax.",
+                                System.Drawing.KnownColor.Red);
+                            return false;
+                        }
+                        // Smallest is clearly the winner; the others are the outer body rings.
+                        if (DisplayResults)
+                            _mainForm.DisplayText(
+                                $"EmguCV: {validCandidates.Count} circles in window - selecting smallest ({smallest:F3}mm), next is {second:F3}mm",
+                                System.Drawing.KnownColor.DarkCyan);
+                    }
+
+                    double bestCx = validCandidates[0].Item1;
+                    double bestCy = validCandidates[0].Item2;
+                    double bestDiameterMm = validCandidates[0].Item3;
 
                     X = (bestCx - centerX) * XmmPerPixel;
                     Y = (centerY - bestCy) * YmmPerPixel;

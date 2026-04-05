@@ -285,6 +285,8 @@ namespace LitePlacer
             NozzleData Nozzle = new NozzleData();
             Nozzle.CalibrationPoints = new CalibrationPointsList();
             Nozzle.Calibrated = false;
+            double referenceDiameterMm = 0.0; // diameter measured at angle 0; all steps checked against this
+
             // I goes in .1 of degrees. Makes sense to have the increase so, that multiplies of 45 are hit
             for (int i = 0; i <= 3600; i = i + 225)
             {
@@ -299,15 +301,36 @@ namespace LitePlacer
                 {
                     if (Cam.Measure(out Point.X, out Point.Y, out double Ares, out bool ambiguous, true))
                     {
+                        // Deviation guard: measured circle must stay within 5% of the reference diameter.
+                        // A jump larger than 5% means the engine locked onto a different ring.
+                        double measuredDiameter = Cam.LastMeasuredSizeMm;
+                        if (referenceDiameterMm < 0.001)
+                        {
+                            referenceDiameterMm = measuredDiameter; // first step sets the reference
+                        }
+                        else if (measuredDiameter > 0.001 &&
+                                 Math.Abs(measuredDiameter - referenceDiameterMm) / referenceDiameterMm > 0.05)
+                        {
+                            MainForm.ShowMessageBox(
+                                "Nozzle calibration aborted: circle diameter changed by more than 5% between rotation steps.\n" +
+                                "At angle " + Point.Angle.ToString("0.0") + "° the measured diameter is " +
+                                measuredDiameter.ToString("0.000") + "mm vs reference " +
+                                referenceDiameterMm.ToString("0.000") + "mm.\n" +
+                                "The engine may have switched to a different ring. Check lighting and Xmin/Xmax settings.",
+                                "Circle size deviation",
+                                MessageBoxButtons.OK);
+                            NozzleDataAllNozzles[MainForm.Setting.Nozzles_current - 1] = Nozzle;
+                            return false;
+                        }
                         break;
                     }
                     if (ambiguous)
                     {
-                        // More than one circle matches size+distance criteria: abort immediately.
-                        // Retrying won't help — the optics are seeing multiple features.
+                        // Two circles within 5% of each other - cannot pick reliably.
                         MainForm.ShowMessageBox(
-                            "Nozzle calibration aborted: more than one circle found within the size and distance limits.\n" +
-                            "Check that only the nozzle tip is visible, or tighten the Min/Max size and distance settings.",
+                            "Nozzle calibration aborted: ambiguous measurement at angle " +
+                            Point.Angle.ToString("0.0") + "°.\n" +
+                            "Two circles of similar size passed the filters. Tighten Xmin/Xmax settings.",
                             "Ambiguous measurement",
                             MessageBoxButtons.OK);
                         NozzleDataAllNozzles[MainForm.Setting.Nozzles_current - 1] = Nozzle;

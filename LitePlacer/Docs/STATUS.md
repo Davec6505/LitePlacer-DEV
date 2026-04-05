@@ -81,3 +81,57 @@ Fix: IncrementTape() reads UseNozzlePull_Column itself at the top via
   LitePlacer/tapes.cs      (IncrementTape — owns no-increment rule with InvokeRequired)
 
 ---
+
+## Session: 2025-07-17 — EmguCV Nozzle Calibration Circle Selection
+
+### Summary
+Replaced the previous "pick best" circle selection logic in the EmguCV engine with a
+robust smallest-circle + 5% deviation guard approach. Added cross-rotation-step
+consistency checking to Calibrate() so a wrong-ring grab is caught immediately.
+
+### Problem
+The previous EmguCV DetectCircles_SubPixel used a "pick best" heuristic (smallest
+diameter for edge images, closest to centre for filled images). This silently selected
+the wrong circle ring when the nozzle outer body was also visible, causing calibration
+errors that were invisible to the operator.
+
+### Fix 1: DetectCircles_SubPixel — smallest-circle with 5% ambiguity guard
+File: LitePlacer/Classes/CameraEngines/EmguCVEngine.cs
+- All circles passing size (Xmin/Xmax) AND distance filters are collected
+- List sorted by diameter ascending
+- If only 1 passes: use it
+- If >1 pass and two smallest within 5% of each other: abort as ambiguous
+- If >1 pass and smallest is >5% smaller than next: select smallest, log the rest
+  (inner hole is always smaller than the outer body ring)
+
+### Fix 2: FindCirclesForDisplay — overlay mirrors engine selection exactly
+File: LitePlacer/Classes/CameraEngines/EmguCVEngine.cs
+- Green  = selected smallest circle (what Measure() returns)
+- Yellow = passes size+distance but ambiguous with winner (within 5%) or runner-up
+- Orange = passes size only, outside distance window
+- Red    = fails size filter
+
+### Fix 3: Camera.LastMeasuredSizeMm — diameter exposed to callers
+File: LitePlacer/Classes/Camera.cs
+- New public field LastMeasuredSizeMm written after each successful engine measurement
+- Lets Calibrate() read diameter without changing the Measure() signature
+
+### Fix 4: Calibrate() — cross-step diameter deviation guard
+File: LitePlacer/Classes/Nozzle.cs
+- Step 0 (angle 0°) sets referenceDiameterMm from Cam.LastMeasuredSizeMm
+- Every subsequent step checks: |measured - reference| / reference > 0.05
+- If exceeded: abort with message naming the angle and both diameters
+- Ambiguous result from engine also aborts with angle-specific message
+
+### Calibration contract (post-fix)
+  - Operator sets Xmin/Xmax to bracket the inner nozzle hole diameter
+  - Engine selects the smallest circle passing those bounds
+  - If two circles indistinguishable in size (within 5%): abort, tighten bounds
+  - If selected circle diameter changes >5% between rotation steps: abort
+  - Overlay always shows exactly what Measure() will use
+
+### Files changed
+  LitePlacer/Classes/Camera.cs                     (LastMeasuredSizeMm field + write)
+  LitePlacer/Classes/CameraEngines/EmguCVEngine.cs (DetectCircles_SubPixel + FindCirclesForDisplay)
+  LitePlacer/Classes/Nozzle.cs                     (Calibrate() deviation guard)
+

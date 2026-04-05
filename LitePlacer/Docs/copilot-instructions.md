@@ -143,10 +143,37 @@ CopyFrom_button added to Algorithms tab:
   Uses DeepClone<T> (JSON round-trip). Located at (1120, 211), right of Rename button.
   Handler: CopyFrom_button_Click in VideoAlgorithmsUI.cs
 
+## EmguCV Circle Selection (Fixed 2025-07-17)
+
+DetectCircles_SubPixel selection strategy:
+  Previous: "pick best" heuristic (smallest for edge images, closest-to-centre for filled).
+  Problem:  Silently selected the outer nozzle body ring when it also passed filters.
+  Fix:      Collect all circles passing size (Xmin/Xmax) AND distance filters.
+            Sort by diameter ascending. Select the smallest.
+            If two smallest are within 5% of each other -> abort as ambiguous.
+            If smallest is clearly distinct (>5% smaller than next) -> use it.
+
+FindCirclesForDisplay overlay colour coding (post-fix):
+  Green  = selected circle (smallest passing all filters, clearly distinct)
+  Yellow = passes size+distance but ambiguous with winner (within 5%) or runner-up
+  Orange = passes size only, outside distance window
+  Red    = fails size filter
+
+Camera.LastMeasuredSizeMm:
+  New public field. Written by MeasureInternal (engine path) after each successful measurement.
+  Holds the diameter of the measured circle in mm. Used by Calibrate() for cross-step guard.
+
+Nozzle calibration deviation guard (Nozzle.cs Calibrate()):
+  Step 0 sets reference diameter from Cam.LastMeasuredSizeMm.
+  Each subsequent step checks: |measured - reference| / reference > 0.05
+  If exceeded: abort with angle + both diameters in message.
+  Ambiguous engine result also aborts with angle-specific message.
+
 ## Status
-  Plan/STATUS.md        full project history (TinyG, MZ_CNC, SKR3, concurrency, EmguCV) — 1393+ lines
-  Plan/PULL_INDEXING.md nozzle pull feature complete changelog — 1114 lines
+  Plan/STATUS.md        full project history (TinyG, MZ_CNC, SKR3, concurrency, EmguCV)
+  Plan/PULL_INDEXING.md nozzle pull feature complete changelog
   Docs/STATUS.md        session fix summaries (this folder)
-  Last updated: 2025-07-16
-  Current state: EmguCV fully wired. Overlay display fixed. Pull feature camera-path bugs fixed.
-  Next: runtime testing on hardware - tape placement with EmguCV hole detection.
+  Last updated: 2025-07-17
+  Current state: EmguCV circle selection robust. Nozzle calibration deviation guard added.
+  Next: runtime testing on hardware - nozzle calibration + tape placement with EmguCV.
+
