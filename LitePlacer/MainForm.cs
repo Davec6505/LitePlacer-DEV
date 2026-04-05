@@ -15209,9 +15209,18 @@ namespace LitePlacer
                 return;
             }
             
-            // Apply engine to both cameras
-            DownCamera.SetEngine(engine);
-            UpCamera.SetEngine(engine);
+            // Apply engine to both cameras - each gets its own instance so state is isolated
+            if (engineName.ToUpperInvariant().Contains("EMGUCV") ||
+                engineName.ToUpperInvariant().Contains("OPENCV"))
+            {
+                DownCamera.SetEngine(new CameraEngines.EmguCVEngine(this));
+                UpCamera.SetEngine(new CameraEngines.EmguCVEngine(this));
+            }
+            else
+            {
+                DownCamera.SetEngine(new CameraEngines.AForgeEngine(DownCamera));
+                UpCamera.SetEngine(new CameraEngines.AForgeEngine(UpCamera));
+            }
             
             // Save selection to settings
             Setting.CameraEngine = engineName;
@@ -15294,9 +15303,17 @@ namespace LitePlacer
                 return;
             }
             
-            // Apply engine to both cameras
-            DownCamera.SetEngine(engine);
-            UpCamera.SetEngine(engine);
+            // Apply engine to both cameras - each gets its own instance so state is isolated
+            if (selectedEngine.Contains("EmguCV") || selectedEngine.Contains("OpenCV"))
+            {
+                DownCamera.SetEngine(new CameraEngines.EmguCVEngine(this));
+                UpCamera.SetEngine(new CameraEngines.EmguCVEngine(this));
+            }
+            else
+            {
+                DownCamera.SetEngine(new CameraEngines.AForgeEngine(DownCamera));
+                UpCamera.SetEngine(new CameraEngines.AForgeEngine(UpCamera));
+            }
             
             // Save selection to settings
             Setting.CameraEngine = selectedEngine;

@@ -351,6 +351,156 @@ namespace LitePlacer.CameraEngines
         }
         
         /// <summary>
+        /// Find all circle candidates in the pipeline-processed frame for display overlay.
+        /// Uses the same contour + circularity logic as DetectCircles_SubPixel but returns every
+        /// circular contour, classified so Camera can draw green/yellow/red accurately.
+        /// Coordinates are in measurement-frame pixels (CameraResolution space).
+        /// </summary>
+        public List<EngineCircle> FindCirclesForDisplay(Bitmap processedFrame,
+                                                         MeasurementParametersClass parameters,
+                                                         double XmmPerPixel,
+                                                         double YmmPerPixel)
+        {
+            var result = new List<EngineCircle>();
+            if (!IsAvailable || processedFrame == null) return result;
+
+            try
+            {
+                using (Mat mat = BitmapToMat(processedFrame))
+                {
+                    Mat gray = new Mat();
+                    if (mat.NumberOfChannels > 1)
+                        CvInvoke.CvtColor(mat, gray, ColorConversion.Bgr2Gray);
+                    else
+                        gray = mat.Clone();
+
+                    int centerX = mat.Width / 2;
+                    int centerY = mat.Height / 2;
+
+                    // Determine edge vs filled image (same logic as DetectCircles_SubPixel)
+                    bool isEdgeImage = true;
+                    using (VectorOfVectorOfPoint testContours = new VectorOfVectorOfPoint())
+                    {
+                        CvInvoke.FindContours(gray.Clone(), testContours, null, RetrType.External, ChainApproxMethod.ChainApproxSimple);
+                        double maxArea = 0;
+                        for (int t = 0; t < testContours.Size; t++)
+                        {
+                            using (VectorOfPoint tc = testContours[t])
+                            {
+                                double a = CvInvoke.ContourArea(tc);
+                                if (a > maxArea)
+                                {
+                                    maxArea = a;
+                                    CircleF enc = CvInvoke.MinEnclosingCircle(tc);
+                                    double encArea = Math.PI * enc.Radius * enc.Radius;
+                                    isEdgeImage = encArea < 1 || (maxArea / encArea) < 0.75;
+                                }
+                            }
+                        }
+                    }
+
+                    // For edge images use RetrType.List here (not External) so we see ALL rings —
+                    // the display wants to show every contour classified, not just the outermost.
+                    using (VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint())
+                    {
+                        CvInvoke.FindContours(gray, contours, null, RetrType.List, ChainApproxMethod.ChainApproxNone);
+                        gray.Dispose();
+
+                        double minPerimeterPx = Math.PI * (parameters.Xmin / XmmPerPixel);
+
+                        // Collect every sufficiently circular contour
+                        var candidates = new List<EngineCircle>();
+                        for (int i = 0; i < contours.Size; i++)
+                        {
+                            using (VectorOfPoint contour = contours[i])
+                            {
+                                double perimeter = CvInvoke.ArcLength(contour, true);
+                                if (perimeter < minPerimeterPx) continue;
+
+                                double area = CvInvoke.ContourArea(contour);
+                                CircleF encCircle = CvInvoke.MinEnclosingCircle(contour);
+                                double encRadiusPx = encCircle.Radius;
+
+                                double radiusPx;
+                                double circularity;
+                                if (isEdgeImage)
+                                {
+                                    radiusPx = encRadiusPx;
+                                    double idealPerimeter = 2.0 * Math.PI * encRadiusPx;
+                                    circularity = idealPerimeter > 0 ? Math.Min(1.0, idealPerimeter / perimeter) : 0;
+                                }
+                                else
+                                {
+                                    radiusPx = Math.Sqrt(area / Math.PI);
+                                    circularity = (4.0 * Math.PI * area) / (perimeter * perimeter);
+                                }
+
+                                if (circularity < 0.6) continue;
+
+                                var moments = CvInvoke.Moments(contour);
+                                if (moments.M00 < 1) continue;
+                                double cx = moments.M10 / moments.M00;
+                                double cy = moments.M01 / moments.M00;
+                                double diameterMm = radiusPx * 2.0 * XmmPerPixel;
+
+                                bool passesSize = diameterMm >= parameters.Xmin && diameterMm <= parameters.Xmax;
+                                double XdistMm = Math.Abs((cx - centerX) * XmmPerPixel);
+                                double YdistMm = Math.Abs((cy - centerY) * YmmPerPixel);
+                                bool passesDist = XdistMm <= parameters.XUniqueDistance && YdistMm <= parameters.YUniqueDistance;
+
+                                candidates.Add(new EngineCircle
+                                {
+                                    CenterX = cx,
+                                    CenterY = cy,
+                                    RadiusPx = radiusPx,
+                                    DiameterMm = diameterMm,
+                                    PassesSize = passesSize,
+                                    PassesDistance = passesDist,
+                                    IsSelected = false  // set below
+                                });
+                            }
+                        }
+
+                        // Identify the selected candidate: the one that passes both filters and is
+                        // smallest (edge) or closest to centre (filled) — matches DetectCircles_SubPixel.
+                        int selectedIdx = -1;
+                        double bestDiameterForEdge = double.MaxValue;
+                        double bestDist = double.MaxValue;
+                        for (int i = 0; i < candidates.Count; i++)
+                        {
+                            var c = candidates[i];
+                            if (!c.PassesSize || !c.PassesDistance) continue;
+                            double distPx = Math.Sqrt(
+                                (c.CenterX - centerX) * (c.CenterX - centerX) +
+                                (c.CenterY - centerY) * (c.CenterY - centerY));
+                            bool isBetter = isEdgeImage
+                                ? c.DiameterMm < bestDiameterForEdge
+                                : distPx < bestDist;
+                            if (isBetter)
+                            {
+                                bestDiameterForEdge = c.DiameterMm;
+                                bestDist = distPx;
+                                selectedIdx = i;
+                            }
+                        }
+
+                        for (int i = 0; i < candidates.Count; i++)
+                        {
+                            var c = candidates[i];
+                            c.IsSelected = (i == selectedIdx);
+                            result.Add(c);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _mainForm.DisplayText($"EmguCV FindCirclesForDisplay error: {ex.Message}", System.Drawing.KnownColor.DarkRed);
+            }
+            return result;
+        }
+
+        /// <summary>
         /// Detect circles using contour analysis - matches AForge FindCirclesFunct() behaviour.
         /// AForge uses BlobCounter + SimpleShapeChecker.IsCircle() on the pipeline-processed image.
         /// We do the same with FindContours + circularity check (4*pi*area/perimeter^2).

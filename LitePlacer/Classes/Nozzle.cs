@@ -297,9 +297,21 @@ namespace LitePlacer
                 }
                 for (int tries = 0; tries < 10; tries++)
                 {
-                    if (Cam.Measure(out Point.X, out Point.Y, out double Ares, true))
+                    if (Cam.Measure(out Point.X, out Point.Y, out double Ares, out bool ambiguous, true))
                     {
                         break;
+                    }
+                    if (ambiguous)
+                    {
+                        // More than one circle matches size+distance criteria: abort immediately.
+                        // Retrying won't help — the optics are seeing multiple features.
+                        MainForm.ShowMessageBox(
+                            "Nozzle calibration aborted: more than one circle found within the size and distance limits.\n" +
+                            "Check that only the nozzle tip is visible, or tighten the Min/Max size and distance settings.",
+                            "Ambiguous measurement",
+                            MessageBoxButtons.OK);
+                        NozzleDataAllNozzles[MainForm.Setting.Nozzles_current - 1] = Nozzle;
+                        return false;
                     }
                     if (tries >= 9)
                     {

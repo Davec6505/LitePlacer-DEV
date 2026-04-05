@@ -936,6 +936,7 @@ namespace LitePlacer
 
 
             List<Shapes.Circle> Circles = new List<Shapes.Circle>();
+            List<CameraEngines.EngineCircle> EngineCircles = new List<CameraEngines.EngineCircle>();
             List<Shapes.Rectangle> Rectangles = new List<Shapes.Rectangle>();
             List<Shapes.Component> ComponentsByOutline = new List<Shapes.Component>();
             List<Shapes.Component> ComponentsFromPads = new List<Shapes.Component>();
@@ -968,6 +969,7 @@ namespace LitePlacer
                 {
                     return;
                 }
+                DisplayedFrame = EnsureDrawableFormat(DisplayedFrame);
             }
             else
             {
@@ -1028,7 +1030,21 @@ namespace LitePlacer
 
                     if (FindCircles)
                     {
-                        Circles = FindCirclesFunct(blobInputFrame);
+                        // When an engine other than AForge is active (e.g. EmguCV), use its own
+                        // circle detector so the display overlay matches what Measure() uses.
+                        // AForge engine returns null here and we fall back to the blob path.
+                        if (_currentEngine != null && _currentEngine.EngineName != "AForge.NET")
+                        {
+                            double engZoom = GetProcessingZoom();
+                            double engXmmPpix = XmmPerPixel / engZoom;
+                            double engYmmPpix = YmmPerPixel / engZoom;
+                            EngineCircles = _currentEngine.FindCirclesForDisplay(
+                                blobInputFrame, MeasurementParameters, engXmmPpix, engYmmPpix);
+                        }
+                        else
+                        {
+                            Circles = FindCirclesFunct(blobInputFrame);
+                        }
                     }
                     if (FindRectangles)
                     {
@@ -1063,10 +1079,22 @@ namespace LitePlacer
                         return;     // this can happen during startup, change of cameras etc. Next frame will fix it.
                     }
 
+                    // DrawXxxFunct calls use Graphics.FromImage which requires a non-indexed pixel format.
+                    // EmguCV pipeline steps (Grayscale, Threshold) may produce Format8bppIndexed via ToBitmap().
+                    // Convert to Format24bppRgb before drawing overlays.
+                    DisplayedFrame = EnsureDrawableFormat(DisplayedFrame);
+
                     // Draw the processing results to DisplayedFrame
                     if (FindCircles)
                     {
-                        DrawCirclesFunct(ref DisplayedFrame, Circles, Zoom, ProcessingZoom);
+                        if (EngineCircles != null && EngineCircles.Count > 0)
+                        {
+                            DrawEmguCVCirclesFunct(ref DisplayedFrame, EngineCircles, Zoom, GetProcessingZoom());
+                        }
+                        else
+                        {
+                            DrawCirclesFunct(ref DisplayedFrame, Circles, Zoom, ProcessingZoom);
+                        }
                     }
                     if (FindRectangles)
                     {
@@ -1081,12 +1109,27 @@ namespace LitePlacer
                         DrawComponentsFunct(ref DisplayedFrame, ComponentsFromPads, Zoom, ProcessingZoom);
                     }
                 }
-                catch (System.InvalidOperationException)
+                catch (Exception)
                 {
-                    // No need to do anything, next frame fixes it
+                    // Any exception in per-frame processing is transient; next frame fixes it.
+                    // Catches InvalidOperationException (pipeline change race), AForge
+                    // UnsupportedImageFormatException (indexed pixel format), and EmguCV
+                    // exceptions that can occur during engine switching or UpCamera processing.
                 }
             };
 
+
+            // Final safety net: ensure DisplayedFrame is in a drawable format before all
+            // post-processing overlays (Mirror, DrawBox, DrawCross, etc.). Covers the case
+            // where an exception in the processed branch left DisplayedFrame in an indexed format.
+            // Also guards null: if the try block threw before assigning DisplayedFrame (e.g. EmguCV
+            // Canny on UpCamera), EnsureDrawableFormat returns null and we skip all overlay draws.
+            DisplayedFrame = EnsureDrawableFormat(DisplayedFrame);
+
+            if (DisplayedFrame == null)
+            {
+                return;
+            }
 
             if (Mirror)
             {
@@ -1097,7 +1140,6 @@ namespace LitePlacer
             {
                 DrawBoxFunct(ref DisplayedFrame);
             };
-
 
             if (DrawCross)
             {
@@ -1156,6 +1198,24 @@ namespace LitePlacer
 
         // see http://www.codeproject.com/Questions/689320/object-is-currently-in-use-elsewhere about the locker
 
+
+        // Converts bitmap to Format24bppRgb if it has an indexed or otherwise non-drawable pixel format.
+        // Required because AForge filters and GDI+ Graphics.FromImage both reject indexed formats.
+        private static Bitmap EnsureDrawableFormat(Bitmap bitmap)
+        {
+            if (bitmap == null) return null;
+            if (bitmap.PixelFormat == PixelFormat.Format24bppRgb ||
+                bitmap.PixelFormat == PixelFormat.Format32bppArgb ||  // ← passed through as-is
+                bitmap.PixelFormat == PixelFormat.Format32bppRgb)
+            {
+                return bitmap;
+            }
+            Bitmap converted = new Bitmap(bitmap.Width, bitmap.Height, PixelFormat.Format24bppRgb);
+            using (Graphics gr = Graphics.FromImage(converted))
+                gr.DrawImage(bitmap, 0, 0);
+            bitmap.Dispose();
+            return converted;
+        }
 
         // =========================================================
         private Bitmap FitImageToUI(Bitmap SourceFrame, out double zoom)
@@ -1955,6 +2015,59 @@ namespace LitePlacer
         }
 
         // =========================================================
+        // Draw circle overlay from EmguCV engine candidates.
+        // EngineCircle coordinates are in measurement-frame pixel space (CameraResolution).
+        // Colour coding:
+        //   Green  = IsSelected (the one circle Measure() would use)
+        //   Yellow = PassesSize && PassesDistance but not selected (ambiguous — won't be used)
+        //   Orange = PassesSize but outside distance window
+        //   Red    = fails size filter
+        private void DrawEmguCVCirclesFunct(ref Bitmap bitmap,
+            List<CameraEngines.EngineCircle> circles, double Zoom, double ProcessingZoom)
+        {
+            if (circles == null || circles.Count == 0) return;
+
+            int PenSize = 2;
+            Graphics g = Graphics.FromImage(bitmap);
+            Pen GreenPen  = new Pen(Color.Lime, PenSize);
+            Pen YellowPen = new Pen(Color.Yellow, PenSize);
+            Pen OrangePen = new Pen(Color.Orange, PenSize);
+            Pen RedPen    = new Pen(Color.Red, PenSize);
+
+            int FrameCenterX = bitmap.Width / 2;
+            int FrameCenterY = bitmap.Height / 2;
+            int MeasurementCenterX = CameraResolution.X / 2;
+            int MeasurementCenterY = CameraResolution.Y / 2;
+
+            foreach (var c in circles)
+            {
+                // Transform from measurement-frame pixels to display-frame pixels
+                double screenX = (c.CenterX - MeasurementCenterX) * Zoom + FrameCenterX;
+                double screenY = (c.CenterY - MeasurementCenterY) * Zoom + FrameCenterY;
+                float r = (float)(c.RadiusPx * Zoom);
+                float dia = r * 2;
+
+                Pen pen;
+                if (c.IsSelected)
+                    pen = GreenPen;
+                else if (c.PassesSize && c.PassesDistance)
+                    pen = YellowPen;   // ambiguous — passes all filters but not chosen
+                else if (c.PassesSize)
+                    pen = OrangePen;   // right size, too far from centre
+                else
+                    pen = RedPen;      // wrong size
+
+                g.DrawEllipse(pen, (float)(screenX - r), (float)(screenY - r), dia, dia);
+            }
+
+            g.Dispose();
+            GreenPen.Dispose();
+            YellowPen.Dispose();
+            OrangePen.Dispose();
+            RedPen.Dispose();
+        }
+
+        // =========================================================
         private void DrawCirclesFunct(ref Bitmap bitmap, List<Shapes.Circle> Circles, double Zoom, double ProcessingZoom)
         {
             if (Circles.Count == 0)
@@ -1979,42 +2092,86 @@ namespace LitePlacer
             double XUniqueDistance = MainForm.VideoAlgorithms.CurrentAlgorithm.MeasurementParameters.XUniqueDistance;
             double YUniqueDistance = MainForm.VideoAlgorithms.CurrentAlgorithm.MeasurementParameters.YUniqueDistance;
 
-            for (int i = 0, n = Circles.Count; i < n; i++)
+            // Classify every circle first so we can identify the single best candidate.
+            // 0 = red (wrong size), 1 = yellow (right size, too far), 2 = green (passes all filters).
+            int n = Circles.Count;
+            int[] colorClass = new int[n];
+            double[] screenX = new double[n];
+            double[] screenY = new double[n];
+            double[] scaledRadius = new double[n];
+            double[] sizeMm = new double[n];
+
+            for (int i = 0; i < n; i++)
             {
                 double X = Circles[i].Center.X;
-                X = X - MeasurementCenterX;     // X = pixels from measured frame center
-                X = X * Zoom;                   // X = pixels from displayed image center
-                X = X + FrameCenterX;           // move to position
+                X = X - MeasurementCenterX;
+                X = X * Zoom;
+                X = X + FrameCenterX;
+                screenX[i] = X;
 
                 double Y = Circles[i].Center.Y;
                 Y = Y - MeasurementCenterY;
                 Y = Y * Zoom;
                 Y = Y + FrameCenterY;
+                screenY[i] = Y;
 
-                double radius = Circles[i].Radius;
-                radius = radius * Zoom;
-                float dia = (float)(radius * 2);
-                double Size = Circles[i].Radius * 2 * XmmPerPixel / ProcessingZoom;
+                scaledRadius[i] = Circles[i].Radius * Zoom;
+                sizeMm[i] = Circles[i].Radius * 2 * XmmPerPixel / ProcessingZoom;
+
                 double Xdist = Math.Abs((X - FrameCenterX) * XmmPpix);
                 double Ydist = Math.Abs((FrameCenterY - Y) * YmmPpix);
 
-
-                if ((Size < Xmin) || (Size > Xmax))
+                if ((sizeMm[i] < Xmin) || (sizeMm[i] > Xmax))
                 {
-                    // Wrong size, draw in red
-                    g.DrawEllipse(RedPen, (float)(X - radius), (float)(Y - radius), dia, dia);
+                    colorClass[i] = 0; // red: wrong size
                 }
                 else if ((Xdist > XUniqueDistance) || (Ydist > YUniqueDistance))
                 {
-                    // Size OK, too far; draw yellow
-                    g.DrawEllipse(YellowPen, (float)(X - radius), (float)(Y - radius), dia, dia);
+                    colorClass[i] = 1; // yellow: right size, too far
                 }
                 else
                 {
-                    // All ok, draw in green
-                    g.DrawEllipse(LimePen, (float)(X - radius), (float)(Y - radius), dia, dia);
+                    colorClass[i] = 2; // green: passes all filters
                 }
             }
+
+            // When more than one circle passes all filters the measurement engine would pick
+            // only one (smallest diameter for edge/Canny images, closest to centre otherwise).
+            // Demote the non-selected green circles to yellow so the display matches what
+            // the engine actually uses, and the operator can see the ambiguity clearly.
+            int bestIndex = -1;
+            int greenCount = 0;
+            for (int i = 0; i < n; i++)
+            {
+                if (colorClass[i] == 2)
+                {
+                    greenCount++;
+                    if (bestIndex < 0 || sizeMm[i] < sizeMm[bestIndex])
+                    {
+                        bestIndex = i;
+                    }
+                }
+            }
+            if (greenCount > 1)
+            {
+                for (int i = 0; i < n; i++)
+                {
+                    if (colorClass[i] == 2 && i != bestIndex)
+                    {
+                        colorClass[i] = 1; // demote to yellow
+                    }
+                }
+            }
+
+            // Draw all circles with their final colour.
+            for (int i = 0; i < n; i++)
+            {
+                float r = (float)scaledRadius[i];
+                float dia = r * 2;
+                Pen pen = colorClass[i] == 0 ? RedPen : (colorClass[i] == 1 ? YellowPen : LimePen);
+                g.DrawEllipse(pen, (float)(screenX[i] - r), (float)(screenY[i] - r), dia, dia);
+            }
+
             g.Dispose();
             LimePen.Dispose();
             YellowPen.Dispose();
@@ -2167,13 +2324,22 @@ namespace LitePlacer
 
         private Bitmap MirrorFunct(ref Bitmap frame)
         {
+            // AForge Mirror only supports Format8bppIndexed and Format24bppRgb
+            if (frame.PixelFormat != System.Drawing.Imaging.PixelFormat.Format24bppRgb &&
+                frame.PixelFormat != System.Drawing.Imaging.PixelFormat.Format8bppIndexed)
+            {
+                Bitmap converted = new Bitmap(frame.Width, frame.Height,
+                    System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+                using (Graphics g = Graphics.FromImage(converted))
+                    g.DrawImage(frame, 0, 0);
+                frame.Dispose();
+                frame = converted;
+            }
+
             Mirror Mfilter = new Mirror(false, true);
-            // apply the MirrFilter
             Mfilter.ApplyInPlace(frame);
-            return (frame);
+            return frame;
         }
-
-
         // =========================================================
         private Bitmap TestAlgorithmFunct(Bitmap frame)
         {
@@ -2394,28 +2560,25 @@ namespace LitePlacer
             int FrameCenterY = img.Height / 2;
             int FrameSizeX = img.Width;
             int FrameSizeY = img.Height;
-
-            Graphics g = Graphics.FromImage(img);
-            int PenSize = 2;
-            int tick = 12;
-            int PicSizeX = FrameSizeX;
-            int PicSizeY = FrameSizeY;
             if (ImageBox != null && ImageBox.SizeMode == PictureBoxSizeMode.CenterImage)
             {
                 // UI shows 640x480 from middle of image. Draw tics accordingly
-                PicSizeX = 640;
-                PicSizeY = 480;
-                PenSize = 1;
-                tick = 6;
+                FrameCenterX = 640 / 2;
+                FrameCenterY = 480 / 2;
+                FrameSizeX = 640;
+                FrameSizeY = 480;
             }
 
-            Pen pen = new Pen(Color.Red, PenSize);
-            int XStart = (FrameSizeX / 2) - (PicSizeX / 2);
-            int XEnd = (FrameSizeX / 2) + (PicSizeX / 2);
-            int YStart = (FrameSizeY / 2) - (PicSizeY / 2);
-            int YEnd = (FrameSizeY / 2) + (PicSizeY / 2);
+            Graphics g = Graphics.FromImage(img);
+            Pen pen = new Pen(Color.Red, 2);
+            int tick = 10;
 
-            int Xinc = Convert.ToInt32(PicSizeX / SideMarksX);
+            int XStart = FrameCenterX - (FrameSizeX / 2);
+            int XEnd = FrameCenterX + (FrameSizeX / 2);
+            int YStart = FrameCenterY - (FrameSizeY / 2);
+            int YEnd = FrameCenterY + (FrameSizeY / 2);
+
+            int Xinc = Convert.ToInt32(FrameSizeX / SideMarksX);
             int X = XStart;
             while (X < XEnd)
             {
@@ -2423,7 +2586,7 @@ namespace LitePlacer
                 g.DrawLine(pen, X, YStart, X, YStart + tick);
                 X += Xinc;
             }
-            int Yinc = Convert.ToInt32(PicSizeY / SideMarksY);
+            int Yinc = Convert.ToInt32(FrameSizeY / SideMarksY);
             int Y = YEnd;
             while (Y > YStart)
             {
@@ -2769,7 +2932,7 @@ namespace LitePlacer
         }
 
 
-        // =========================================================================================================
+        // ==========================================================================================================
         // _mmPerScreenPixel: Returns the mm value of a pixel on UI, regardless of showing conditions
 
         // CameraResolution { get; set; }  // resolution from camera
@@ -2867,18 +3030,32 @@ namespace LitePlacer
                 OutString = Xpxls + ", " + Ypxls + "| " + Xmms + ", " + Ymms + "| "
                           + Xsize + ", " + Ysize + "| " + SizeXmm + ", " + SizeYmm + "| " + A;
                 MainForm.DisplayText(OutString);
-            }
+            };
         }
 
 
         // =========================================================
 
-        public bool Measure(out double Xresult, out double Yresult, out double Aresult, bool DisplayResults = false )
+        /// <summary>
+        /// Overload that also reports whether measurement failed due to ambiguity (more than one matching feature).
+        /// </summary>
+        public bool Measure(out double Xresult, out double Yresult, out double Aresult, out bool ambiguous, bool DisplayResults = false)
+        {
+            ambiguous = false;
+            return MeasureInternal(out Xresult, out Yresult, out Aresult, ref ambiguous, DisplayResults);
+        }
+
+        public bool Measure(out double Xresult, out double Yresult, out double Aresult, bool DisplayResults = false)
+        {
+            bool ambiguous = false;
+            return MeasureInternal(out Xresult, out Yresult, out Aresult, ref ambiguous, DisplayResults);
+        }
+
+        private bool MeasureInternal(out double Xresult, out double Yresult, out double Aresult, ref bool ambiguous, bool DisplayResults)
         {
             Xresult = 0.0;
             Yresult = 0.0;
             Aresult = 0.0;
-            DisplayResults = true;
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();
             if ((!MeasurementParameters.SearchRounds) && (!MeasurementParameters.SearchRectangles)
@@ -3152,7 +3329,8 @@ namespace LitePlacer
             {
                 if (FilteredForDistance.Count != 1)
                 {
-                    MainForm.DisplayText("Camera Measure(): result is not unique", KnownColor.Red, true);
+                    ambiguous = true;
+                    MainForm.DisplayText("Camera Measure(): result is not unique (" + FilteredForDistance.Count.ToString() + " matches)", KnownColor.Red, true);
                     MainForm.DisplayText("Elapsed time " + stopwatch.ElapsedMilliseconds.ToString() + "ms");
                     Paused = PauseSave;
                     PauseProcessing = false;
@@ -3169,7 +3347,8 @@ namespace LitePlacer
             DisplayShapes(FilteredForDistance, 0, XmmPpix, YmmPpix);
             if (FilteredForDistance.Count != 1)
             {
-                MainForm.DisplayText("Result is NOT unique!", KnownColor.Red, true);
+                ambiguous = true;
+                MainForm.DisplayText("Result is NOT unique! (" + FilteredForDistance.Count.ToString() + " matches)", KnownColor.Red, true);
                 MainForm.DisplayText("Elapsed time " + stopwatch.ElapsedMilliseconds.ToString() + "ms");
                 Paused = PauseSave;
                 PauseProcessing = false;

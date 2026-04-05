@@ -90,6 +90,18 @@ namespace LitePlacer.CameraEngines
         }
 
         /// <summary>
+        /// AForge engine does not implement engine-side circle detection for display.
+        /// Returning null tells Camera.Video_NewFrame to fall back to the existing AForge blob path.
+        /// </summary>
+        public List<EngineCircle> FindCirclesForDisplay(Bitmap processedFrame,
+                                                         MeasurementParametersClass parameters,
+                                                         double XmmPerPixel,
+                                                         double YmmPerPixel)
+        {
+            return null;
+        }
+
+        /// <summary>
         /// Executes measurement using existing Camera.Measure() implementation
         /// This preserves ALL current AForge functionality without changes
         /// </summary>
