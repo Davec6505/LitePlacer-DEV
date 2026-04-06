@@ -96,12 +96,34 @@ namespace LitePlacer.CameraEngines
             {
                 using (Mat src = frame.ToMat())
                 {
+                    // Ensure 8-bit single-channel. ToMat() on an indexed/1bpp bitmap (which is
+                    // what Threshold outputs via ToBitmap()) produces a depth type where
+                    // BitwiseNot returns all-black. Always normalise to Cv8U first.
+                    Mat work = new Mat();
+                    if (src.Depth != DepthType.Cv8U || src.NumberOfChannels != 1)
+                    {
+                        if (src.NumberOfChannels > 1)
+                            CvInvoke.CvtColor(src, work, ColorConversion.Bgr2Gray);
+                        else
+                            src.ConvertTo(work, DepthType.Cv8U);
+                    }
+                    else
+                    {
+                        work = src.Clone();
+                    }
+
                     Mat inverted = new Mat();
-                    CvInvoke.BitwiseNot(src, inverted);
-                    
-                    frame.Dispose();
-                    frame = inverted.ToBitmap();
+                    CvInvoke.BitwiseNot(work, inverted);
+                    work.Dispose();
+
+                    // Return as 24bpp BGR so the rest of the pipeline never sees indexed bitmaps.
+                    Mat bgr = new Mat();
+                    CvInvoke.CvtColor(inverted, bgr, ColorConversion.Gray2Bgr);
                     inverted.Dispose();
+
+                    frame.Dispose();
+                    frame = bgr.ToBitmap();
+                    bgr.Dispose();
                 }
             }
             catch (Exception ex)

@@ -17,6 +17,12 @@ namespace LitePlacer.CameraEngines
     /// </summary>
     public class EmguCVEngine : ICameraEngine
     {
+        // Minimum fraction of a full circle circumference that a Canny contour must cover to be
+        // accepted as a ring (not a reflection arc). 0.60 = 216-degree minimum arc.
+        // Raise toward 0.75 if shoulder-reflection arcs still pass; lower toward 0.45 for
+        // worn/dirty nozzles where the Canny ring is partially interrupted.
+        private const double ArcCoverageThreshold = 0.60;
+
         private FormMain _mainForm;
         
         public EmguCVEngine(FormMain mainForm)
@@ -377,38 +383,28 @@ namespace LitePlacer.CameraEngines
                     int centerX = mat.Width / 2;
                     int centerY = mat.Height / 2;
 
-                    // Determine edge vs filled image (same logic as DetectCircles_SubPixel)
-                    bool isEdgeImage = true;
-                    using (VectorOfVectorOfPoint testContours = new VectorOfVectorOfPoint())
-                    {
-                        CvInvoke.FindContours(gray.Clone(), testContours, null, RetrType.External, ChainApproxMethod.ChainApproxSimple);
-                        double maxArea = 0;
-                        for (int t = 0; t < testContours.Size; t++)
-                        {
-                            using (VectorOfPoint tc = testContours[t])
-                            {
-                                double a = CvInvoke.ContourArea(tc);
-                                if (a > maxArea)
-                                {
-                                    maxArea = a;
-                                    CircleF enc = CvInvoke.MinEnclosingCircle(tc);
-                                    double encArea = Math.PI * enc.Radius * enc.Radius;
-                                    isEdgeImage = encArea < 1 || (maxArea / encArea) < 0.75;
-                                }
-                            }
-                        }
-                    }
+                    // Edge images: sparse lines, fillRatio < 0.08. Filled: solid blobs, > 0.08.
+                    double totalDisplayPixels = mat.Width * mat.Height;
+                    MCvScalar displayNonZero = new MCvScalar(CvInvoke.CountNonZero(gray));
+                    bool isEdgeImage = (displayNonZero.V0 / totalDisplayPixels) < 0.08;
 
-                    // For edge images use RetrType.List here (not External) so we see ALL rings —
-                    // the display wants to show every contour classified, not just the outermost.
+                    // MUST match DetectCircles_SubPixel: External for edge images suppresses the
+                    // inner Canny ring phantom. List is correct for filled/threshold images.
                     using (VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint())
                     {
                         CvInvoke.FindContours(gray, contours, null, RetrType.List, ChainApproxMethod.ChainApproxNone);
                         gray.Dispose();
 
-                        double minPerimeterPx = Math.PI * (parameters.Xmin / XmmPerPixel);
+                        // Hard size window for display: only show contours within 4x of the
+                        // configured size limits. Prevents large irregular blobs (e.g. PCB pads,
+                        // text, edges) from being drawn as red circles all over the overlay when
+                        // Xmin/Xmax are set to small values like 1-1.5mm.
+                        double displayXmin = parameters.Xmin > 0 ? parameters.Xmin * 0.25 : 0;
+                        // Only apply an upper hard-reject for display — blobs > 4x Xmax are never
+                        // the target and just pollute the overlay as red circles.
+                        double displayXmax = parameters.Xmax * 4.0;
+                        double minPerimeterPx = Math.Max(10.0, Math.PI * (parameters.Xmin / XmmPerPixel));
 
-                        // Collect every sufficiently circular contour
                         var candidates = new List<EngineCircle>();
                         for (int i = 0; i < contours.Size; i++)
                         {
@@ -437,12 +433,24 @@ namespace LitePlacer.CameraEngines
 
                                 if (circularity < 0.6) continue;
 
+                                if (isEdgeImage)
+                                {
+                                    double expectedCircumferencePx = 2.0 * Math.PI * encRadiusPx;
+                                    double arcCoverage = contour.Size / expectedCircumferencePx;
+                                    if (arcCoverage < ArcCoverageThreshold) continue;
+                                }
+
                                 var moments = CvInvoke.Moments(contour);
                                 if (moments.M00 < 1) continue;
                                 double cx = moments.M10 / moments.M00;
                                 double cy = moments.M01 / moments.M00;
                                 double diameterMm = radiusPx * 2.0 * XmmPerPixel;
 
+                                // Hard reject: discard anything far outside the size window.
+                                // This is the key fix - without this, every large blob that passes
+                                // circularity gets added and drawn red, polluting the overlay.
+                                //if (diameterMm < displayXmin || diameterMm > displayXmax) continue;
+                                if (diameterMm > displayXmax) continue;
                                 bool passesSize = diameterMm >= parameters.Xmin && diameterMm <= parameters.Xmax;
                                 double XdistMm = Math.Abs((cx - centerX) * XmmPerPixel);
                                 double YdistMm = Math.Abs((cy - centerY) * YmmPerPixel);
@@ -456,15 +464,12 @@ namespace LitePlacer.CameraEngines
                                     DiameterMm = diameterMm,
                                     PassesSize = passesSize,
                                     PassesDistance = passesDist,
-                                    IsSelected = false  // set below
+                                    IsSelected = false
                                 });
                             }
                         }
 
-                        // Identify the selected candidate using the same logic as DetectCircles_SubPixel:
-                        // sort by diameter, pick the smallest. If the two smallest are within 5% of
-                        // each other the result would be ambiguous - mark both yellow, not green.
-                        var passing = new List<int>(); // indices of candidates that pass both filters
+                        var passing = new List<int>();
                         for (int i = 0; i < candidates.Count; i++)
                         {
                             if (candidates[i].PassesSize && candidates[i].PassesDistance)
@@ -473,7 +478,6 @@ namespace LitePlacer.CameraEngines
                         passing.Sort((a, b) => candidates[a].DiameterMm.CompareTo(candidates[b].DiameterMm));
 
                         int selectedIdx = -1;
-                        bool ambiguous = false;
                         if (passing.Count == 1)
                         {
                             selectedIdx = passing[0];
@@ -482,10 +486,9 @@ namespace LitePlacer.CameraEngines
                         {
                             double smallest = candidates[passing[0]].DiameterMm;
                             double second   = candidates[passing[1]].DiameterMm;
-                            ambiguous = (second - smallest) / smallest < 0.05;
+                            bool ambiguous = (second - smallest) / smallest < 0.05;
                             if (!ambiguous)
-                                selectedIdx = passing[0]; // smallest is clearly distinct
-                            // if ambiguous, selectedIdx stays -1 so all passing show yellow
+                                selectedIdx = passing[0];
                         }
 
                         for (int i = 0; i < candidates.Count; i++)
@@ -546,49 +549,28 @@ namespace LitePlacer.CameraEngines
                 MCvScalar nonZeroCount = new MCvScalar(CvInvoke.CountNonZero(gray));
                 double fillRatio = nonZeroCount.V0 / totalPixels;
 
-                // Find largest contour to test filled vs edge
-                bool isEdgeImage = true;
-                using (VectorOfVectorOfPoint testContours = new VectorOfVectorOfPoint())
-                {
-                    CvInvoke.FindContours(gray.Clone(), testContours, null, RetrType.External, ChainApproxMethod.ChainApproxSimple);
-                    double maxArea = 0;
-                    for (int t = 0; t < testContours.Size; t++)
-                    {
-                        using (VectorOfPoint tc = testContours[t])
-                        {
-                            double a = CvInvoke.ContourArea(tc);
-                            if (a > maxArea)
-                            {
-                                maxArea = a;
-                                CircleF enc = CvInvoke.MinEnclosingCircle(tc);
-                                double encArea = Math.PI * enc.Radius * enc.Radius;
-                                // Filled disc fills > 75% of its enclosing circle area
-                                isEdgeImage = encArea < 1 || (maxArea / encArea) < 0.75;
-                            }
-                        }
-                    }
-                }
+                // Edge images (Canny/Sobel): sparse white lines, fillRatio typically < 0.08.
+                // Filled binary images (Threshold+Invert): solid white blobs, fillRatio > 0.08.
+                // The previous largest-contour heuristic broke when the dominant blob was a large
+                // non-circular PCB region, causing the wrong radius estimator to be chosen.
+                bool isEdgeImage = fillRatio < 0.08;
 
                 if (DisplayResults)
                     _mainForm.DisplayText($"EmguCV Circles: image={image.Width}x{image.Height}, fill={fillRatio:P1}, mode={(isEdgeImage ? "edge" : "filled")}, XmmPerPix={XmmPerPixel:F4}",
                         System.Drawing.KnownColor.DarkCyan);
 
-                // ChainApproxNone: keep every boundary pixel for accurate perimeter and centroid.
-                // Edge images (Canny): use RetrType.External to suppress the inner concentric ring
-                // that Canny produces for the bright halo — only the outermost ring is needed.
-                // Filled images: RetrType.List is fine (single blob per feature).
-                RetrType retrieval = isEdgeImage ? RetrType.External : RetrType.List;
                 using (VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint())
                 {
-                    CvInvoke.FindContours(gray, contours, null, retrieval, ChainApproxMethod.ChainApproxNone);
+                    CvInvoke.FindContours(gray, contours, null, RetrType.List, ChainApproxMethod.ChainApproxNone);
                     gray.Dispose();
 
                     if (DisplayResults)
                         _mainForm.DisplayText($"  {contours.Size} raw contours found", System.Drawing.KnownColor.DarkCyan);
 
-                    // Minimum perimeter guard based on Xmin: contours shorter than the
-                    // circumference of a circle of diameter Xmin are too small to be the target.
-                    double minPerimeterPx = Math.PI * (parameters.Xmin / XmmPerPixel); // pi * d
+                    // Minimum perimeter guard. RetrType.List is used for all image types: Canny
+                    // images have no true contour nesting so External was silently dropping arc
+                    // fragments. Floor prevents Xmin=0 from disabling this guard entirely.
+                    double minPerimeterPx = Math.Max(10.0, Math.PI * (parameters.Xmin / XmmPerPixel));
 
                     // Collect ALL candidates that pass both size AND distance filters.
                     // Uniqueness is enforced after collection - mirrors AForge MeasureInternal exactly:
@@ -638,6 +620,18 @@ namespace LitePlacer.CameraEngines
                             double diameterMm = radiusPx * 2.0 * XmmPerPixel;
 
                             if (circularity < 0.6) continue;
+
+                            // Arc-coverage guard for edge images: reject arc fragments that are not
+                            // a near-complete ring. ChainApproxNone gives one point per boundary pixel,
+                            // so contour.Size approximates the arc length in pixels.
+                            // A full circle of radius r has circumference 2*pi*r pixels.
+                            // See ArcCoverageThreshold for the tuning constant.
+                            if (isEdgeImage)
+                            {
+                                double expectedCircumferencePx = 2.0 * Math.PI * encRadiusPx;
+                                double arcCoverage = contour.Size / expectedCircumferencePx;
+                                if (arcCoverage < ArcCoverageThreshold) continue;
+                            }
 
                             if (DisplayResults)
                                 _mainForm.DisplayText($"    contour {i}: d={diameterMm:F3}mm circ={circularity:F2}", System.Drawing.KnownColor.DarkGray);
