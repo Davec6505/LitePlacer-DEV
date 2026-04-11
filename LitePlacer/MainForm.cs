@@ -13078,6 +13078,9 @@ namespace LitePlacer
         private void Nozzles_tabPage_End()
         {
             ZGuardOn();
+            // Clear the display pipeline set up for nozzle calibration so the
+            // Algorithms tab radio buttons take effect cleanly when the user returns.
+            UpCamera.ClearDisplayFunctionsList();
             // enable switches
             Cnc.EnableZswitches();
             // restore settings
@@ -13378,6 +13381,11 @@ namespace LitePlacer
             }
             UpCamera.BuildMeasurementFunctionsList(Alg.FunctionList);
             UpCamera.MeasurementParameters = Alg.MeasurementParameters;
+            // Show the algorithm results on the live view so the operator can verify the
+            // nozzle is visible and correctly detected before/during calibration.
+            // ShowProcessing=false = "Show results" mode: overlay on the raw image.
+            UpCamera.BuildDisplayFunctionsList(Alg.FunctionList);
+            UpCamera.ShowProcessing = false;
 
             // Override size:
             double SmaxSave = UpCamera.MeasurementParameters.Xmax;

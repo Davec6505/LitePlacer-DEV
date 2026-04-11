@@ -120,6 +120,7 @@ namespace LitePlacer.CameraEngines
                 "Morphological black hat",         // Dark feature extraction
                 "CLAHE",                          // Contrast Limited Adaptive Histogram Equalization
                 "Hough circles (sub-pixel)",      // Circle detection with sub-pixel accuracy
+                "Contour circles",                 // Contour+circularity detection on pre-processed image
                 "Harris corners",                  // Corner point detection
                 "Shi-Tomasi corners",             // Good features to track
                 "FAST feature detection",          // Fast feature point detection
@@ -193,6 +194,7 @@ namespace LitePlacer.CameraEngines
                 case "Morphological top hat":   return new EmguCVProcessor(def, EmguCVFunctions.MorphologicalTopHat);
                 case "Morphological black hat":  return new EmguCVProcessor(def, EmguCVFunctions.MorphologicalBlackHat);
                 case "Hough circles (sub-pixel)":return new EmguCVProcessor(def, EmguCVFunctions.HoughCirclesVis);
+                case "Contour circles":          return new EmguCVProcessor(def, EmguCVFunctions.ContourCircles);
                 case "Harris corners":          return new EmguCVProcessor(def, EmguCVFunctions.HarrisCorners);
                 case "Shi-Tomasi corners":      return new EmguCVProcessor(def, EmguCVFunctions.ShiTomasiCorners);
                 case "FAST feature detection":  return new EmguCVProcessor(def, EmguCVFunctions.FastFeatureDetection);
@@ -303,20 +305,23 @@ namespace LitePlacer.CameraEngines
                 return false;
             }
             
+            // Extract Hough parameters from the pipeline if a Hough step is present.
+            // All other pipeline steps have already been applied to the bitmap before Measure() is called.
+            HoughParams hough = ExtractHoughParams(pipeline, parameters, XmmPerPixel);
+            // Use Contour path unless the user explicitly added "Hough circles (sub-pixel)".
+            // Hough without tuned parameters fires false positives on everything.
+            bool useContour = !HasHoughCircles(pipeline);
+
             try
             {
-                // Convert Bitmap to Mat (EmguCV native format)
                 using (Mat matImage = BitmapToMat(image))
                 {
-                    // Process image through pipeline (already done in GetMeasurementFrame, but pipeline is empty here)
-                    // The processed frame comes in as 'image' parameter
-                    
-                    // Try all checked search types - matches AForge behaviour which builds
-                    // a combined candidates list from all enabled types.
                     if (parameters.SearchRounds)
                     {
-                        if (DetectCircles_SubPixel(matImage, parameters, XmmPerPixel, YmmPerPixel, out X, out Y, out A, out XSizeMm, out YSizeMm, DisplayResults))
-                            return true;
+                        bool found = useContour
+                            ? DetectCircles_Contour(matImage, pipeline, parameters, XmmPerPixel, YmmPerPixel, out X, out Y, out A, out XSizeMm, out YSizeMm, DisplayResults)
+                            : DetectCircles_SubPixel(matImage, hough, parameters, XmmPerPixel, YmmPerPixel, out X, out Y, out A, out XSizeMm, out YSizeMm, DisplayResults);
+                        if (found) return true;
                     }
                     if (parameters.SearchRectangles)
                     {
@@ -355,6 +360,77 @@ namespace LitePlacer.CameraEngines
             // Use BitmapExtension method to convert Bitmap to Mat
             return bitmap.ToMat();
         }
+
+        // Carries the user-configured HoughCircles parameters extracted from the pipeline.
+        private struct HoughParams
+        {
+            public HoughModes Method;   // Gradient or GradientAlt
+            public double Dp;           // Accumulator resolution ratio
+            public double MinDist;      // Minimum distance between centres in pixels
+            public double Param1;       // Upper Canny threshold
+            public double Param2;       // Accumulator centre threshold
+            public int MinRadiusPx;
+            public int MaxRadiusPx;
+        }
+
+        // Reads HoughCircles tuning values from the active pipeline step named "Hough circles (sub-pixel)".
+        // If no such step exists (user is using a plain Threshold+Invert pipeline), sensible defaults
+        // are derived purely from MeasurementParameters so detection still works without the step.
+        private HoughParams ExtractHoughParams(List<IProcessingFunction> pipeline,
+            MeasurementParametersClass parameters, double XmmPerPixel)
+        {
+            var p = new HoughParams
+            {
+                Method  = HoughModes.Gradient,
+                Dp      = 1.0,
+                MinDist = 0,        // 0 = auto (derived below)
+                Param1  = 100.0,
+                Param2  = 30.0,
+                MinRadiusPx = Math.Max(1, (int)Math.Floor((parameters.Xmin / 2.0) / XmmPerPixel)),
+                MaxRadiusPx = 0     // filled below
+            };
+            p.MaxRadiusPx = Math.Max(p.MinRadiusPx + 1,
+                (int)Math.Ceiling((parameters.Xmax / 2.0) / XmmPerPixel));
+
+            // Override from pipeline step if present
+            if (pipeline != null)
+            {
+                foreach (IProcessingFunction f in pipeline)
+                {
+                    if (f == null || f.Name != "Hough circles (sub-pixel)") continue;
+                    p.Method  = f.ParameterInt == 1 ? HoughModes.GradientAlt : HoughModes.Gradient;
+                    p.Dp      = f.ParameterDouble > 0 ? f.ParameterDouble : 1.0;
+                    p.MinDist = f.ParameterDoubleA; // 0 = auto
+                    p.Param1  = f.ParameterDoubleB > 0 ? f.ParameterDoubleB : 100.0;
+                    p.Param2  = f.ParameterDoubleC > 0 ? f.ParameterDoubleC : 30.0;
+                    break;
+                }
+            }
+
+            // Auto minDist: if user left it at 0, set to minRadius so concentric circles are suppressed.
+            if (p.MinDist < 1.0)
+                p.MinDist = p.MinRadiusPx;
+
+            return p;
+        }
+
+        // Returns true if the pipeline contains a "Contour circles" step.
+        private bool HasContourCircles(List<IProcessingFunction> pipeline)
+        {
+            if (pipeline == null) return false;
+            foreach (IProcessingFunction f in pipeline)
+                if (f != null && f.Name == "Contour circles") return true;
+            return false;
+        }
+
+        // Returns true if the pipeline contains a "Hough circles (sub-pixel)" step.
+        private bool HasHoughCircles(List<IProcessingFunction> pipeline)
+        {
+            if (pipeline == null) return false;
+            foreach (IProcessingFunction f in pipeline)
+                if (f != null && f.Name == "Hough circles (sub-pixel)") return true;
+            return false;
+        }
         
         /// <summary>
         /// Find all circle candidates in the pipeline-processed frame for display overlay.
@@ -367,11 +443,34 @@ namespace LitePlacer.CameraEngines
                                                          double XmmPerPixel,
                                                          double YmmPerPixel)
         {
+            return FindCirclesForDisplay(processedFrame, parameters, XmmPerPixel, YmmPerPixel, null);
+        }
+
+        public List<EngineCircle> FindCirclesForDisplay(Bitmap processedFrame,
+                                                         MeasurementParametersClass parameters,
+                                                         double XmmPerPixel,
+                                                         double YmmPerPixel,
+                                                         List<IProcessingFunction> pipeline)
+        {
             var result = new List<EngineCircle>();
             if (!IsAvailable || processedFrame == null) return result;
 
             try
             {
+                // If the pipeline contains "Contour circles" use that path.
+                // If it contains "Hough circles (sub-pixel)" use Hough.
+                // If neither is present (plain Threshold+Invert pipeline), default to
+                // the Contour path - Hough without tuned parameters fires on everything.
+                bool hasHough = false;
+                if (pipeline != null)
+                    foreach (IProcessingFunction f in pipeline)
+                        if (f != null && f.Name == "Hough circles (sub-pixel)") { hasHough = true; break; }
+
+                if (HasContourCircles(pipeline) || !hasHough)
+                    return FindCirclesForDisplay_Contour(processedFrame, pipeline, parameters, XmmPerPixel, YmmPerPixel);
+
+                HoughParams hp = ExtractHoughParams(pipeline, parameters, XmmPerPixel);
+
                 using (Mat mat = BitmapToMat(processedFrame))
                 {
                     Mat gray = new Mat();
@@ -383,120 +482,57 @@ namespace LitePlacer.CameraEngines
                     int centerX = mat.Width / 2;
                     int centerY = mat.Height / 2;
 
-                    // Edge images: sparse lines, fillRatio < 0.08. Filled: solid blobs, > 0.08.
-                    double totalDisplayPixels = mat.Width * mat.Height;
-                    MCvScalar displayNonZero = new MCvScalar(CvInvoke.CountNonZero(gray));
-                    bool isEdgeImage = (displayNonZero.V0 / totalDisplayPixels) < 0.08;
+                    // The frame is already pipeline-processed (binary after Threshold+Invert).
+                    // HoughCircles runs its own internal Canny, which needs gradient edges.
+                    // A light 3x3 blur softens the 1-pixel binary boundary just enough.
+                    // Use lower Param1/Param2 than the natural-image defaults because the
+                    // binary edge gradient is shallow even after blurring.
+                    Mat blurred = new Mat();
+                    CvInvoke.GaussianBlur(gray, blurred, new System.Drawing.Size(3, 3), 0);
+                    gray.Dispose();
 
-                    // MUST match DetectCircles_SubPixel: External for edge images suppresses the
-                    // inner Canny ring phantom. List is correct for filled/threshold images.
-                    using (VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint())
+                    double houghParam1 = hp.Param1 > 0 ? hp.Param1 : 30.0;   // lower Canny threshold for binary
+                    double houghParam2 = hp.Param2 > 0 ? hp.Param2 : 15.0;   // lower accumulator threshold for binary
+
+                    // Display: widen search by 50% each side so near-miss circles show as red
+                    int displayMinR = Math.Max(1, (int)Math.Floor(hp.MinRadiusPx * 0.5));
+                    int displayMaxR = (int)Math.Ceiling(hp.MaxRadiusPx * 1.5);
+
+                    CircleF[] circles = CvInvoke.HoughCircles(blurred, hp.Method, hp.Dp,
+                        hp.MinDist, houghParam1, houghParam2, displayMinR, displayMaxR);
+                    blurred.Dispose();
+
+                    int selectedIdx = -1;
+                    double bestDist = double.MaxValue;
+                    for (int i = 0; i < circles.Length; i++)
                     {
-                        CvInvoke.FindContours(gray, contours, null, RetrType.List, ChainApproxMethod.ChainApproxNone);
-                        gray.Dispose();
+                        double d = circles[i].Radius * 2.0 * XmmPerPixel;
+                        if (d < parameters.Xmin || d > parameters.Xmax) continue;
+                        double xd = Math.Abs((circles[i].Center.X - centerX) * XmmPerPixel);
+                        double yd = Math.Abs((circles[i].Center.Y - centerY) * YmmPerPixel);
+                        if (xd > parameters.XUniqueDistance || yd > parameters.YUniqueDistance) continue;
+                        double distPx = Math.Sqrt(Math.Pow(circles[i].Center.X - centerX, 2) +
+                                                  Math.Pow(circles[i].Center.Y - centerY, 2));
+                        if (distPx < bestDist) { bestDist = distPx; selectedIdx = i; }
+                    }
 
-                        // Hard size window for display: only show contours within 4x of the
-                        // configured size limits. Prevents large irregular blobs (e.g. PCB pads,
-                        // text, edges) from being drawn as red circles all over the overlay when
-                        // Xmin/Xmax are set to small values like 1-1.5mm.
-                        double displayXmin = parameters.Xmin > 0 ? parameters.Xmin * 0.25 : 0;
-                        // Only apply an upper hard-reject for display — blobs > 4x Xmax are never
-                        // the target and just pollute the overlay as red circles.
-                        double displayXmax = parameters.Xmax * 4.0;
-                        double minPerimeterPx = Math.Max(10.0, Math.PI * (parameters.Xmin / XmmPerPixel));
-
-                        var candidates = new List<EngineCircle>();
-                        for (int i = 0; i < contours.Size; i++)
+                    for (int i = 0; i < circles.Length; i++)
+                    {
+                        double diameterMm = circles[i].Radius * 2.0 * XmmPerPixel;
+                        bool passesSize = diameterMm >= parameters.Xmin && diameterMm <= parameters.Xmax;
+                        double XdistMm = Math.Abs((circles[i].Center.X - centerX) * XmmPerPixel);
+                        double YdistMm = Math.Abs((circles[i].Center.Y - centerY) * YmmPerPixel);
+                        bool passesDist = XdistMm <= parameters.XUniqueDistance && YdistMm <= parameters.YUniqueDistance;
+                        result.Add(new EngineCircle
                         {
-                            using (VectorOfPoint contour = contours[i])
-                            {
-                                double perimeter = CvInvoke.ArcLength(contour, true);
-                                if (perimeter < minPerimeterPx) continue;
-
-                                double area = CvInvoke.ContourArea(contour);
-                                CircleF encCircle = CvInvoke.MinEnclosingCircle(contour);
-                                double encRadiusPx = encCircle.Radius;
-
-                                double radiusPx;
-                                double circularity;
-                                if (isEdgeImage)
-                                {
-                                    radiusPx = encRadiusPx;
-                                    double idealPerimeter = 2.0 * Math.PI * encRadiusPx;
-                                    circularity = idealPerimeter > 0 ? Math.Min(1.0, idealPerimeter / perimeter) : 0;
-                                }
-                                else
-                                {
-                                    radiusPx = Math.Sqrt(area / Math.PI);
-                                    circularity = (4.0 * Math.PI * area) / (perimeter * perimeter);
-                                }
-
-                                if (circularity < 0.6) continue;
-
-                                if (isEdgeImage)
-                                {
-                                    double expectedCircumferencePx = 2.0 * Math.PI * encRadiusPx;
-                                    double arcCoverage = contour.Size / expectedCircumferencePx;
-                                    if (arcCoverage < ArcCoverageThreshold) continue;
-                                }
-
-                                var moments = CvInvoke.Moments(contour);
-                                if (moments.M00 < 1) continue;
-                                double cx = moments.M10 / moments.M00;
-                                double cy = moments.M01 / moments.M00;
-                                double diameterMm = radiusPx * 2.0 * XmmPerPixel;
-
-                                // Hard reject: discard anything far outside the size window.
-                                // This is the key fix - without this, every large blob that passes
-                                // circularity gets added and drawn red, polluting the overlay.
-                                //if (diameterMm < displayXmin || diameterMm > displayXmax) continue;
-                                if (diameterMm > displayXmax) continue;
-                                bool passesSize = diameterMm >= parameters.Xmin && diameterMm <= parameters.Xmax;
-                                double XdistMm = Math.Abs((cx - centerX) * XmmPerPixel);
-                                double YdistMm = Math.Abs((cy - centerY) * YmmPerPixel);
-                                bool passesDist = XdistMm <= parameters.XUniqueDistance && YdistMm <= parameters.YUniqueDistance;
-
-                                candidates.Add(new EngineCircle
-                                {
-                                    CenterX = cx,
-                                    CenterY = cy,
-                                    RadiusPx = radiusPx,
-                                    DiameterMm = diameterMm,
-                                    PassesSize = passesSize,
-                                    PassesDistance = passesDist,
-                                    IsSelected = false
-                                });
-                            }
-                        }
-
-                        var passing = new List<int>();
-                        for (int i = 0; i < candidates.Count; i++)
-                        {
-                            if (candidates[i].PassesSize && candidates[i].PassesDistance)
-                                passing.Add(i);
-                        }
-                        passing.Sort((a, b) => candidates[a].DiameterMm.CompareTo(candidates[b].DiameterMm));
-
-                        int selectedIdx = -1;
-                        if (passing.Count == 1)
-                        {
-                            selectedIdx = passing[0];
-                        }
-                        else if (passing.Count > 1)
-                        {
-                            double smallest = candidates[passing[0]].DiameterMm;
-                            double second   = candidates[passing[1]].DiameterMm;
-                            bool ambiguous = (second - smallest) / smallest < 0.05;
-                            if (!ambiguous)
-                                selectedIdx = passing[0];
-                        }
-
-                        for (int i = 0; i < candidates.Count; i++)
-                        {
-                            var c = candidates[i];
-                            c.IsSelected = (i == selectedIdx);
-                            result.Add(c);
-                        }
+                            CenterX = circles[i].Center.X,
+                            CenterY = circles[i].Center.Y,
+                            RadiusPx = circles[i].Radius,
+                            DiameterMm = diameterMm,
+                            PassesSize = passesSize,
+                            PassesDistance = passesDist,
+                            IsSelected = (i == selectedIdx)
+                        });
                     }
                 }
             }
@@ -507,12 +543,8 @@ namespace LitePlacer.CameraEngines
             return result;
         }
 
-        /// <summary>
-        /// Detect circles using contour analysis - matches AForge FindCirclesFunct() behaviour.
-        /// AForge uses BlobCounter + SimpleShapeChecker.IsCircle() on the pipeline-processed image.
-        /// We do the same with FindContours + circularity check (4*pi*area/perimeter^2).
-        /// </summary>
-        private bool DetectCircles_SubPixel(Mat image, MeasurementParametersClass parameters,
+        private bool DetectCircles_SubPixel(Mat image, HoughParams hp,
+                                            MeasurementParametersClass parameters,
                                             double XmmPerPixel, double YmmPerPixel,
                                             out double X, out double Y, out double A,
                                             out double XSizeMm, out double YSizeMm,
@@ -532,198 +564,82 @@ namespace LitePlacer.CameraEngines
                 int centerX = image.Width / 2;
                 int centerY = image.Height / 2;
 
-                // Detect whether the pipeline produced an edge image (Canny/Sobel) or a filled binary image
-                // (Threshold+Invert). This drives which radius estimator is correct:
-                //   Filled image -> radius = sqrt(area / pi)   [area of the filled disc - most accurate]
-                //   Edge image   -> radius = perimeter / (2*pi)[arc length of the ring]
-                //
-                // The filled-disc area estimator is always preferred when available because it averages
-                // out pixel stairstepping across the whole disc boundary rather than amplifying it via
-                // perimeter measurement.
-                //
-                // Detection method: compare the largest single contour's area to its enclosing circle area.
-                // A filled disc has contourArea / enclosingCircleArea > 0.85 (nearly fills the circle).
-                // A Canny ring has contourArea / enclosingCircleArea << 0.1 (ring pixels vs filled area).
-                // This is robust regardless of the dot's size relative to the frame.
-                double totalPixels = image.Width * image.Height;
-                MCvScalar nonZeroCount = new MCvScalar(CvInvoke.CountNonZero(gray));
-                double fillRatio = nonZeroCount.V0 / totalPixels;
+                Mat blurred = new Mat();
+                CvInvoke.GaussianBlur(gray, blurred, new System.Drawing.Size(3, 3), 0);
+                gray.Dispose();
 
-                // Edge images (Canny/Sobel): sparse white lines, fillRatio typically < 0.08.
-                // Filled binary images (Threshold+Invert): solid white blobs, fillRatio > 0.08.
-                // The previous largest-contour heuristic broke when the dominant blob was a large
-                // non-circular PCB region, causing the wrong radius estimator to be chosen.
-                bool isEdgeImage = fillRatio < 0.08;
+                // Use lower thresholds when operating on a binary pipeline image.
+                double houghParam1 = hp.Param1 > 0 ? hp.Param1 : 30.0;
+                double houghParam2 = hp.Param2 > 0 ? hp.Param2 : 15.0;
 
                 if (DisplayResults)
-                    _mainForm.DisplayText($"EmguCV Circles: image={image.Width}x{image.Height}, fill={fillRatio:P1}, mode={(isEdgeImage ? "edge" : "filled")}, XmmPerPix={XmmPerPixel:F4}",
+                    _mainForm.DisplayText(
+                        $"EmguCV HoughCircles: method={hp.Method} dp={hp.Dp:F1} minDist={hp.MinDist:F0}px p1={houghParam1} p2={houghParam2} minR={hp.MinRadiusPx}px maxR={hp.MaxRadiusPx}px",
                         System.Drawing.KnownColor.DarkCyan);
 
-                using (VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint())
+                CircleF[] circles = CvInvoke.HoughCircles(blurred, hp.Method, hp.Dp,
+                    hp.MinDist, houghParam1, houghParam2, hp.MinRadiusPx, hp.MaxRadiusPx);
+                blurred.Dispose();
+
+                if (DisplayResults)
+                    _mainForm.DisplayText($"  {circles.Length} Hough circles found", System.Drawing.KnownColor.DarkCyan);
+
+                var validCandidates = new List<System.Tuple<double, double, double>>();
+                foreach (CircleF c in circles)
                 {
-                    CvInvoke.FindContours(gray, contours, null, RetrType.List, ChainApproxMethod.ChainApproxNone);
-                    gray.Dispose();
-
+                    double diameterMm = c.Radius * 2.0 * XmmPerPixel;
                     if (DisplayResults)
-                        _mainForm.DisplayText($"  {contours.Size} raw contours found", System.Drawing.KnownColor.DarkCyan);
+                        _mainForm.DisplayText($"    circle: cx={c.Center.X:F1} cy={c.Center.Y:F1} r={c.Radius:F1}px d={diameterMm:F3}mm",
+                            System.Drawing.KnownColor.DarkGray);
 
-                    // Minimum perimeter guard. RetrType.List is used for all image types: Canny
-                    // images have no true contour nesting so External was silently dropping arc
-                    // fragments. Floor prevents Xmin=0 from disabling this guard entirely.
-                    double minPerimeterPx = Math.Max(10.0, Math.PI * (parameters.Xmin / XmmPerPixel));
+                    if (diameterMm < parameters.Xmin || diameterMm > parameters.Xmax)
+                        continue;
 
-                    // Collect ALL candidates that pass both size AND distance filters.
-                    // Uniqueness is enforced after collection - mirrors AForge MeasureInternal exactly:
-                    // if more than one circle passes all filters the result is ambiguous and we abort.
-                    var validCandidates = new List<System.Tuple<double, double, double>>(); // cx, cy, diameterMm
+                    double XdistMm = Math.Abs((c.Center.X - centerX) * XmmPerPixel);
+                    double YdistMm = Math.Abs((c.Center.Y - centerY) * YmmPerPixel);
+                    if (XdistMm > parameters.XUniqueDistance || YdistMm > parameters.YUniqueDistance)
+                        continue;
 
-                    // Diagnostic: track the most circular candidate regardless of size/distance
-                    // filters so we can log what the algorithm actually sees when nothing passes.
-                    double diagBestCircularity = 0;
-                    double diagBestDiameterMm = 0;
-                    double diagBestDist = double.MaxValue;
-
-                    for (int i = 0; i < contours.Size; i++)
-                    {
-                        using (VectorOfPoint contour = contours[i])
-                        {
-                            double perimeter = CvInvoke.ArcLength(contour, true);
-                            if (perimeter < minPerimeterPx) continue;
-
-                            double area = CvInvoke.ContourArea(contour);
-                            CircleF encCircle = CvInvoke.MinEnclosingCircle(contour);
-                            double encRadiusPx = encCircle.Radius;
-
-                            double radiusPx;
-                            double circularity;
-
-                            if (isEdgeImage)
-                            {
-                                // Edge image (Canny ring): use MinEnclosingCircle radius as the size estimator.
-                                // It is immune to jagged perimeter noise that inflates perimeter/(2?).
-                                // Circularity: compare ideal perimeter (2?·r) to actual perimeter.
-                                // A perfect circle ? ratio=1.0. Noise/non-circle ? <1.0.
-                                // Clamped to [0,1] to prevent >1 from sub-pixel jaggedness.
-                                radiusPx = encRadiusPx;
-                                double idealPerimeter = 2.0 * Math.PI * encRadiusPx;
-                                circularity = idealPerimeter > 0
-                                    ? Math.Min(1.0, idealPerimeter / perimeter)
-                                    : 0;
-                            }
-                            else
-                            {
-                                // Filled image: standard 4?A/P² circularity, area-based radius.
-                                radiusPx = Math.Sqrt(area / Math.PI);
-                                circularity = (4.0 * Math.PI * area) / (perimeter * perimeter);
-                            }
-
-                            double diameterMm = radiusPx * 2.0 * XmmPerPixel;
-
-                            if (circularity < 0.6) continue;
-
-                            // Arc-coverage guard for edge images: reject arc fragments that are not
-                            // a near-complete ring. ChainApproxNone gives one point per boundary pixel,
-                            // so contour.Size approximates the arc length in pixels.
-                            // A full circle of radius r has circumference 2*pi*r pixels.
-                            // See ArcCoverageThreshold for the tuning constant.
-                            if (isEdgeImage)
-                            {
-                                double expectedCircumferencePx = 2.0 * Math.PI * encRadiusPx;
-                                double arcCoverage = contour.Size / expectedCircumferencePx;
-                                if (arcCoverage < ArcCoverageThreshold) continue;
-                            }
-
-                            if (DisplayResults)
-                                _mainForm.DisplayText($"    contour {i}: d={diameterMm:F3}mm circ={circularity:F2}", System.Drawing.KnownColor.DarkGray);
-
-                            // Track best circular candidate for diagnostics (before size/distance filter)
-                            var momDiag = CvInvoke.Moments(contour);
-                            if (momDiag.M00 >= 1)
-                            {
-                                double dxDiag = (momDiag.M10 / momDiag.M00) - centerX;
-                                double dyDiag = (momDiag.M01 / momDiag.M00) - centerY;
-                                double distDiag = Math.Sqrt(dxDiag * dxDiag + dyDiag * dyDiag);
-                                if (circularity > diagBestCircularity || (circularity >= diagBestCircularity && distDiag < diagBestDist))
-                                {
-                                    diagBestCircularity = circularity;
-                                    diagBestDiameterMm = diameterMm;
-                                    diagBestDist = distDiag;
-                                }
-                            }
-
-                            // Size filter
-                            if (diameterMm < parameters.Xmin || diameterMm > parameters.Xmax)
-                                continue;
-
-                            // Sub-pixel centroid from moments
-                            var moments = CvInvoke.Moments(contour);
-                            if (moments.M00 < 1) continue;
-                            double cx = moments.M10 / moments.M00;
-                            double cy = moments.M01 / moments.M00;
-
-                            // Distance filter
-                            double XdistMm = Math.Abs((cx - centerX) * XmmPerPixel);
-                            double YdistMm = Math.Abs((cy - centerY) * YmmPerPixel);
-                            if (XdistMm > parameters.XUniqueDistance || YdistMm > parameters.YUniqueDistance)
-                                continue;
-
-                            // Passed both filters - add to candidates list
-                            validCandidates.Add(System.Tuple.Create(cx, cy, diameterMm));
-                        }
-                    }
-
-                    if (validCandidates.Count == 0)
-                    {
-                        if (DisplayResults)
-                        {
-                            string diagHint = diagBestCircularity > 0
-                                ? $" Best candidate: Diameter={diagBestDiameterMm:F3}mm circularity={diagBestCircularity:F2} dist={diagBestDist * XmmPerPixel:F2}mm"
-                                : " No circular contours found above circularity threshold.";
-                            _mainForm.DisplayText(
-                                $"EmguCV: no circles passed filters (Xmin={parameters.Xmin:F2}mm Xmax={parameters.Xmax:F2}mm XDist={parameters.XUniqueDistance:F2}mm YDist={parameters.YUniqueDistance:F2}mm).{diagHint}",
-                                System.Drawing.KnownColor.DarkOrange);
-                        }
-                        return false;
-                    }
-
-                    // Sort candidates by diameter ascending so the smallest is always [0].
-                    validCandidates.Sort((a, b) => a.Item3.CompareTo(b.Item3));
-
-                    if (validCandidates.Count > 1)
-                    {
-                        double smallest = validCandidates[0].Item3;
-                        double second  = validCandidates[1].Item3;
-                        // If the two smallest are within 5% of each other we cannot reliably
-                        // tell them apart - abort as ambiguous, same as AForge uniqueness error.
-                        if ((second - smallest) / smallest < 0.05)
-                        {
-                            _mainForm.DisplayText(
-                                $"EmguCV: result is ambiguous - smallest circle ({smallest:F3}mm) and next ({second:F3}mm) are within 5%. Tighten Xmin/Xmax.",
-                                System.Drawing.KnownColor.Red);
-                            return false;
-                        }
-                        // Smallest is clearly the winner; the others are the outer body rings.
-                        if (DisplayResults)
-                            _mainForm.DisplayText(
-                                $"EmguCV: {validCandidates.Count} circles in window - selecting smallest ({smallest:F3}mm), next is {second:F3}mm",
-                                System.Drawing.KnownColor.DarkCyan);
-                    }
-
-                    double bestCx = validCandidates[0].Item1;
-                    double bestCy = validCandidates[0].Item2;
-                    double bestDiameterMm = validCandidates[0].Item3;
-
-                    X = (bestCx - centerX) * XmmPerPixel;
-                    Y = (centerY - bestCy) * YmmPerPixel;
-                    A = 0.0;
-                    XSizeMm = bestDiameterMm;
-                    YSizeMm = bestDiameterMm;
-
-                    if (DisplayResults)
-                        _mainForm.DisplayText($"EmguCV Circle: X={X:F3}mm, Y={Y:F3}mm, Diameter={bestDiameterMm:F3}mm", System.Drawing.KnownColor.DarkGreen);
-
-                    return true;
+                    validCandidates.Add(System.Tuple.Create((double)c.Center.X, (double)c.Center.Y, diameterMm));
                 }
+
+                if (validCandidates.Count == 0)
+                {
+                    if (DisplayResults)
+                        _mainForm.DisplayText(
+                            $"EmguCV: no circles passed filters (Xmin={parameters.Xmin:F2}mm Xmax={parameters.Xmax:F2}mm XDist={parameters.XUniqueDistance:F2}mm YDist={parameters.YUniqueDistance:F2}mm)",
+                            System.Drawing.KnownColor.DarkOrange);
+                    return false;
+                }
+
+                // Pick circle closest to frame centre.
+                validCandidates.Sort((a, b) =>
+                {
+                    double da = Math.Sqrt(Math.Pow(a.Item1 - centerX, 2) + Math.Pow(a.Item2 - centerY, 2));
+                    double db = Math.Sqrt(Math.Pow(b.Item1 - centerX, 2) + Math.Pow(b.Item2 - centerY, 2));
+                    return da.CompareTo(db);
+                });
+
+                if (validCandidates.Count > 1 && DisplayResults)
+                    _mainForm.DisplayText(
+                        $"EmguCV: {validCandidates.Count} circles passed filters - selecting closest to centre",
+                        System.Drawing.KnownColor.DarkCyan);
+
+                double bestCx = validCandidates[0].Item1;
+                double bestCy = validCandidates[0].Item2;
+                double bestDiameterMm = validCandidates[0].Item3;
+
+                X = (bestCx - centerX) * XmmPerPixel;
+                Y = (centerY - bestCy) * YmmPerPixel;
+                A = 0.0;
+                XSizeMm = bestDiameterMm;
+                YSizeMm = bestDiameterMm;
+
+                if (DisplayResults)
+                    _mainForm.DisplayText($"EmguCV Circle: X={X:F3}mm Y={Y:F3}mm D={bestDiameterMm:F3}mm",
+                        System.Drawing.KnownColor.DarkGreen);
+
+                return true;
             }
             catch (Exception ex)
             {
@@ -732,6 +648,390 @@ namespace LitePlacer.CameraEngines
             }
         }
         
+        /// <summary>
+        /// Contour-based circle detection. Works on the already-processed pipeline image
+        /// (Threshold+Invert, Canny, etc.). Circularity threshold from the "Contour circles"
+        /// step's ParameterDouble (default 0.70).
+        /// Edge images (Canny): uses MinEnclosingCircle radius + arc-coverage guard.
+        /// Filled images (Threshold+Invert): uses area-based radius + 4*pi*A/P^2 circularity.
+        /// Image type is detected by fillRatio of the processed image.
+        /// </summary>
+        private bool DetectCircles_Contour(Mat image, List<IProcessingFunction> pipeline,
+                                           MeasurementParametersClass parameters,
+                                           double XmmPerPixel, double YmmPerPixel,
+                                           out double X, out double Y, out double A,
+                                           out double XSizeMm, out double YSizeMm,
+                                           bool DisplayResults)
+        {
+            X = Y = A = 0;
+            XSizeMm = YSizeMm = 0;
+            try
+            {
+                double circThreshold = 0.70;
+                if (pipeline != null)
+                    foreach (IProcessingFunction f in pipeline)
+                        if (f != null && f.Name == "Contour circles" && f.ParameterDouble > 0)
+                        { circThreshold = f.ParameterDouble; break; }
+
+                Mat gray = new Mat();
+                if (image.NumberOfChannels > 1)
+                    CvInvoke.CvtColor(image, gray, ColorConversion.Bgr2Gray);
+                else
+                    gray = image.Clone();
+
+                // If Blur or Noise reduction was applied after Invert, the binary image
+                // has softened edges. Re-threshold at 128 to restore clean binary boundaries
+                // so FindContours sees exactly one clean ring per blob.
+                Mat binary = new Mat();
+                CvInvoke.Threshold(gray, binary, 128, 255, ThresholdType.Binary);
+                gray.Dispose();
+
+                int centerX = image.Width / 2;
+                int centerY = image.Height / 2;
+                int frameW = image.Width;
+                int frameH = image.Height;
+
+                double totalPixels = frameW * frameH;
+                double fillRatio = CvInvoke.CountNonZero(binary) / totalPixels;
+                bool isEdgeImage = fillRatio < 0.15;
+
+                if (DisplayResults)
+                    _mainForm.DisplayText(
+                        $"EmguCV ContourCircles: fill={fillRatio:P1} mode={(isEdgeImage ? "edge" : "filled")} circMin={circThreshold:F2}",
+                        System.Drawing.KnownColor.DarkCyan);
+
+                double minPerimeterPx = Math.Max(10.0, Math.PI * (parameters.Xmin / XmmPerPixel));
+
+                // Step 1: collect all circular contours that pass circularity and arc-coverage.
+                // Store as (cx, cy, radiusPx, diameterMm, circularity).
+                var allCircles = new List<System.Tuple<double, double, double, double, double>>();
+
+                using (VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint())
+                {
+                    CvInvoke.FindContours(binary, contours, null, RetrType.List, ChainApproxMethod.ChainApproxNone);
+                    binary.Dispose();
+
+                    for (int i = 0; i < contours.Size; i++)
+                    {
+                        using (VectorOfPoint contour = contours[i])
+                        {
+                            System.Drawing.Rectangle bb = CvInvoke.BoundingRectangle(contour);
+                            if (bb.X <= 1 || bb.Y <= 1 || bb.Right >= frameW - 1 || bb.Bottom >= frameH - 1) continue;
+
+                            double perimeter = CvInvoke.ArcLength(contour, true);
+                            if (perimeter < minPerimeterPx) continue;
+
+                            double area = CvInvoke.ContourArea(contour);
+                            CircleF enc = CvInvoke.MinEnclosingCircle(contour);
+                            double encR = enc.Radius;
+
+                            double radiusPx, circularity;
+                            if (isEdgeImage)
+                            {
+                                radiusPx = encR;
+                                double ideal = 2.0 * Math.PI * encR;
+                                circularity = ideal > 0 ? Math.Min(1.0, ideal / perimeter) : 0;
+                            }
+                            else
+                            {
+                                radiusPx = Math.Sqrt(area / Math.PI);
+                                circularity = (4.0 * Math.PI * area) / (perimeter * perimeter);
+                            }
+
+                            if (circularity < circThreshold) continue;
+
+                            if (isEdgeImage)
+                            {
+                                double arcCoverage = contour.Size / (2.0 * Math.PI * encR);
+                                if (arcCoverage < ArcCoverageThreshold) continue;
+                            }
+
+                            var mom = CvInvoke.Moments(contour);
+                            if (mom.M00 < 1) continue;
+                            double cx = mom.M10 / mom.M00;
+                            double cy = mom.M01 / mom.M00;
+                            double diameterMm = radiusPx * 2.0 * XmmPerPixel;
+
+                            allCircles.Add(System.Tuple.Create(cx, cy, radiusPx, diameterMm, circularity));
+                        }
+                    }
+                }
+
+                // Log all raw candidates in the same format as AForge.
+                if (DisplayResults)
+                {
+                    _mainForm.DisplayText("Result candidates:");
+                    _mainForm.DisplayText("Circles:");
+                    if (allCircles.Count == 0)
+                    {
+                        _mainForm.DisplayText("    No results.");
+                    }
+                    else
+                    {
+                        _mainForm.DisplayText("Position, pxls|mm               |Size, pxls   |mm         |Circ");
+                        foreach (var c in allCircles)
+                        {
+                            double dxPx = c.Item1 - centerX;
+                            double dyPx = centerY - c.Item2;
+                            _mainForm.DisplayText(string.Format(
+                                "{0,7:0.0},{1,7:0.0}|{2,8:0.000},{3,8:0.000}|{4,6:0.0},{5,6:0.0}|{6,5:0.00},{7,5:0.00}|{8,5:0.00}",
+                                dxPx, dyPx,
+                                dxPx * XmmPerPixel, dyPx * YmmPerPixel,
+                                c.Item3 * 2, c.Item3 * 2,
+                                c.Item4, c.Item4,
+                                c.Item5));
+                        }
+                    }
+                }
+
+                // Step 2: filter for size.
+                var sizeFiltered = new List<System.Tuple<double, double, double, double, double>>();
+                foreach (var c in allCircles)
+                    if (c.Item4 >= parameters.Xmin && c.Item4 <= parameters.Xmax)
+                        sizeFiltered.Add(c);
+
+                if (DisplayResults)
+                {
+                    _mainForm.DisplayText("");
+                    _mainForm.DisplayText(string.Format(
+                        "Filtered for size (Xmin: {0:0.000}, Xmax: {1:0.000}, Ymin: {2:0.000}, Ymax: {3:0.000}), results:",
+                        parameters.Xmin, parameters.Xmax, parameters.Ymin, parameters.Ymax));
+                    if (sizeFiltered.Count == 0)
+                    {
+                        _mainForm.DisplayText("    No results.");
+                        // Show closest miss to help user tune parameters
+                        if (allCircles.Count > 0)
+                        {
+                            var best = allCircles[0];
+                            foreach (var c in allCircles)
+                                if (c.Item5 > best.Item5) best = c;
+                            _mainForm.DisplayText(string.Format(
+                                "    Best candidate: d={0:0.000}mm circ={1:0.00} (Xmin={2:0.000} Xmax={3:0.000})",
+                                best.Item4, best.Item5, parameters.Xmin, parameters.Xmax),
+                                System.Drawing.KnownColor.DarkOrange);
+                        }
+                    }
+                    else
+                    {
+                        _mainForm.DisplayText("Position, pxls|mm               |Size, pxls   |mm         |Circ");
+                        foreach (var c in sizeFiltered)
+                        {
+                            double dxPx = c.Item1 - centerX;
+                            double dyPx = centerY - c.Item2;
+                            _mainForm.DisplayText(string.Format(
+                                "{0,7:0.0},{1,7:0.0}|{2,8:0.000},{3,8:0.000}|{4,6:0.0},{5,6:0.0}|{6,5:0.00},{7,5:0.00}|{8,5:0.00}",
+                                dxPx, dyPx,
+                                dxPx * XmmPerPixel, dyPx * YmmPerPixel,
+                                c.Item3 * 2, c.Item3 * 2,
+                                c.Item4, c.Item4,
+                                c.Item5));
+                        }
+                    }
+                }
+
+                if (sizeFiltered.Count == 0)
+                    return false;
+
+                // Step 3: filter for distance.
+                var distFiltered = new List<System.Tuple<double, double, double, double, double>>();
+                foreach (var c in sizeFiltered)
+                {
+                    double XdistMm = Math.Abs((c.Item1 - centerX) * XmmPerPixel);
+                    double YdistMm = Math.Abs((c.Item2 - centerY) * YmmPerPixel);
+                    if (XdistMm <= parameters.XUniqueDistance && YdistMm <= parameters.YUniqueDistance)
+                        distFiltered.Add(c);
+                }
+
+                if (DisplayResults)
+                {
+                    _mainForm.DisplayText("");
+                    _mainForm.DisplayText(string.Format(
+                        "Filtered for distance (Xmax dist.: {0:0.000}, Ymax dist.: {1:0.000}), results:",
+                        parameters.XUniqueDistance, parameters.YUniqueDistance));
+                    if (distFiltered.Count == 0)
+                    {
+                        _mainForm.DisplayText("    No results.");
+                    }
+                    else
+                    {
+                        _mainForm.DisplayText("Position, pxls|mm               |Size, pxls   |mm         |Circ");
+                        foreach (var c in distFiltered)
+                        {
+                            double dxPx = c.Item1 - centerX;
+                            double dyPx = centerY - c.Item2;
+                            _mainForm.DisplayText(string.Format(
+                                "{0,7:0.0},{1,7:0.0}|{2,8:0.000},{3,8:0.000}|{4,6:0.0},{5,6:0.0}|{6,5:0.00},{7,5:0.00}|{8,5:0.00}",
+                                dxPx, dyPx,
+                                dxPx * XmmPerPixel, dyPx * YmmPerPixel,
+                                c.Item3 * 2, c.Item3 * 2,
+                                c.Item4, c.Item4,
+                                c.Item5));
+                        }
+                    }
+                }
+
+                if (distFiltered.Count == 0)
+                    return false;
+
+                // Select: if multiple pass all filters, pick smallest diameter (most precise feature).
+                distFiltered.Sort((a, b) => a.Item4.CompareTo(b.Item4));
+
+                if (distFiltered.Count > 1)
+                {
+                    double smallest = distFiltered[0].Item4;
+                    double second   = distFiltered[1].Item4;
+                    if ((second - smallest) / smallest < 0.05)
+                    {
+                        _mainForm.DisplayText(
+                            $"EmguCV ContourCircles: result is not unique ({distFiltered.Count} matches)",
+                            System.Drawing.KnownColor.Red);
+                        return false;
+                    }
+                }
+
+                double bestCx  = distFiltered[0].Item1;
+                double bestCy  = distFiltered[0].Item2;
+                double bestDiam = distFiltered[0].Item4;
+
+                X = (bestCx - centerX) * XmmPerPixel;
+                Y = (centerY - bestCy) * YmmPerPixel;
+                A = 0.0;
+                XSizeMm = bestDiam;
+                YSizeMm = bestDiam;
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _mainForm.DisplayText($"EmguCV ContourCircles error: {ex.Message}", System.Drawing.KnownColor.DarkRed);
+                return false;
+            }
+        }
+
+        // Display overlay variant of contour circle detection.
+        private List<EngineCircle> FindCirclesForDisplay_Contour(Bitmap processedFrame,
+            List<IProcessingFunction> pipeline, MeasurementParametersClass parameters,
+            double XmmPerPixel, double YmmPerPixel)
+        {
+            var result = new List<EngineCircle>();
+            try
+            {
+                double circThreshold = 0.70;
+                if (pipeline != null)
+                    foreach (IProcessingFunction f in pipeline)
+                        if (f != null && f.Name == "Contour circles" && f.ParameterDouble > 0)
+                        { circThreshold = f.ParameterDouble; break; }
+
+                using (Mat mat = BitmapToMat(processedFrame))
+                {
+                    Mat gray = new Mat();
+                    if (mat.NumberOfChannels > 1)
+                        CvInvoke.CvtColor(mat, gray, ColorConversion.Bgr2Gray);
+                    else
+                        gray = mat.Clone();
+
+                    // Re-threshold to restore clean binary edges in case Blur/Noise reduction
+                    // was applied after Invert (which softens the boundary FindContours needs).
+                    Mat binary = new Mat();
+                    CvInvoke.Threshold(gray, binary, 128, 255, ThresholdType.Binary);
+                    gray.Dispose();
+
+                    int centerX = mat.Width / 2;
+                    int centerY = mat.Height / 2;
+                    int frameW = mat.Width;
+                    int frameH = mat.Height;
+
+                    double fillRatio = CvInvoke.CountNonZero(binary) / (double)(frameW * frameH);
+                    bool isEdgeImage = fillRatio < 0.15;
+                    double minPerimeterPx = Math.Max(10.0, Math.PI * (parameters.Xmin / XmmPerPixel));
+
+                    // Find which candidate would be selected (smallest passing diameter)
+                    int selectedIdx = -1;
+                    double smallestPassingDiam = double.MaxValue;
+
+                    var candidates = new List<EngineCircle>();
+                    using (VectorOfVectorOfPoint contours = new VectorOfVectorOfPoint())
+                    {
+                        CvInvoke.FindContours(binary, contours, null, RetrType.List, ChainApproxMethod.ChainApproxNone);
+                        binary.Dispose();
+
+                        for (int i = 0; i < contours.Size; i++)
+                        {
+                            using (VectorOfPoint contour = contours[i])
+                            {
+                                // Reject frame-border contours (image edge artefacts, not circles)
+                                System.Drawing.Rectangle bb = CvInvoke.BoundingRectangle(contour);
+                                if (bb.X <= 1 || bb.Y <= 1 || bb.Right >= frameW - 1 || bb.Bottom >= frameH - 1) continue;
+
+                                double perimeter = CvInvoke.ArcLength(contour, true);
+                                if (perimeter < minPerimeterPx) continue;
+
+                                double area = CvInvoke.ContourArea(contour);
+                                CircleF enc = CvInvoke.MinEnclosingCircle(contour);
+                                double encR = enc.Radius;
+
+                                double radiusPx, circularity;
+                                if (isEdgeImage)
+                                {
+                                    radiusPx = encR;
+                                    double ideal = 2.0 * Math.PI * encR;
+                                    circularity = ideal > 0 ? Math.Min(1.0, ideal / perimeter) : 0;
+                                }
+                                else
+                                {
+                                    radiusPx = Math.Sqrt(area / Math.PI);
+                                    circularity = (4.0 * Math.PI * area) / (perimeter * perimeter);
+                                }
+
+                                if (circularity < circThreshold) continue;
+
+                                if (isEdgeImage && contour.Size / (2.0 * Math.PI * encR) < ArcCoverageThreshold) continue;
+
+                                var mom = CvInvoke.Moments(contour);
+                                if (mom.M00 < 1) continue;
+                                double cx = mom.M10 / mom.M00;
+                                double cy = mom.M01 / mom.M00;
+                                double diameterMm = radiusPx * 2.0 * XmmPerPixel;
+
+                                if (diameterMm > parameters.Xmax) continue;
+
+                                bool passesSize = diameterMm >= parameters.Xmin && diameterMm <= parameters.Xmax;
+                                bool passesCirc = circularity >= circThreshold;
+                                double XdistMm = Math.Abs((cx - centerX) * XmmPerPixel);
+                                double YdistMm = Math.Abs((cy - centerY) * YmmPerPixel);
+                                bool passesDist = XdistMm <= parameters.XUniqueDistance && YdistMm <= parameters.YUniqueDistance;
+
+                                int idx = candidates.Count;
+                                candidates.Add(new EngineCircle
+                                {
+                                    CenterX = cx, CenterY = cy,
+                                    RadiusPx = radiusPx, DiameterMm = diameterMm,
+                                    PassesSize = passesSize && passesCirc,
+                                    PassesDistance = passesDist,
+                                    IsSelected = false
+                                });
+
+                                if (passesSize && passesCirc && passesDist && diameterMm < smallestPassingDiam)
+                                { smallestPassingDiam = diameterMm; selectedIdx = idx; }
+                            }
+                        }
+                    }
+
+                    for (int i = 0; i < candidates.Count; i++)
+                    {
+                        var c = candidates[i];
+                        c.IsSelected = (i == selectedIdx);
+                        result.Add(c);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _mainForm.DisplayText($"EmguCV ContourCircles display error: {ex.Message}", System.Drawing.KnownColor.DarkRed);
+            }
+            return result;
+        }
+
         /// <summary>
         /// Detect rectangles using contour detection with minimum area rectangle fitting
         /// </summary>

@@ -68,6 +68,12 @@ namespace LitePlacer.CameraEngines
                                                   double XmmPerPixel,
                                                   double YmmPerPixel);
 
+        List<EngineCircle> FindCirclesForDisplay(Bitmap processedFrame,
+                                                  MeasurementParametersClass parameters,
+                                                  double XmmPerPixel,
+                                                  double YmmPerPixel,
+                                                  List<IProcessingFunction> pipeline);
+
         /// <summary>
         /// Executes measurement on an image using the specified processing pipeline
         /// This is the main entry point for vision-based measurements

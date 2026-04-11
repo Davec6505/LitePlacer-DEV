@@ -205,29 +205,28 @@ namespace LitePlacer.CameraEngines
             int origH = frame.Height;
             int centerX = origW / 2;
             int centerY = origH / 2;
+
+            // Match AForge ZoomFunct exactly: crop is always centred on the frame centre.
+            // No clamping - a feature centred at (centerX, centerY) maps to (centerX, centerY)
+            // in the zoomed image, so DetectCircles_Contour's "X = (cx - centerX) * mmPerPx" is correct.
+            int fromX = centerX - (int)(centerX / factor);
+            int fromY = centerY - (int)(centerY / factor);
             int cropW = (int)(origW / factor);
             int cropH = (int)(origH / factor);
-            int fromX = centerX - cropW / 2;
-            int fromY = centerY - cropH / 2;
-
-            // Clamp to frame bounds
-            fromX = Math.Max(0, fromX);
-            fromY = Math.Max(0, fromY);
-            cropW = Math.Min(cropW, origW - fromX);
-            cropH = Math.Min(cropH, origH - fromY);
 
             try
             {
                 Bitmap cropped = new Bitmap(cropW, cropH);
                 using (Graphics g = Graphics.FromImage(cropped))
                 {
+                    g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
                     g.DrawImage(frame, new Rectangle(0, 0, cropW, cropH),
                         new Rectangle(fromX, fromY, cropW, cropH), GraphicsUnit.Pixel);
                 }
                 Bitmap resized = new Bitmap(origW, origH);
                 using (Graphics g = Graphics.FromImage(resized))
                 {
-                    g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.Bilinear;
+                    g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.NearestNeighbor;
                     g.DrawImage(cropped, 0, 0, origW, origH);
                 }
                 cropped.Dispose();
@@ -1065,6 +1064,19 @@ namespace LitePlacer.CameraEngines
             {
                 System.Diagnostics.Debug.WriteLine($"EmguCV WatershedSegmentation error: {ex.Message}");
             }
+        }
+
+        /// <summary>
+        /// Contour circles marker - no image transformation.
+        /// Acts as a tag in the pipeline that tells DetectCircles_Contour to use
+        /// contour+circularity detection on the pre-processed image rather than HoughCircles.
+        /// The circularity threshold is stored in par_d (default 0.7).
+        /// </summary>
+        public static void ContourCircles(ref Bitmap frame, int par_int, double par_d, int par_R, int par_G, int par_B,
+            double par_dA, double par_dB, double par_dC)
+        {
+            // Pass-through: image is already in the state the pipeline left it.
+            // Detection happens in EmguCVEngine.DetectCircles_Contour.
         }
     }
 }

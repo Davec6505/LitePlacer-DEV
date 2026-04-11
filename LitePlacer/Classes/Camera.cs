@@ -1038,8 +1038,17 @@ namespace LitePlacer
                             double engZoom = GetProcessingZoom();
                             double engXmmPpix = XmmPerPixel / engZoom;
                             double engYmmPpix = YmmPerPixel / engZoom;
+                            // Use the measurement pipeline to determine which circle detector is
+                            // configured (Hough or Contour). The display pipeline may have the
+                            // circle-detector step disabled (unchecked) so the user sees only the
+                            // processed binary image, but the overlay must still detect circles.
+                            List<CameraEngines.IProcessingFunction> measurePipeline;
+                            lock (_enginePipelineLock)
+                            {
+                                measurePipeline = new List<CameraEngines.IProcessingFunction>(_enginePipeline);
+                            }
                             EngineCircles = _currentEngine.FindCirclesForDisplay(
-                                blobInputFrame, MeasurementParameters, engXmmPpix, engYmmPpix);
+                                blobInputFrame, MeasurementParameters, engXmmPpix, engYmmPpix, measurePipeline);
                         }
                         else
                         {

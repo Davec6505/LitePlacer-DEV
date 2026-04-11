@@ -101,6 +101,15 @@ namespace LitePlacer.CameraEngines
             return null;
         }
 
+        public List<EngineCircle> FindCirclesForDisplay(Bitmap processedFrame,
+                                                         MeasurementParametersClass parameters,
+                                                         double XmmPerPixel,
+                                                         double YmmPerPixel,
+                                                         List<IProcessingFunction> pipeline)
+        {
+            return null;
+        }
+
         /// <summary>
         /// Executes measurement using existing Camera.Measure() implementation
         /// This preserves ALL current AForge functionality without changes

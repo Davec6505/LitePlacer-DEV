@@ -1294,13 +1294,15 @@ namespace LitePlacer
                     break;
 
                 case "Hough circles (sub-pixel)":
-                    funct.parameterInt = 0;         // Method
-                    funct.parameterDouble = 1.0;    // DP
-                    funct.parameterDoubleA = 20;    // Min distance
-                    funct.parameterDoubleB = 100;   // Param1
-                    funct.parameterDoubleC = 30;    // Param2
-                    funct.R = 10;                   // Min radius
-                    funct.G = 100;                  // Max radius
+                    funct.parameterInt = 0;         // Method: 0=Gradient, 1=GradientAlt
+                    funct.parameterDouble = 1.0;    // DP: accumulator resolution (1=same as image)
+                    funct.parameterDoubleA = 0;     // Min distance (0 = auto from Xmin)
+                    funct.parameterDoubleB = 100;   // Param1: Canny upper threshold
+                    funct.parameterDoubleC = 30;    // Param2: accumulator centre threshold
+                    break;
+
+                case "Contour circles":
+                    funct.parameterDouble = 0.70;   // Circularity threshold (0=round, 1=perfect)
                     break;
 
                 case "Harris corners":
@@ -1564,21 +1566,27 @@ namespace LitePlacer
                     EnableDouble("DP:");
                     EnableDoubleA("Min distance:");
                     EnableDoubleB("Edge threshold:");
-                    EnableDoubleC("Center threshold:");
-                    R_label.Text = "Min radius:";
-                    R_label.Visible = true;
-                    DoubleParA_textBox.Text = VideoAlgorithms.CurrentAlgorithm.FunctionList[VideoAlgorithms.CurrentFunctionIndex].R.ToString();
-                    DoubleParA_textBox.Visible = true;
-                    G_label.Text = "Max radius:";
-                    G_label.Visible = true;
-                    DoubleParB_textBox.Text = VideoAlgorithms.CurrentAlgorithm.FunctionList[VideoAlgorithms.CurrentFunctionIndex].G.ToString();
-                    DoubleParB_textBox.Visible = true;
+                    EnableDoubleC("Centre threshold:");
                     FunctionExplanation_textBox.Text =
-                        "Circle detection with sub-pixel accuracy.\r\n" +
-                        "DP: Inverse accumulator resolution\r\n" +
-                        "Min distance: Minimum distance between circle centers\r\n" +
-                        "Edge threshold: Canny edge detector threshold\r\n" +
-                        "Center threshold: Accumulator threshold for centers";
+                        "Hough circle detection (HoughCircles).\r\n" +
+                        "Method: 0=Gradient, 1=GradientAlt\r\n" +
+                        "DP: Accumulator resolution (1=full, 2=half). Use 1.\r\n" +
+                        "Min distance: Min px between centres (0=auto from Xmin).\r\n" +
+                        "Edge threshold: Internal Canny upper threshold (50-200).\r\n" +
+                        "Centre threshold: Accumulator votes needed (10-50).\r\n" +
+                        "Radius range comes from Acceptable size (Xmin/Xmax).";   
+                    FunctionExplanation_textBox.Visible = true;
+                    break;
+
+                case "Contour circles":
+                    EnableDouble("Circularity min:");
+                    FunctionExplanation_textBox.Text =
+                        "Circle detection on the pre-processed pipeline image.\r\n" +
+                        "Works with Threshold+Invert (filled blobs) or Canny (edge rings).\r\n" +
+                        "Circularity min: 0.0=any shape, 1.0=perfect circle (0.70 typical).\r\n" +
+                        "Radius range comes from Acceptable size (Xmin/Xmax).\r\n" +
+                        "Selects the smallest circle that passes all filters.\r\n" +
+                        "Use instead of Hough circles when the image is already processed.";
                     FunctionExplanation_textBox.Visible = true;
                     break;
 
@@ -1786,14 +1794,16 @@ namespace LitePlacer
             }
             // Pass CurrentAlgorithm to camera
             DisplayText("UpdateVideoProcessing()");
-            if (DownCam_radioButton.Checked)
-            {
-                DownCamera.BuildDisplayFunctionsList(VideoAlgorithms.CurrentAlgorithm.FunctionList);
-            }
-            else
-            {
-                UpCamera.BuildDisplayFunctionsList(VideoAlgorithms.CurrentAlgorithm.FunctionList);
-            }
+            bool showProcessing = ShowVideoProcessing_radioButton.Checked;
+            Camera activeCam = DownCam_radioButton.Checked ? DownCamera : UpCamera;
+            activeCam.ShowProcessing = showProcessing;
+            activeCam.BuildDisplayFunctionsList(VideoAlgorithms.CurrentAlgorithm.FunctionList);
+            // Keep the measurement pipeline in sync so the EmguCV circle overlay works
+            // immediately. Without this, _enginePipeline is empty until the user presses
+            // Measure, causing HasContourCircles() to always return false and the wrong
+            // detection path (Hough) to be used for the display overlay.
+            activeCam.BuildMeasurementFunctionsList(VideoAlgorithms.CurrentAlgorithm.FunctionList);
+            activeCam.MeasurementParameters = VideoAlgorithms.CurrentAlgorithm.MeasurementParameters;
             UpdateSearchFunctions();
         }
 
