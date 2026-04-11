@@ -10526,7 +10526,8 @@ namespace LitePlacer
             {
                 return false;  // header row
             }
-            if (cell.OwningRow.Cells["CADdataXmachineColumn"].Value.ToString() == "Nan")
+            object xMachineVal = cell.OwningRow.Cells["CADdataXmachineColumn"].Value;
+            if (xMachineVal == null || xMachineVal.ToString() == "Nan")
             {
                 DialogResult dialogResult = ShowMessageBox(
                     "Component locations not yet measured. Measure now?",
@@ -10539,9 +10540,10 @@ namespace LitePlacer
                 {
                     return false;
                 }
+                xMachineVal = cell.OwningRow.Cells["CADdataXmachineColumn"].Value;
             }
 
-            if (!double.TryParse(cell.OwningRow.Cells["CADdataXmachineColumn"].Value.ToString().Replace(',', '.'), out X))
+            if (xMachineVal == null || !double.TryParse(xMachineVal.ToString().Replace(',', '.'), out X))
             {
                 ShowMessageBox(
                     "Bad data at X_machine",
@@ -10550,7 +10552,8 @@ namespace LitePlacer
                 return false;
             }
 
-            if (!double.TryParse(cell.OwningRow.Cells["CADdataYmachineColumn"].Value.ToString().Replace(',', '.'), out Y))
+            object yMachineVal = cell.OwningRow.Cells["CADdataYmachineColumn"].Value;
+            if (yMachineVal == null || !double.TryParse(yMachineVal.ToString().Replace(',', '.'), out Y))
             {
                 ShowMessageBox(
                     "Bad data at Y_machine",
@@ -11385,6 +11388,10 @@ namespace LitePlacer
             SetDownCameraDefaults();
             SelectCamera(DownCamera);
             TapeSetupZguard_checkBox.Checked = false;
+
+            PullEngageSpeedZ_textBox.Text = Setting.NozzlePull_EngageSpeedZ.ToString("0", CultureInfo.InvariantCulture);
+            PullSpeedXY_textBox.Text = Setting.NozzlePull_PullSpeedXY.ToString("0", CultureInfo.InvariantCulture);
+            PullLiftSpeedZ_textBox.Text = Setting.NozzlePull_LiftSpeedZ.ToString("0", CultureInfo.InvariantCulture);
         }
 
         private void Tapes_tabPage_End()
@@ -12494,7 +12501,7 @@ namespace LitePlacer
             // STEP 2: Lower into sprocket hole
             double engageZ = pickupZ + ENGAGEMENT_DEPTH;
             DisplayText($"  Engaging into hole: Z={engageZ:F3} (pickup Z={pickupZ:F3} + {ENGAGEMENT_DEPTH}mm)", KnownColor.DarkCyan);
-            if (!Cnc.Execute_Z(engageZ, 500.0, "G1"))
+            if (!Cnc.Execute_Z(engageZ, Setting.NozzlePull_EngageSpeedZ, "G1"))
             {
                 DisplayText("*** Failed to engage nozzle into hole", KnownColor.DarkRed);
                 return false;
@@ -12511,14 +12518,14 @@ namespace LitePlacer
                 case "-X": pullTargetX -= totalPull; break;
                 default:
                     ShowMessageBox($"Unknown tape orientation: {orientation}", "Tape error", MessageBoxButtons.OK);
-                    Cnc.Z(engageZ - 10.0);
+                    Cnc.Execute_Z(engageZ - 10.0,Setting.NozzlePull_LiftSpeedZ,"G1");
                     return false;
             }
             DisplayText($"  Pulling tape {totalPull}mm ({orientation})", KnownColor.DarkCyan);
-            if (!Cnc.Execute_XYA(pullTargetX, pullTargetY, Cnc.CurrentA, 300.0, "G1"))
+            if (!Cnc.Execute_XYA(pullTargetX, pullTargetY, Cnc.CurrentA, Setting.NozzlePull_PullSpeedXY, "G1"))
             {
                 DisplayText("*** Failed to pull tape", KnownColor.DarkRed);
-                Cnc.Z(engageZ - 10.0);
+                Cnc.Execute_Z(engageZ - 10.0,Setting.NozzlePull_LiftSpeedZ,"G1");
                 return false;
             }
 
@@ -12526,7 +12533,7 @@ namespace LitePlacer
             ZGuardOff();
             double liftZ = engageZ - 10.0;
             DisplayText($"  Lifting 10mm to Z={liftZ:F3}", KnownColor.DarkCyan);
-            if (!Cnc.Z(liftZ))
+            if (!Cnc.Execute_Z(liftZ,Setting.NozzlePull_LiftSpeedZ,"G1"))
             {
                 DisplayText("*** Warning: Failed to lift nozzle after tape pull", KnownColor.DarkOrange);
                 ZGuardOn();
@@ -14514,6 +14521,52 @@ namespace LitePlacer
             }
         }
 
+
+
+        private void PullEngageSpeedZ_textBox_TextChanged(object sender, EventArgs e)
+        {
+            double val;
+            if (double.TryParse(PullEngageSpeedZ_textBox.Text.Replace(',', '.'), out val) && val > 0)
+            {
+                Setting.NozzlePull_EngageSpeedZ = val;
+                PullEngageSpeedZ_textBox.ForeColor = Color.Black;
+            }
+            else
+            {
+                PullEngageSpeedZ_textBox.ForeColor = Color.Red;
+            }
+        }
+
+        private void PullSpeedXY_textBox_TextChanged(object sender, EventArgs e)
+        {
+            double val;
+            if (double.TryParse(PullSpeedXY_textBox.Text.Replace(',', '.'), out val) && val > 0)
+            {
+                Setting.NozzlePull_PullSpeedXY = val;
+                PullSpeedXY_textBox.ForeColor = Color.Black;
+            }
+            else
+            {
+                PullSpeedXY_textBox.ForeColor = Color.Red;
+            }
+        }
+
+        private void PullLiftSpeedZ_textBox_TextChanged(object sender, EventArgs e)
+        {
+            double val;
+            if (double.TryParse(PullLiftSpeedZ_textBox.Text.Replace(',', '.'), out val) && val > 0)
+            {
+                Setting.NozzlePull_LiftSpeedZ = val;
+                PullLiftSpeedZ_textBox.ForeColor = Color.Black;
+            }
+            else
+            {
+                PullLiftSpeedZ_textBox.ForeColor = Color.Red;
+            }
+        }
+
+
+
         private void NozzleTimeout_textBox_TextChanged(object sender, EventArgs e)
         {
             int val;
@@ -14809,6 +14862,7 @@ namespace LitePlacer
         // TODO: Move routines below to correct places
 
         public bool DownCameraRotationFollowsA { get; set; } = false;
+
         private void apos_textBox_TextChanged(object sender, EventArgs e)
         {
             if (DownCameraRotationFollowsA)
@@ -15340,6 +15394,28 @@ namespace LitePlacer
             DisplayText($"Both cameras now using {engine.EngineName}", KnownColor.DarkGreen);
             DisplayText("Function list updated in Video Processing tab", KnownColor.DarkCyan);
         }
+        // Plan:
+        // 1. CS0825: 'var' is used as a field declaration, which is not allowed. Replace with explicit type.
+        // 2. CS0103: 'cell' is not defined in the current context. The code is not inside a method, and 'cell' is not declared. 
+        //    To fix, you must move the code into a method where 'cell' is defined, or define 'cell' appropriately.
+        //    Since the code is at the class level and not inside a method, and there is no context for 'cell', 
+        //    the correct fix is to remove or move this code into a method where 'cell' is defined and in scope.
+        //    If you want to get the value from a DataGridViewCell, you must do so inside a method/event handler where 'cell' is available.
+
+        // Remove the following invalid field declaration from the class body:
+        // var xValue = cell.OwningRow.Cells["CADdataXmachineColumn"].Value?.ToString();
+
+        // If you want to use this code, place it inside a method where 'cell' is defined, for example:
+        private void SomeMethod(DataGridViewCell cell)
+        {
+            var xValue = cell.OwningRow.Cells["CADdataXmachineColumn"].Value?.ToString();
+            if (xValue == null || xValue == "Nan")
+            {
+                // prompt to measure...
+            }
+        }
+
+
     }	// end of: 	public partial class FormMain : Form
 
 

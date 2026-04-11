@@ -41,9 +41,9 @@ namespace LitePlacer
         {
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormMain));
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle5 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle6 = new System.Windows.Forms.DataGridViewCellStyle();
             this.Park_button = new System.Windows.Forms.Button();
             this.TestNozzleRecognition_button = new System.Windows.Forms.Button();
             this.DownCamZoomFactor_textBox = new System.Windows.Forms.TextBox();
@@ -78,6 +78,13 @@ namespace LitePlacer
             this.Bookmark5_button = new System.Windows.Forms.Button();
             this.Bookmark6_button = new System.Windows.Forms.Button();
             this.Tapes_tabPage = new System.Windows.Forms.TabPage();
+            this.groupBoxPullZSpeeds = new System.Windows.Forms.GroupBox();
+            this.labelZLiftSpeed = new System.Windows.Forms.Label();
+            this.labelZPullSpeed = new System.Windows.Forms.Label();
+            this.labelZEngageSpeed = new System.Windows.Forms.Label();
+            this.PullLiftSpeedZ_textBox = new System.Windows.Forms.TextBox();
+            this.PullSpeedXY_textBox = new System.Windows.Forms.TextBox();
+            this.PullEngageSpeedZ_textBox = new System.Windows.Forms.TextBox();
             this.TapesOld_dataGridView = new System.Windows.Forms.DataGridView();
             this.SelectButtonColumn = new System.Windows.Forms.DataGridViewButtonColumn();
             this.IdColumn = new System.Windows.Forms.DataGridViewTextBoxColumn();
@@ -1022,6 +1029,7 @@ namespace LitePlacer
             this.TapesAll_openFileDialog = new System.Windows.Forms.OpenFileDialog();
             this.FPStimer = new System.Windows.Forms.Timer(this.components);
             this.Tapes_tabPage.SuspendLayout();
+            this.groupBoxPullZSpeeds.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.TapesOld_dataGridView)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.Tapes_dataGridView)).BeginInit();
             this.Tapes_contextMenuStrip.SuspendLayout();
@@ -1489,6 +1497,7 @@ namespace LitePlacer
             // 
             // Tapes_tabPage
             // 
+            this.Tapes_tabPage.Controls.Add(this.groupBoxPullZSpeeds);
             this.Tapes_tabPage.Controls.Add(this.TapesOld_dataGridView);
             this.Tapes_tabPage.Controls.Add(this.label230);
             this.Tapes_tabPage.Controls.Add(this.TapeSetupZguard_checkBox);
@@ -1534,6 +1543,76 @@ namespace LitePlacer
             this.Tapes_tabPage.Tag = "https://liteplacer.com/tape-positions-page/";
             this.Tapes_tabPage.Text = "Tape Positions";
             this.Tapes_tabPage.UseVisualStyleBackColor = true;
+            // 
+            // groupBoxPullZSpeeds
+            // 
+            this.groupBoxPullZSpeeds.AutoSize = true;
+            this.groupBoxPullZSpeeds.BackColor = System.Drawing.Color.WhiteSmoke;
+            this.groupBoxPullZSpeeds.Controls.Add(this.labelZLiftSpeed);
+            this.groupBoxPullZSpeeds.Controls.Add(this.labelZPullSpeed);
+            this.groupBoxPullZSpeeds.Controls.Add(this.labelZEngageSpeed);
+            this.groupBoxPullZSpeeds.Controls.Add(this.PullLiftSpeedZ_textBox);
+            this.groupBoxPullZSpeeds.Controls.Add(this.PullSpeedXY_textBox);
+            this.groupBoxPullZSpeeds.Controls.Add(this.PullEngageSpeedZ_textBox);
+            this.groupBoxPullZSpeeds.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
+            this.groupBoxPullZSpeeds.ForeColor = System.Drawing.SystemColors.ActiveCaptionText;
+            this.groupBoxPullZSpeeds.Location = new System.Drawing.Point(655, 504);
+            this.groupBoxPullZSpeeds.Name = "groupBoxPullZSpeeds";
+            this.groupBoxPullZSpeeds.Size = new System.Drawing.Size(499, 104);
+            this.groupBoxPullZSpeeds.TabIndex = 269;
+            this.groupBoxPullZSpeeds.TabStop = false;
+            this.groupBoxPullZSpeeds.Text = "Z Speeds for Tape Pulling";
+            // 
+            // labelZLiftSpeed
+            // 
+            this.labelZLiftSpeed.AutoSize = true;
+            this.labelZLiftSpeed.Location = new System.Drawing.Point(358, 29);
+            this.labelZLiftSpeed.Name = "labelZLiftSpeed";
+            this.labelZLiftSpeed.Size = new System.Drawing.Size(70, 16);
+            this.labelZLiftSpeed.TabIndex = 5;
+            this.labelZLiftSpeed.Text = "Z Lift Sped";
+            // 
+            // labelZPullSpeed
+            // 
+            this.labelZPullSpeed.AutoSize = true;
+            this.labelZPullSpeed.Location = new System.Drawing.Point(198, 29);
+            this.labelZPullSpeed.Name = "labelZPullSpeed";
+            this.labelZPullSpeed.Size = new System.Drawing.Size(84, 16);
+            this.labelZPullSpeed.TabIndex = 4;
+            this.labelZPullSpeed.Text = "Z Pull Speed";
+            // 
+            // labelZEngageSpeed
+            // 
+            this.labelZEngageSpeed.AutoSize = true;
+            this.labelZEngageSpeed.Location = new System.Drawing.Point(41, 29);
+            this.labelZEngageSpeed.Name = "labelZEngageSpeed";
+            this.labelZEngageSpeed.Size = new System.Drawing.Size(135, 16);
+            this.labelZEngageSpeed.TabIndex = 3;
+            this.labelZEngageSpeed.Text = "Z Pull Engage Speed";
+            // 
+            // PullLiftSpeedZ_textBox
+            // 
+            this.PullLiftSpeedZ_textBox.Location = new System.Drawing.Point(358, 61);
+            this.PullLiftSpeedZ_textBox.Name = "PullLiftSpeedZ_textBox";
+            this.PullLiftSpeedZ_textBox.Size = new System.Drawing.Size(100, 22);
+            this.PullLiftSpeedZ_textBox.TabIndex = 2;
+            this.PullLiftSpeedZ_textBox.TextChanged += new System.EventHandler(this.PullLiftSpeedZ_textBox_TextChanged);
+            // 
+            // PullSpeedXY_textBox
+            // 
+            this.PullSpeedXY_textBox.Location = new System.Drawing.Point(198, 61);
+            this.PullSpeedXY_textBox.Name = "PullSpeedXY_textBox";
+            this.PullSpeedXY_textBox.Size = new System.Drawing.Size(100, 22);
+            this.PullSpeedXY_textBox.TabIndex = 1;
+            this.PullSpeedXY_textBox.TextChanged += new System.EventHandler(this.PullSpeedXY_textBox_TextChanged);
+            // 
+            // PullEngageSpeedZ_textBox
+            // 
+            this.PullEngageSpeedZ_textBox.Location = new System.Drawing.Point(41, 61);
+            this.PullEngageSpeedZ_textBox.Name = "PullEngageSpeedZ_textBox";
+            this.PullEngageSpeedZ_textBox.Size = new System.Drawing.Size(100, 22);
+            this.PullEngageSpeedZ_textBox.TabIndex = 0;
+            this.PullEngageSpeedZ_textBox.TextChanged += new System.EventHandler(this.PullEngageSpeedZ_textBox_TextChanged);
             // 
             // TapesOld_dataGridView
             // 
@@ -2394,8 +2473,8 @@ namespace LitePlacer
             // 
             // PullDistance_Column
             // 
-            dataGridViewCellStyle1.Format = "0.0";
-            this.PullDistance_Column.DefaultCellStyle = dataGridViewCellStyle1;
+            dataGridViewCellStyle4.Format = "0.0";
+            this.PullDistance_Column.DefaultCellStyle = dataGridViewCellStyle4;
             this.PullDistance_Column.HeaderText = "Pull Dist";
             this.PullDistance_Column.MinimumWidth = 6;
             this.PullDistance_Column.Name = "PullDistance_Column";
@@ -2404,12 +2483,11 @@ namespace LitePlacer
             // 
             // EngageDepth_Column
             // 
-            this.EngageDepth_Column.DefaultCellStyle = dataGridViewCellStyle1;
             this.EngageDepth_Column.HeaderText = "Engage Depth";
             this.EngageDepth_Column.MinimumWidth = 6;
             this.EngageDepth_Column.Name = "EngageDepth_Column";
             this.EngageDepth_Column.ToolTipText = "Depth nozzle engages into sprocket hole below pickup Z (mm), default 1.0";
-            this.EngageDepth_Column.Width = 88;
+            this.EngageDepth_Column.Width = 113;
             // 
             // VerifyHoleWithCamera_Column
             // 
@@ -9617,14 +9695,14 @@ namespace LitePlacer
             | System.Windows.Forms.AnchorStyles.Right)));
             this.JobData_GridView.CellBorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.Raised;
             this.JobData_GridView.ClipboardCopyMode = System.Windows.Forms.DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
-            dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle2.BackColor = System.Drawing.SystemColors.Control;
-            dataGridViewCellStyle2.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            dataGridViewCellStyle2.ForeColor = System.Drawing.SystemColors.WindowText;
-            dataGridViewCellStyle2.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle2.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle2.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.JobData_GridView.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle2;
+            dataGridViewCellStyle5.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle5.BackColor = System.Drawing.SystemColors.Control;
+            dataGridViewCellStyle5.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            dataGridViewCellStyle5.ForeColor = System.Drawing.SystemColors.WindowText;
+            dataGridViewCellStyle5.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle5.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle5.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.JobData_GridView.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle5;
             this.JobData_GridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             this.JobData_GridView.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
             this.JobDataValueColumn,
@@ -9740,14 +9818,14 @@ namespace LitePlacer
             | System.Windows.Forms.AnchorStyles.Right)));
             this.CadData_GridView.CellBorderStyle = System.Windows.Forms.DataGridViewCellBorderStyle.Raised;
             this.CadData_GridView.ClipboardCopyMode = System.Windows.Forms.DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
-            dataGridViewCellStyle3.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
-            dataGridViewCellStyle3.BackColor = System.Drawing.SystemColors.Control;
-            dataGridViewCellStyle3.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            dataGridViewCellStyle3.ForeColor = System.Drawing.SystemColors.WindowText;
-            dataGridViewCellStyle3.SelectionBackColor = System.Drawing.SystemColors.Highlight;
-            dataGridViewCellStyle3.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle3.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.CadData_GridView.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle3;
+            dataGridViewCellStyle6.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleCenter;
+            dataGridViewCellStyle6.BackColor = System.Drawing.SystemColors.Control;
+            dataGridViewCellStyle6.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            dataGridViewCellStyle6.ForeColor = System.Drawing.SystemColors.WindowText;
+            dataGridViewCellStyle6.SelectionBackColor = System.Drawing.SystemColors.Highlight;
+            dataGridViewCellStyle6.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle6.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.CadData_GridView.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle6;
             this.CadData_GridView.ColumnHeadersHeight = 29;
             this.CadData_GridView.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
             this.CadData_GridView.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
@@ -11533,16 +11611,6 @@ namespace LitePlacer
             this.RenameAlgorithm_button.UseVisualStyleBackColor = true;
             this.RenameAlgorithm_button.Click += new System.EventHandler(this.RenameAlgorithm_button_Click);
             // 
-            // CopyFrom_button
-            // 
-            this.CopyFrom_button.Location = new System.Drawing.Point(1120, 211);
-            this.CopyFrom_button.Name = "CopyFrom_button";
-            this.CopyFrom_button.Size = new System.Drawing.Size(75, 23);
-            this.CopyFrom_button.TabIndex = 214;
-            this.CopyFrom_button.Text = "Copy from...";
-            this.CopyFrom_button.UseVisualStyleBackColor = true;
-            this.CopyFrom_button.Click += new System.EventHandler(this.CopyFrom_button_Click);
-            // 
             // DuplicateAlgorithm_button
             // 
             this.DuplicateAlgorithm_button.Location = new System.Drawing.Point(958, 212);
@@ -11553,6 +11621,16 @@ namespace LitePlacer
             this.DuplicateAlgorithm_button.Text = "Duplicate";
             this.DuplicateAlgorithm_button.UseVisualStyleBackColor = true;
             this.DuplicateAlgorithm_button.Click += new System.EventHandler(this.DuplicateAlgorithm_button_Click);
+            // 
+            // CopyFrom_button
+            // 
+            this.CopyFrom_button.Location = new System.Drawing.Point(1120, 211);
+            this.CopyFrom_button.Name = "CopyFrom_button";
+            this.CopyFrom_button.Size = new System.Drawing.Size(75, 23);
+            this.CopyFrom_button.TabIndex = 214;
+            this.CopyFrom_button.Text = "Copy from...";
+            this.CopyFrom_button.UseVisualStyleBackColor = true;
+            this.CopyFrom_button.Click += new System.EventHandler(this.CopyFrom_button_Click);
             // 
             // RemoveAlgorithm_button
             // 
@@ -12842,6 +12920,8 @@ namespace LitePlacer
             this.Shown += new System.EventHandler(this.FormMain_Shown);
             this.Tapes_tabPage.ResumeLayout(false);
             this.Tapes_tabPage.PerformLayout();
+            this.groupBoxPullZSpeeds.ResumeLayout(false);
+            this.groupBoxPullZSpeeds.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.TapesOld_dataGridView)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.Tapes_dataGridView)).EndInit();
             this.Tapes_contextMenuStrip.ResumeLayout(false);
@@ -13925,6 +14005,13 @@ namespace LitePlacer
         private Label label322;
         private GroupBox groupBoxCameraEngin;
         private ListBox listBoxCameraEngin;
+        private GroupBox groupBoxPullZSpeeds;
+        private TextBox PullLiftSpeedZ_textBox;
+        private TextBox PullSpeedXY_textBox;
+        private TextBox PullEngageSpeedZ_textBox;
+        private Label labelZLiftSpeed;
+        private Label labelZPullSpeed;
+        private Label labelZEngageSpeed;
     }
 }
     

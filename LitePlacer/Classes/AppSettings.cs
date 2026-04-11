@@ -213,6 +213,11 @@ namespace LitePlacer
         public bool General_Autopark { get; set; } = false;
         public double General_ZTestTravel { get; set; } = 20;
 
+        // Nozzle pull tape indexing speed setpoints (mm/min)
+        public double NozzlePull_EngageSpeedZ { get; set; } = 500.0;
+        public double NozzlePull_PullSpeedXY { get; set; } = 300.0;
+        public double NozzlePull_LiftSpeedZ { get; set; } = 1000.0;
+
         public double General_Z0toPCB { get; set; } = 0;
         public bool General_ZlbFixAsked { get; set; } = false;
         public int NozzleHeightSetupStage { get; set; } = 0;
