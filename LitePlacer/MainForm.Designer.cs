@@ -937,7 +937,7 @@ namespace LitePlacer
             this.label155 = new System.Windows.Forms.Label();
             this.CalData_button = new System.Windows.Forms.Button();
             this.EditNozzleCalibration_button = new System.Windows.Forms.Button();
-            this.label1510 = new System.Windows.Forms.Label();
+            this.label323 = new System.Windows.Forms.Label();
             this.label151 = new System.Windows.Forms.Label();
             this.label150 = new System.Windows.Forms.Label();
             this.NozzlesParameters_dataGridView = new System.Windows.Forms.DataGridView();
@@ -11710,7 +11710,7 @@ namespace LitePlacer
             this.Nozzles_tabPage.Controls.Add(this.label155);
             this.Nozzles_tabPage.Controls.Add(this.CalData_button);
             this.Nozzles_tabPage.Controls.Add(this.EditNozzleCalibration_button);
-            this.Nozzles_tabPage.Controls.Add(this.label1510);
+            this.Nozzles_tabPage.Controls.Add(this.label323);
             this.Nozzles_tabPage.Controls.Add(this.label151);
             this.Nozzles_tabPage.Controls.Add(this.label150);
             this.Nozzles_tabPage.Controls.Add(this.NozzlesParameters_dataGridView);
@@ -11828,14 +11828,14 @@ namespace LitePlacer
             //
             // label EditNozzelCalibration
             //
-            this.label1510.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.label1510.AutoSize = true;
-            this.label1510.Location = new System.Drawing.Point(700, 581);
-            this.label1510.Name = "label1510";
-            this.label1510.Size = new System.Drawing.Size(86, 16);
-            this.label1510.TabIndex = 38;
-            this.label1510.Tag = "https://liteplacer.com/setup-nozzles/";
-            this.label1510.Text = "Edit Nozzel Calibrations";
+            this.label323.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.label323.AutoSize = true;
+            this.label323.Location = new System.Drawing.Point(700, 581);
+            this.label323.Name = "label323";
+            this.label323.Size = new System.Drawing.Size(86, 16);
+            this.label323.TabIndex = 38;
+            this.label323.Tag = "https://liteplacer.com/setup-nozzles/";
+            this.label323.Text = "Edit Nozzel Calibrations";
 
             // 
             // EditNozzleCalibration_button
@@ -14040,7 +14040,7 @@ namespace LitePlacer
         private Label labelZLiftSpeed;
         private Label labelZPullSpeed;
         private Label labelZEngageSpeed;
-        private System.Windows.Forms.Label label1510;
+        private System.Windows.Forms.Label label323;
     }
 }
     
