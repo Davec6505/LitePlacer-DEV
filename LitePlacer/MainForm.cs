@@ -49,6 +49,7 @@ namespace LitePlacer
         Camera DownCamera;
         Camera UpCamera;
         NozzleCalibrationClass Nozzle;
+        public NozzleCalibrationClass NozzleCalibration { get { return Nozzle; } }
         TapesClass Tapes;
 
         public MySettings Setting;
@@ -13611,6 +13612,30 @@ namespace LitePlacer
                     }
                 }
             }
+        }
+
+
+        private void Invoke_NozzleCalEditDialog(int nozzleIndex)
+        {
+            NozzleCalEditForm dlg = new NozzleCalEditForm();
+            dlg.MainForm = this;
+            dlg.NozzleIndex = nozzleIndex;
+            dlg.StartPosition = FormStartPosition.CenterParent;
+            dlg.ShowDialog(this);
+        }
+
+        private void EditNozzleCalibration_button_Click(object sender, EventArgs e)
+        {
+            int row = NozzlesParameters_dataGridView.CurrentCell != null
+                ? NozzlesParameters_dataGridView.CurrentCell.RowIndex
+                : Setting.Nozzles_current - 1;
+
+            if (row < 0 || row >= Nozzle.NozzleDataAllNozzles.Count)
+            {
+                DisplayText("Select a nozzle row first.");
+                return;
+            }
+            Invoke_NozzleCalEditDialog(row);
         }
 
 

@@ -10,7 +10,7 @@ using System.Globalization;
 
 namespace LitePlacer
 {
-    class NozzleCalibrationClass
+    public class NozzleCalibrationClass
     {
         public class NozzlePoint
         {

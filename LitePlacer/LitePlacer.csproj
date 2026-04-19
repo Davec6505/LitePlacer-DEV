@@ -264,6 +264,12 @@
     </Compile>
     <Compile Include="Classes\MZ_CNCControl.cs" />
     <Compile Include="Classes\SKR3Control.cs" />
+    <Compile Include="NozzleCalEdit.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="NozzleCalEdit.Designer.cs">
+      <DependentUpon>NozzleCalEdit.cs</DependentUpon>
+    </Compile>
     <Compile Include="SKR3Settings.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -425,10 +431,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Classes\" />
-    <Folder Include="Interfaces\" />
-  </ItemGroup>
+  <ItemGroup />
   <PropertyGroup>
     <PostBuildEvent>
     </PostBuildEvent>

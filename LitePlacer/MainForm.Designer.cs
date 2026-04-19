@@ -936,6 +936,8 @@ namespace LitePlacer
             this.CalibrateThis_button = new System.Windows.Forms.Button();
             this.label155 = new System.Windows.Forms.Label();
             this.CalData_button = new System.Windows.Forms.Button();
+            this.EditNozzleCalibration_button = new System.Windows.Forms.Button();
+            this.label1510 = new System.Windows.Forms.Label();
             this.label151 = new System.Windows.Forms.Label();
             this.label150 = new System.Windows.Forms.Label();
             this.NozzlesParameters_dataGridView = new System.Windows.Forms.DataGridView();
@@ -11707,6 +11709,8 @@ namespace LitePlacer
             this.Nozzles_tabPage.Controls.Add(this.CalibrateThis_button);
             this.Nozzles_tabPage.Controls.Add(this.label155);
             this.Nozzles_tabPage.Controls.Add(this.CalData_button);
+            this.Nozzles_tabPage.Controls.Add(this.EditNozzleCalibration_button);
+            this.Nozzles_tabPage.Controls.Add(this.label1510);
             this.Nozzles_tabPage.Controls.Add(this.label151);
             this.Nozzles_tabPage.Controls.Add(this.label150);
             this.Nozzles_tabPage.Controls.Add(this.NozzlesParameters_dataGridView);
@@ -11821,6 +11825,29 @@ namespace LitePlacer
             this.CalData_button.Text = "Dump cal data";
             this.CalData_button.UseVisualStyleBackColor = true;
             this.CalData_button.Click += new System.EventHandler(this.CalData_button_Click);
+            //
+            // label EditNozzelCalibration
+            //
+            this.label1510.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.label1510.AutoSize = true;
+            this.label1510.Location = new System.Drawing.Point(700, 581);
+            this.label1510.Name = "label1510";
+            this.label1510.Size = new System.Drawing.Size(86, 16);
+            this.label1510.TabIndex = 38;
+            this.label1510.Tag = "https://liteplacer.com/setup-nozzles/";
+            this.label1510.Text = "Edit Nozzel Calibrations";
+
+            // 
+            // EditNozzleCalibration_button
+            // 
+            this.EditNozzleCalibration_button.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.EditNozzleCalibration_button.Location = new System.Drawing.Point(700, 602);
+            this.EditNozzleCalibration_button.Name = "EditNozzleCalibration_button";
+            this.EditNozzleCalibration_button.Size = new System.Drawing.Size(99, 23);
+            this.EditNozzleCalibration_button.TabIndex = 310;
+            this.EditNozzleCalibration_button.Text = "Edit cal data";
+            this.EditNozzleCalibration_button.UseVisualStyleBackColor = true;
+            this.EditNozzleCalibration_button.Click += new System.EventHandler(this.EditNozzleCalibration_button_Click);
             // 
             // label151
             // 
@@ -13418,6 +13445,7 @@ namespace LitePlacer
         private System.Windows.Forms.Label label150;
         private System.Windows.Forms.Label label151;
         private System.Windows.Forms.Button CalData_button;
+        private System.Windows.Forms.Button EditNozzleCalibration_button;
         private System.Windows.Forms.Label label155;
         private System.Windows.Forms.Button CalibrateThis_button;
         private System.Windows.Forms.Timer MotorPower_timer;
@@ -14012,6 +14040,7 @@ namespace LitePlacer
         private Label labelZLiftSpeed;
         private Label labelZPullSpeed;
         private Label labelZEngageSpeed;
+        private System.Windows.Forms.Label label1510;
     }
 }
     
