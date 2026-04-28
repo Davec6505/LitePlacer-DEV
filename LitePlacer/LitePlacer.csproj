@@ -270,6 +270,12 @@
     <Compile Include="NozzleCalEdit.Designer.cs">
       <DependentUpon>NozzleCalEdit.cs</DependentUpon>
     </Compile>
+    <Compile Include="NozzleManualCal.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="NozzleManualCal.Designer.cs">
+      <DependentUpon>NozzleManualCal.cs</DependentUpon>
+    </Compile>
     <Compile Include="SKR3Settings.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -352,6 +358,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="NonModalDialog.resx">
       <DependentUpon>NonModalDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="NozzleManualCal.resx">
+      <DependentUpon>NozzleManualCal.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="PlacementMethodSelectionForm.resx">
       <DependentUpon>PlacementMethodSelectionForm.cs</DependentUpon>

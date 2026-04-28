@@ -276,7 +276,7 @@ namespace LitePlacer
                 MainForm.DisplayText("Attempt to calibrate Nozzle, camera is not running!", System.Drawing.KnownColor.DarkRed, true);
                 return false;
             }
-            if (NozzleDataAllNozzles.Count < MainForm.Setting.Nozzles_current - 1)
+            if (NozzleDataAllNozzles.Count < MainForm.Setting.Nozzles_current)
             {
                 MainForm.DisplayText("Attempt to calibrate Nozzle, current nozzle > amount of data!", System.Drawing.KnownColor.DarkRed, true);
                 return false;

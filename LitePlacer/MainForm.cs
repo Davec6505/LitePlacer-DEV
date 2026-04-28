@@ -13556,7 +13556,11 @@ namespace LitePlacer
 
         private void CalibrateThis_button_Click(object sender, EventArgs e)
         {
-            CalibrateCurrentNozzle();
+            if (CalibrateCurrentNozzle())
+            {
+                string path = GetPath();
+                Nozzle.SaveNozzlesCalibration(path + NOZZLES_CALIBRATION_DATAFILE);
+            }
             CheckCalibrationErrors(Setting.Nozzles_current);
         }
 
@@ -13615,6 +13619,31 @@ namespace LitePlacer
         }
 
 
+        private void Invoke_NozzleManualCalDialog(int nozzleIndex)
+        {
+            NozzleManualCalForm dlg = new NozzleManualCalForm();
+            dlg.MainForm = this;
+            dlg.NozzleIndex = nozzleIndex;
+            dlg.StartPosition = FormStartPosition.Manual;
+            // Position to the right of the main form so it doesn't obscure the jog controls
+            dlg.Location = new System.Drawing.Point(
+                Location.X + (Width - dlg.Width) / 2,
+                Location.Y + (Height - dlg.Height) / 2);
+            dlg.Show(this);
+        }
+
+        private void ManualNozzleCal_button_Click(object sender, EventArgs e)
+        {
+            int row = (int)ForceNozzle_numericUpDown.Value - 1;
+
+            if (row < 0 || row >= Nozzle.NozzleDataAllNozzles.Count)
+            {
+                DisplayText("Select a valid nozzle first.");
+                return;
+            }
+            Invoke_NozzleManualCalDialog(row);
+        }
+
         private void Invoke_NozzleCalEditDialog(int nozzleIndex)
         {
             NozzleCalEditForm dlg = new NozzleCalEditForm();
@@ -13626,13 +13655,11 @@ namespace LitePlacer
 
         private void EditNozzleCalibration_button_Click(object sender, EventArgs e)
         {
-            int row = NozzlesParameters_dataGridView.CurrentCell != null
-                ? NozzlesParameters_dataGridView.CurrentCell.RowIndex
-                : Setting.Nozzles_current - 1;
+            int row = (int)ForceNozzle_numericUpDown.Value - 1;
 
             if (row < 0 || row >= Nozzle.NozzleDataAllNozzles.Count)
             {
-                DisplayText("Select a nozzle row first.");
+                DisplayText("Select a valid nozzle first.");
                 return;
             }
             Invoke_NozzleCalEditDialog(row);

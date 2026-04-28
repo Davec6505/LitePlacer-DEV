@@ -937,6 +937,7 @@ namespace LitePlacer
             this.label155 = new System.Windows.Forms.Label();
             this.CalData_button = new System.Windows.Forms.Button();
             this.EditNozzleCalibration_button = new System.Windows.Forms.Button();
+            this.ManualNozzleCal_button = new System.Windows.Forms.Button();
             this.label323 = new System.Windows.Forms.Label();
             this.label151 = new System.Windows.Forms.Label();
             this.label150 = new System.Windows.Forms.Label();
@@ -11710,6 +11711,7 @@ namespace LitePlacer
             this.Nozzles_tabPage.Controls.Add(this.label155);
             this.Nozzles_tabPage.Controls.Add(this.CalData_button);
             this.Nozzles_tabPage.Controls.Add(this.EditNozzleCalibration_button);
+            this.Nozzles_tabPage.Controls.Add(this.ManualNozzleCal_button);
             this.Nozzles_tabPage.Controls.Add(this.label323);
             this.Nozzles_tabPage.Controls.Add(this.label151);
             this.Nozzles_tabPage.Controls.Add(this.label150);
@@ -11793,9 +11795,9 @@ namespace LitePlacer
             // 
             this.CalibrateThis_button.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.CalibrateThis_button.Enabled = false;
-            this.CalibrateThis_button.Location = new System.Drawing.Point(711, 602);
+            this.CalibrateThis_button.Location = new System.Drawing.Point(685, 600);
             this.CalibrateThis_button.Name = "CalibrateThis_button";
-            this.CalibrateThis_button.Size = new System.Drawing.Size(87, 23);
+            this.CalibrateThis_button.Size = new System.Drawing.Size(115, 23);
             this.CalibrateThis_button.TabIndex = 41;
             this.CalibrateThis_button.Tag = "https://liteplacer.com/setup-nozzles/";
             this.CalibrateThis_button.Text = "Calibrate curr.";
@@ -11825,29 +11827,39 @@ namespace LitePlacer
             this.CalData_button.Text = "Dump cal data";
             this.CalData_button.UseVisualStyleBackColor = true;
             this.CalData_button.Click += new System.EventHandler(this.CalData_button_Click);
-            //
-            // label EditNozzelCalibration
-            //
-            this.label323.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.label323.AutoSize = true;
-            this.label323.Location = new System.Drawing.Point(700, 581);
-            this.label323.Name = "label323";
-            this.label323.Size = new System.Drawing.Size(86, 16);
-            this.label323.TabIndex = 38;
-            this.label323.Tag = "https://liteplacer.com/setup-nozzles/";
-            this.label323.Text = "Edit Nozzel Calibrations";
-
             // 
             // EditNozzleCalibration_button
             // 
             this.EditNozzleCalibration_button.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.EditNozzleCalibration_button.Location = new System.Drawing.Point(700, 602);
+            this.EditNozzleCalibration_button.Location = new System.Drawing.Point(685, 546);
             this.EditNozzleCalibration_button.Name = "EditNozzleCalibration_button";
-            this.EditNozzleCalibration_button.Size = new System.Drawing.Size(99, 23);
+            this.EditNozzleCalibration_button.Size = new System.Drawing.Size(115, 23);
             this.EditNozzleCalibration_button.TabIndex = 310;
             this.EditNozzleCalibration_button.Text = "Edit cal data";
             this.EditNozzleCalibration_button.UseVisualStyleBackColor = true;
             this.EditNozzleCalibration_button.Click += new System.EventHandler(this.EditNozzleCalibration_button_Click);
+            // 
+            // ManualNozzleCal_button
+            // 
+            this.ManualNozzleCal_button.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.ManualNozzleCal_button.Location = new System.Drawing.Point(685, 521);
+            this.ManualNozzleCal_button.Name = "ManualNozzleCal_button";
+            this.ManualNozzleCal_button.Size = new System.Drawing.Size(115, 23);
+            this.ManualNozzleCal_button.TabIndex = 311;
+            this.ManualNozzleCal_button.Text = "Manual Cal...";
+            this.ManualNozzleCal_button.UseVisualStyleBackColor = true;
+            this.ManualNozzleCal_button.Click += new System.EventHandler(this.ManualNozzleCal_button_Click);
+            // 
+            // label323
+            // 
+            this.label323.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.label323.AutoSize = true;
+            this.label323.Location = new System.Drawing.Point(652, 502);
+            this.label323.Name = "label323";
+            this.label323.Size = new System.Drawing.Size(148, 16);
+            this.label323.TabIndex = 38;
+            this.label323.Tag = "https://liteplacer.com/setup-nozzles/";
+            this.label323.Text = "Edit Nozzel Calibrations";
             // 
             // label151
             // 
@@ -11978,9 +11990,9 @@ namespace LitePlacer
             // 
             this.CalibrateNozzles_button.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.CalibrateNozzles_button.Enabled = false;
-            this.CalibrateNozzles_button.Location = new System.Drawing.Point(711, 573);
+            this.CalibrateNozzles_button.Location = new System.Drawing.Point(685, 573);
             this.CalibrateNozzles_button.Name = "CalibrateNozzles_button";
-            this.CalibrateNozzles_button.Size = new System.Drawing.Size(89, 23);
+            this.CalibrateNozzles_button.Size = new System.Drawing.Size(115, 23);
             this.CalibrateNozzles_button.TabIndex = 33;
             this.CalibrateNozzles_button.Tag = "https://liteplacer.com/setup-nozzles/";
             this.CalibrateNozzles_button.Text = "Calibrate All";
@@ -13446,6 +13458,7 @@ namespace LitePlacer
         private System.Windows.Forms.Label label151;
         private System.Windows.Forms.Button CalData_button;
         private System.Windows.Forms.Button EditNozzleCalibration_button;
+        private System.Windows.Forms.Button ManualNozzleCal_button;
         private System.Windows.Forms.Label label155;
         private System.Windows.Forms.Button CalibrateThis_button;
         private System.Windows.Forms.Timer MotorPower_timer;
